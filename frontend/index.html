@@ -154,6 +154,7 @@
                 <div v-if="contextMenu.show" class="context-menu" :style="{ top: contextMenu.y + 'px', left: contextMenu.x + 'px' }">
                     <div class="context-menu-item" @click="playTrackNext(contextMenu.track); closeContextMenu()">Play Next</div>
                     <div class="context-menu-item" @click="addToQueue(contextMenu.track); closeContextMenu()">Add to Queue</div>
+                </div>
                 
                 <div v-if="view === 'albums'">
                     <div class="album-grid">
@@ -339,6 +340,8 @@
                     if (ar) artists.value = ar;
                     const p = await apiCall('/api/playlists');
                     if (p) playlists.value = p;
+                    const c = await apiCall('/api/config');
+                    if (c) config.value = c;
                 }
                 
                 async function loadTracks() {
