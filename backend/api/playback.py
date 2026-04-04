@@ -84,18 +84,24 @@ def stream_track(track_id: int, db: Session = Depends(get_db)):
     if fmt in ('M4A', 'M4B'):
         import logging
         logging.warning(f"Transcoding M4A: {track.path}")
+        
         cmd = [
             'ffmpeg', '-i', track.path,
             '-f', 'mp3', '-codec:a', 'libmp3lame',
-            '-b:a', '320k', '-nostdin', '-loglevel', 'info'
+            '-b:a', '320k', '-nostdin', '-loglevel', 'error'
         ]
-        process = subprocess.Popen(
-            cmd,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE
-        )
+        
+        def generate_stream():
+            process = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            while True:
+                chunk = process.stdout.read(8192)
+                if not chunk:
+                    break
+                yield chunk
+            process.wait()
+        
         return StreamingResponse(
-            process.stdout,
+            generate_stream(),
             media_type="audio/mpeg",
             headers={"Accept-Ranges": "bytes"}
         )
