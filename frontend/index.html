@@ -1,0 +1,403 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LanTunes</title>
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #121212; color: #fff; height: 100vh; overflow: hidden; }
+        #app { display: flex; flex-direction: column; height: 100vh; }
+        
+        .main-content { flex: 1; display: flex; overflow: hidden; }
+        .sidebar { width: 200px; background: #1a1a1a; padding: 20px 0; }
+        .sidebar-item { padding: 12px 20px; cursor: pointer; display: flex; align-items: center; gap: 12px; color: #aaa; }
+        .sidebar-item:hover { color: #fff; }
+        .sidebar-item.active { color: #1db954; background: #252525; }
+        .sidebar-item i { width: 20px; }
+        
+        .content { flex: 1; padding: 20px; overflow-y: auto; }
+        
+        .player-bar { height: 90px; background: #181818; border-top: 1px solid #282828; display: flex; align-items: center; padding: 0 16px; gap: 20px; }
+        .track-info { width: 200px; }
+        .track-info .title { font-size: 14px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .track-info .artist { font-size: 12px; color: #aaa; }
+        
+        .player-controls { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 8px; }
+        .control-buttons { display: flex; align-items: center; gap: 20px; }
+        .control-buttons button { background: none; border: none; color: #fff; cursor: pointer; font-size: 16px; }
+        .control-buttons button:hover { transform: scale(1.1); }
+        .control-buttons .play-btn { width: 32px; height: 32px; border-radius: 50%; background: #fff; color: #000; display: flex; align-items: center; justify-content: center; }
+        
+        .progress { width: 100%; max-width: 400px; display: flex; align-items: center; gap: 8px; }
+        .progress span { font-size: 11px; color: #aaa; min-width: 30px; }
+        .progress-bar { flex: 1; height: 4px; background: #535353; border-radius: 2px; cursor: pointer; position: relative; }
+        .progress-bar .fill { height: 100%; background: #1db954; border-radius: 2px; }
+        
+        .volume { width: 120px; display: flex; align-items: center; gap: 8px; }
+        .volume input { width: 80px; }
+        
+        h1 { margin-bottom: 20px; }
+        
+        .album-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 20px; }
+        .album-card { cursor: pointer; }
+        .album-card img { width: 100%; aspect-ratio: 1; background: #333; object-fit: cover; border-radius: 4px; margin-bottom: 8px; }
+        .album-card .name { font-size: 14px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .album-card .artist { font-size: 12px; color: #aaa; }
+        
+        .track-list { }
+        .track-row { display: flex; align-items: center; padding: 8px 12px; border-radius: 4px; cursor: pointer; }
+        .track-row:hover { background: #2a2a2a; }
+        .track-row .num { width: 30px; color: #aaa; }
+        .track-row .title { flex: 1; }
+        .track-row .duration { color: #aaa; }
+        
+        .search-box { margin-bottom: 20px; }
+        .search-box input { width: 100%; max-width: 400px; padding: 12px 16px; border-radius: 20px; border: none; background: #242424; color: #fff; }
+        
+        .btn { padding: 10px 20px; background: #1db954; color: #000; border: none; border-radius: 20px; cursor: pointer; font-weight: 600; }
+        .btn:hover { background: #1ed760; }
+        
+        .empty { color: #aaa; text-align: center; padding: 40px; }
+        
+        .queue-section { width: 250px; background: #1a1a1a; padding: 20px; overflow-y: auto; }
+        .queue-section h3 { margin-bottom: 10px; }
+        
+        @media (max-width: 768px) {
+            .sidebar { display: none; }
+            .queue-section { display: none; }
+            .player-bar { flex-wrap: wrap; height: auto; padding: 10px; }
+            .track-info { width: 100%; }
+        }
+    </style>
+</head>
+<body>
+    <div id="app">
+        <div class="main-content">
+            <div class="sidebar">
+                <div class="sidebar-item" :class="{ active: view === 'library' }" @click="view = 'library'">
+                    <i class="fas fa-music"></i> Library
+                </div>
+                <div class="sidebar-item" :class="{ active: view === 'albums' }" @click="view = 'albums'">
+                    <i class="fas fa-compact-disc"></i> Albums
+                </div>
+                <div class="sidebar-item" :class="{ active: view === 'artists' }" @click="view = 'artists'">
+                    <i class="fas fa-user"></i> Artists
+                </div>
+                <div class="sidebar-item" :class="{ active: view === 'playlists' }" @click="view = 'playlists'">
+                    <i class="fas fa-list"></i> Playlists
+                </div>
+                <div class="sidebar-item" :class="{ active: view === 'settings' }" @click="view = 'settings'">
+                    <i class="fas fa-cog"></i> Settings
+                </div>
+            </div>
+            
+            <div class="content">
+                <div v-if="view === 'library'">
+                    <div class="search-box">
+                        <input type="text" v-model="searchQuery" @input="search" placeholder="Search...">
+                    </div>
+                    <div v-if="searchResults.tracks.length || searchResults.albums.length || searchResults.artists.length">
+                        <h3>Tracks</h3>
+                        <div class="track-list">
+                            <div class="track-row" v-for="t in searchResults.tracks" :key="t.id" @click="playTrack(t)">
+                                <span class="num">{{ t.track_number }}</span>
+                                <span class="title">{{ t.title }}</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div v-else class="empty">Search or browse your music library</div>
+                </div>
+                
+                <div v-if="view === 'albums'">
+                    <div class="album-grid">
+                        <div class="album-card" v-for="a in albums" :key="a.id" @click="viewAlbum(a.id)">
+                            <div style="width:100%;aspect-ratio:1;background:#333;border-radius:4px;margin-bottom:8px;display:flex;align-items:center;justify-content:center;">
+                                <i class="fas fa-compact-disc" style="font-size:48px;color:#555;"></i>
+                            </div>
+                            <div class="name">{{ a.title }}</div>
+                            <div class="artist">{{ a.artist }}</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div v-if="view === 'artists'">
+                    <div class="album-grid">
+                        <div class="album-card" v-for="a in artists" :key="a.id">
+                            <div style="width:100%;aspect-ratio:1;background:#333;border-radius:50%;margin-bottom:8px;display:flex;align-items:center;justify-content:center;">
+                                <i class="fas fa-user" style="font-size:48px;color:#555;"></i>
+                            </div>
+                            <div class="name">{{ a.name }}</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div v-if="view === 'album-detail'">
+                    <button @click="view = 'albums'" style="margin-bottom:20px;background:none;border:none;color:#aaa;cursor:pointer;">
+                        <i class="fas fa-arrow-left"></i> Back
+                    </button>
+                    <h1>{{ currentAlbum.title }}</h1>
+                    <p style="color:#aaa;margin-bottom:20px;">{{ currentAlbum.artist }} &middot; {{ currentAlbum.year }}</p>
+                    <div class="track-list">
+                        <div class="track-row" v-for="t in currentAlbum.tracks" :key="t.id" @click="playTrack(t)">
+                            <span class="num">{{ t.track_number }}</span>
+                            <span class="title">{{ t.title }}</span>
+                            <span class="duration">{{ formatDuration(t.duration) }}</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div v-if="view === 'playlists'">
+                    <button class="btn" @click="createPlaylist" style="margin-bottom:20px;">New Playlist</button>
+                    <div v-if="playlists.length === 0" class="empty">No playlists yet</div>
+                    <div v-else class="album-grid">
+                        <div class="album-card" v-for="p in playlists" :key="p.id">
+                            <div style="width:100%;aspect-ratio:1;background:#333;border-radius:4px;margin-bottom:8px;display:flex;align-items:center;justify-content:center;">
+                                <i class="fas fa-list" style="font-size:48px;color:#555;"></i>
+                            </div>
+                            <div class="name">{{ p.name }}</div>
+                            <div class="artist">{{ p.track_count }} tracks</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div v-if="view === 'settings'">
+                    <h1>Settings</h1>
+                    <div style="margin-bottom:20px;">
+                        <label>Music Path</label>
+                        <input type="text" v-model="config.library.music_path" style="width:100%;max-width:400px;padding:10px;margin-top:8px;background:#242424;border:1px solid #444;color:#fff;border-radius:4px;">
+                    </div>
+                    <button class="btn" @click="saveConfig">Save Config</button>
+                    <button class="btn" @click="scanLibrary" style="margin-left:10px;">Scan Library</button>
+                    <p style="margin-top:20px;color:#aaa;">{{ scanResult }}</p>
+                </div>
+            </div>
+            
+            <div class="queue-section" v-if="queue.length">
+                <h3>Queue</h3>
+                <div v-for="(id, i) in queue" :key="i" class="track-row" style="padding:4px 0;">
+                    <span style="color:#aaa;margin-right:8px;">{{ i + 1 }}</span>
+                    <span>{{ getTrackTitle(id) }}</span>
+                </div>
+            </div>
+        </div>
+        
+        <div class="player-bar">
+            <div class="track-info">
+                <div class="title">{{ playbackState.track?.title || 'No track playing' }}</div>
+                <div class="artist">{{ playbackState.track?.artist || '' }}</div>
+            </div>
+            
+            <div class="player-controls">
+                <div class="control-buttons">
+                    <button @click="previous"><i class="fas fa-step-backward"></i></button>
+                    <button class="play-btn" @click="togglePlay">
+                        <i :class="playbackState.is_playing ? 'fas fa-pause' : 'fas fa-play'"></i>
+                    </button>
+                    <button @click="next"><i class="fas fa-step-forward"></i></button>
+                </div>
+                <div class="progress">
+                    <span>{{ formatDuration(playbackState.position) }}</span>
+                    <div class="progress-bar" @click="seek($event)">
+                        <div class="fill" :style="{ width: progressPercent + '%' }"></div>
+                    </div>
+                    <span>{{ formatDuration(playbackState.track?.duration || 0) }}</span>
+                </div>
+            </div>
+            
+            <div class="volume">
+                <i class="fas fa-volume-up"></i>
+                <input type="range" min="0" max="1" step="0.01" v-model="volume" @change="setVolume">
+            </div>
+        </div>
+        
+        <audio ref="audioPlayer" @timeupdate="onTimeUpdate" @ended="onEnded" style="display:none;"></audio>
+    </div>
+
+    <script>
+        const { createApp, ref, computed, onMounted } = Vue;
+        
+        const API = '';
+        let ws = null;
+        
+        createApp({
+            setup() {
+                const view = ref('library');
+                const searchQuery = ref('');
+                const searchResults = ref({ tracks: [], albums: [], artists: [] });
+                const albums = ref([]);
+                const artists = ref([]);
+                const playlists = ref([]);
+                const config = ref({ library: { music_path: '' } });
+                const scanResult = ref('');
+                
+                const currentAlbum = ref(null);
+                const playbackState = ref({ track: null, position: 0, is_playing: false, volume: 1.0, queue: [], queue_index: 0 });
+                const queue = ref([]);
+                const volume = ref(1.0);
+                const audioPlayer = ref(null);
+                
+                const progressPercent = computed(() => {
+                    if (!playbackState.value.track?.duration) return 0;
+                    return (playbackState.value.position / playbackState.value.track.duration) * 100;
+                });
+                
+                async function apiCall(url, opts = {}) {
+                    try {
+                        const res = await fetch(API + url, opts);
+                        return await res.json();
+                    } catch (e) { console.error(e); return null; }
+                }
+                
+                async function loadLibrary() {
+                    const a = await apiCall('/api/library/albums');
+                    if (a) albums.value = a;
+                    const ar = await apiCall('/api/library/artists');
+                    if (ar) artists.value = ar;
+                    const p = await apiCall('/api/playlists');
+                    if (p) playlists.value = p;
+                }
+                
+                async function search() {
+                    if (!searchQuery.value) { searchResults.value = { tracks: [], albums: [], artists: [] }; return; }
+                    const r = await apiCall('/api/library/search?q=' + encodeURIComponent(searchQuery.value));
+                    if (r) searchResults.value = r;
+                }
+                
+                async function viewAlbum(id) {
+                    const a = await apiCall('/api/library/albums/' + id);
+                    if (a) { currentAlbum.value = a; view.value = 'album-detail'; }
+                }
+                
+                async function playTrack(track) {
+                    const state = await apiCall('/api/playback/play', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ track_id: track.id, queue: [track.id] })
+                    });
+                    if (state) {
+                        playbackState.value = state;
+                        queue.value = state.queue;
+                        playStream(track.id);
+                    }
+                }
+                
+                function playStream(trackId) {
+                    if (audioPlayer.value) {
+                        audioPlayer.value.src = API + '/api/playback/stream/' + trackId;
+                        audioPlayer.value.play();
+                    }
+                }
+                
+                async function togglePlay() {
+                    if (playbackState.value.is_playing) {
+                        await apiCall('/api/playback/pause', { method: 'POST' });
+                        audioPlayer.value?.pause();
+                    } else {
+                        await apiCall('/api/playback/play', { method: 'POST' });
+                        audioPlayer.value?.play();
+                    }
+                    playbackState.value.is_playing = !playbackState.value.is_playing;
+                }
+                
+                async function next() {
+                    const state = await apiCall('/api/playback/next', { method: 'POST' });
+                    if (state) {
+                        playbackState.value = state;
+                        if (state.track) playStream(state.track.id);
+                    }
+                }
+                
+                async function previous() {
+                    const state = await apiCall('/api/playback/previous', { method: 'POST' });
+                    if (state) {
+                        playbackState.value = state;
+                        if (state.track) playStream(state.track.id);
+                    }
+                }
+                
+                async function seek(e) {
+                    const rect = e.target.getBoundingClientRect();
+                    const percent = (e.clientX - rect.left) / rect.width;
+                    const pos = Math.floor(percent * playbackState.value.track.duration);
+                    await apiCall('/api/playback/seek?position=' + pos, { method: 'POST' });
+                    playbackState.value.position = pos;
+                }
+                
+                async function setVolume() {
+                    await apiCall('/api/playback/volume?volume=' + volume.value, { method: 'POST' });
+                }
+                
+                function onTimeUpdate() {
+                    if (audioPlayer.value) {
+                        playbackState.value.position = Math.floor(audioPlayer.value.currentTime);
+                    }
+                }
+                
+                async function onEnded() {
+                    await next();
+                }
+                
+                async function createPlaylist() {
+                    const name = prompt('Playlist name:');
+                    if (name) {
+                        await apiCall('/api/playlists?name=' + encodeURIComponent(name), { method: 'POST' });
+                        loadLibrary();
+                    }
+                }
+                
+                async function saveConfig() {
+                    // Save to config.yaml via API (not implemented yet)
+                    alert('Config saved. Restart the server for changes to take effect.');
+                }
+                
+                async function scanLibrary() {
+                    scanResult.value = 'Scanning...';
+                    const r = await apiCall('/api/library/scan', { method: 'POST' });
+                    if (r) {
+                        scanResult.value = `Scanned: ${r.scanned}, Added: ${r.added}, Errors: ${r.errors}`;
+                        loadLibrary();
+                    }
+                }
+                
+                function formatDuration(s) {
+                    if (!s) return '0:00';
+                    const m = Math.floor(s / 60);
+                    const sec = s % 60;
+                    return m + ':' + sec.toString().padStart(2, '0');
+                }
+                
+                function getTrackTitle(trackId) {
+                    // Simplified - would need to cache track list
+                    return 'Track ' + trackId;
+                }
+                
+                function connectWS() {
+                    ws = new WebSocket('ws://' + location.host + '/ws');
+                    ws.onmessage = (e) => {
+                        const msg = JSON.parse(e.data);
+                        if (msg.event === 'playback_state') {
+                            playbackState.value = msg.data;
+                            queue.value = msg.data.queue || [];
+                        }
+                    };
+                }
+                
+                onMounted(() => {
+                    loadLibrary();
+                    connectWS();
+                });
+                
+                return {
+                    view, searchQuery, searchResults, albums, artists, playlists, config, scanResult,
+                    currentAlbum, playbackState, queue, volume, audioPlayer, progressPercent,
+                    search, viewAlbum, playTrack, togglePlay, next, previous, seek, setVolume,
+                    onTimeUpdate, onEnded, createPlaylist, saveConfig, scanLibrary, formatDuration, getTrackTitle
+                };
+            }
+        }).mount('#app');
+    </script>
+</body>
+</html>

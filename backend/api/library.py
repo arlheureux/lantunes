@@ -1,0 +1,88 @@
+import sys
+import os
+backend_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+sys.path.insert(0, backend_dir)
+
+from fastapi import APIRouter, Depends, HTTPException, Query
+from sqlalchemy.orm import Session, joinedload
+from database import get_db, Track, Album, Artist, Playlist, PlaylistTrack, Client
+from scanner import scan_library
+
+import config as config_module
+
+router = APIRouter(prefix="/api/library", tags=["library"])
+
+config = config_module.config
+
+@router.get("/tracks")
+def get_tracks(db: Session = Depends(get_db), page: int = 1, limit: int = 50):
+    offset = (page - 1) * limit
+    tracks = db.query(Track).order_by(Track.title).offset(offset).limit(limit).all()
+    total = db.query(Track).count()
+    return {"tracks": [t.as_dict() for t in tracks], "total": total, "page": page, "limit": limit}
+
+@router.get("/tracks/{track_id}")
+def get_track(track_id: int, db: Session = Depends(get_db)):
+    track = db.query(Track).filter(Track.id == track_id).first()
+    if not track:
+        raise HTTPException(status_code=404, detail="Track not found")
+    return track.as_dict()
+
+@router.get("/albums")
+def get_albums(db: Session = Depends(get_db)):
+    albums = db.query(Album).options(joinedload(Album.artist)).order_by(Album.title).all()
+    return [{"id": a.id, "title": a.title, "artist": a.artist.name if a.artist else "Unknown", "year": a.year, "artwork": a.artwork_path} for a in albums]
+
+@router.get("/albums/{album_id}")
+def get_album(album_id: int, db: Session = Depends(get_db)):
+    album = db.query(Album).options(joinedload(Album.artist), joinedload(Album.tracks)).filter(Album.id == album_id).first()
+    if not album:
+        raise HTTPException(status_code=404, detail="Album not found")
+    return {
+        "id": album.id,
+        "title": album.title,
+        "artist": album.artist.name if album.artist else "Unknown",
+        "year": album.year,
+        "genre": album.genre,
+        "artwork": album.artwork_path,
+        "tracks": [t.as_dict() for t in sorted(album.tracks, key=lambda x: (x.disc_number or 1, x.track_number or 0))]
+    }
+
+@router.get("/artists")
+def get_artists(db: Session = Depends(get_db)):
+    artists = db.query(Artist).order_by(Artist.name).all()
+    return [{"id": a.id, "name": a.name, "artwork": a.artwork_path} for a in artists]
+
+@router.get("/artists/{artist_id}")
+def get_artist(artist_id: int, db: Session = Depends(get_db)):
+    artist = db.query(Artist).options(joinedload(Artist.albums)).filter(Artist.id == artist_id).first()
+    if not artist:
+        raise HTTPException(status_code=404, detail="Artist not found")
+    return {
+        "id": artist.id,
+        "name": artist.name,
+        "artwork": artist.artwork_path,
+        "albums": [{"id": a.id, "title": a.title, "year": a.year, "artwork": a.artwork_path} for a in artist.albums]
+    }
+
+@router.get("/search")
+def search(q: str = Query(...), db: Session = Depends(get_db)):
+    q_lower = f"%{q.lower()}%"
+    tracks = db.query(Track).filter(Track.title.ilike(q_lower)).limit(20).all()
+    albums = db.query(Album).filter(Album.title.ilike(q_lower)).limit(10).all()
+    artists = db.query(Artist).filter(Artist.name.ilike(q_lower)).limit(10).all()
+    return {
+        "tracks": [t.as_dict() for t in tracks],
+        "albums": [{"id": a.id, "title": a.title, "artist": a.artist.name if a.artist else "Unknown"} for a in albums],
+        "artists": [{"id": a.id, "name": a.name} for a in artists]
+    }
+
+@router.post("/scan")
+def trigger_scan(db: Session = Depends(get_db)):
+    music_path = config.get("library", {}).get("music_path", "")
+    if not music_path:
+        raise HTTPException(status_code=400, detail="Music path not configured")
+    if not os.path.isdir(music_path):
+        raise HTTPException(status_code=400, detail="Music path does not exist")
+    result = scan_library(music_path)
+    return result

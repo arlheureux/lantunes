@@ -1,0 +1,63 @@
+import sys
+import os
+backend_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+sys.path.insert(0, backend_dir)
+
+from fastapi import APIRouter, Depends, HTTPException, Query
+from sqlalchemy.orm import Session
+from database import get_db, PlaybackState, Track
+from playback import playback
+from typing import List, Optional
+
+router = APIRouter(prefix="/api/playback", tags=["playback"])
+
+@router.get("/state")
+def get_state(db: Session = Depends(get_db)):
+    return playback.get_state(db)
+
+@router.post("/play")
+def play(track_id: Optional[int] = None, queue: Optional[List[int]] = None, db: Session = Depends(get_db)):
+    return playback.play(db, track_id, queue)
+
+@router.post("/pause")
+def pause(db: Session = Depends(get_db)):
+    return playback.pause(db)
+
+@router.post("/stop")
+def stop(db: Session = Depends(get_db)):
+    return playback.stop(db)
+
+@router.post("/next")
+def next_track(db: Session = Depends(get_db)):
+    return playback.next(db)
+
+@router.post("/previous")
+def previous_track(db: Session = Depends(get_db)):
+    return playback.previous(db)
+
+@router.post("/seek")
+def seek(position: int = Query(...), db: Session = Depends(get_db)):
+    return playback.seek(db, position)
+
+@router.post("/volume")
+def set_volume(volume: float = Query(..., ge=0.0, le=1.0), db: Session = Depends(get_db)):
+    return playback.set_volume(db, volume)
+
+@router.post("/queue")
+def set_queue(track_ids: List[int], start_index: int = 0, db: Session = Depends(get_db)):
+    return playback.set_queue(db, track_ids, start_index)
+
+@router.get("/stream/{track_id}")
+def stream_track(track_id: int, db: Session = Depends(get_db)):
+    from fastapi.responses import FileResponse
+    track = db.query(Track).filter(Track.id == track_id).first()
+    if not track:
+        raise HTTPException(status_code=404, detail="Track not found")
+    if not os.path.exists(track.path):
+        raise HTTPException(status_code=404, detail="File not found")
+    
+    return FileResponse(
+        track.path,
+        media_type="audio/flac" if track.file_format == "FLAC" else "audio/mpeg",
+        headers={"Accept-Ranges": "bytes"}
+    )

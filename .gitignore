@@ -1,0 +1,7 @@
+__pycache__/
+*.pyc
+venv/
+lantunes.db
+*.pyc
+.DS_Store
+*.tar.gz
