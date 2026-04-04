@@ -284,8 +284,12 @@
                 async function apiCall(url, opts = {}) {
                     try {
                         const res = await fetch(API + url, opts);
+                        if (!res.ok) {
+                            console.error('API error:', res.status, await res.text());
+                            return null;
+                        }
                         return await res.json();
-                    } catch (e) { console.error(e); return null; }
+                    } catch (e) { console.error('API exception:', e); return null; }
                 }
                 
                 async function loadLibrary() {
@@ -335,11 +339,13 @@
                 }
                 
                 async function playTrack(track) {
+                    console.log('Playing track:', track);
                     const state = await apiCall('/api/playback/play', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({ track_id: track.id, queue: [track.id] })
                     });
+                    console.log('Play response:', state);
                     if (state) {
                         playbackState.value = state;
                         queue.value = state.queue;
@@ -348,9 +354,14 @@
                 }
                 
                 function playStream(trackId) {
+                    console.log('Streaming track:', trackId);
                     if (audioPlayer.value) {
-                        audioPlayer.value.src = API + '/api/playback/stream/' + trackId;
-                        audioPlayer.value.play();
+                        const streamUrl = API + '/api/playback/stream/' + trackId;
+                        console.log('Stream URL:', streamUrl);
+                        audioPlayer.value.src = streamUrl;
+                        audioPlayer.value.play().catch(e => console.error('Play error:', e));
+                    } else {
+                        console.error('Audio player not found');
                     }
                 }
                 
