@@ -80,15 +80,15 @@ def stream_track(track_id: int, db: Session = Depends(get_db)):
     
     fmt = track.file_format.upper() if track.file_format else ""
     
-    # Transcode M4A/M4B to MP3 on-the-fly using FFmpeg
+    # Transcode M4A/M4B to FLAC on-the-fly using FFmpeg
     if fmt in ('M4A', 'M4B'):
         process = subprocess.Popen(
-            ['ffmpeg', '-i', track.path, '-f', 'mp3', 
-             '-codec:a', 'libmp3lame', '-b:a', '192k',
+            ['ffmpeg', '-i', track.path, '-f', 'flac', 
+             '-codec:a', 'flac', '-compression_level', '0',
              '-nostdin', '-loglevel', 'quiet'],
             stdout=subprocess.PIPE, stderr=subprocess.PIPE
         )
-        return StreamingResponse(process.stdout, media_type="audio/mpeg")
+        return StreamingResponse(process.stdout, media_type="audio/flac")
     
     # Determine correct MIME type based on format for other formats
     if fmt == "FLAC":
