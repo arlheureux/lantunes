@@ -4,7 +4,6 @@ backend_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, backend_dir)
 
 from fastapi import APIRouter, Depends, HTTPException, Query
-from fastapi.body import Body
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 from database import get_db, PlaybackState, Track
@@ -22,10 +21,8 @@ def get_state(db: Session = Depends(get_db)):
     return playback.get_state(db)
 
 @router.post("/play")
-def play(req: PlayRequest = None, db: Session = Depends(get_db)):
-    track_id = req.track_id if req else None
-    queue = req.queue if req else None
-    return playback.play(db, track_id, queue)
+def play(req: PlayRequest, db: Session = Depends(get_db)):
+    return playback.play(db, req.track_id, req.queue)
 
 @router.post("/pause")
 def pause(db: Session = Depends(get_db)):

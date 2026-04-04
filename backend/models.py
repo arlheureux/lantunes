@@ -88,7 +88,7 @@ class Client(Base):
 
 class PlaybackState(Base):
     __tablename__ = "playback_state"
-    id = Column(Integer, primary_key=True, check_constraint="id = 1")
+    id = Column(Integer, primary_key=True, default=1)
     current_track_id = Column(Integer, ForeignKey("tracks.id"))
     position = Column(Integer, default=0)
     is_playing = Column(Boolean, default=False)
