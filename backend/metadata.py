@@ -149,14 +149,14 @@ def fetch_album_cover(artist: str, album: str, album_id: int, year: str = None) 
     lastfm_config = config.get('lastfm', {})
     lastfm_api_key = lastfm_config.get('api_key') if lastfm_config else None
     
-    providers = [
-        lambda: fetch_cover_from_musicbrainz(artist, album, year),
-        lambda: fetch_cover_from_deezer(artist, album),
-    ]
+    providers = []
     
-    # Add LastFM if API key is configured
+    # Add LastFM if API key is configured (try first)
     if lastfm_api_key:
         providers.append(lambda: fetch_cover_from_lastfm(artist, album, lastfm_api_key))
+    
+    # Add Deezer (fallback)
+    providers.append(lambda: fetch_cover_from_deezer(artist, album))
     
     for provider in providers:
         try:
