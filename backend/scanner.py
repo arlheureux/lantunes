@@ -4,7 +4,8 @@ from pathlib import Path
 from database import SessionLocal, Artist, Album, Track
 from metadata import extract_metadata, extract_and_save_artwork, fetch_album_cover
 
-AUDIO_EXTENSIONS = {'.flac', '.mp3', '.m4a', '.ogg', '.wav', '.aac', '.wma'}
+AUDIO_EXTENSIONS = {'.flac', '.mp3', '.m4a', '.ogg', '.wav', '.aac', '.wma', 
+                   '.opus', '.ape', '.alac', '.aiff', '.aif', '.m4b', '.mpc', '.mp+'}
 
 def scan_library(music_path: str):
     if not music_path or not os.path.isdir(music_path):
@@ -14,12 +15,17 @@ def scan_library(music_path: str):
     scanned = 0
     added = 0
     errors = 0
+    skipped_format = 0
+    skipped_duplicate = 0
+    unsupported_formats = {}
     
     try:
         for root, dirs, files in os.walk(music_path):
             for filename in files:
                 ext = Path(filename).suffix.lower()
                 if ext not in AUDIO_EXTENSIONS:
+                    skipped_format += 1
+                    unsupported_formats[ext] = unsupported_formats.get(ext, 0) + 1
                     continue
                 
                 scanned += 1
@@ -27,6 +33,7 @@ def scan_library(music_path: str):
                 
                 existing = db.query(Track).filter(Track.path == filepath).first()
                 if existing:
+                    skipped_duplicate += 1
                     continue
                 
                 try:
@@ -99,4 +106,8 @@ def scan_library(music_path: str):
     finally:
         db.close()
     
-    return {"scanned": scanned, "added": added, "errors": errors}
+    print(f"Scan complete: Scanned={scanned}, Added={added}, Errors={errors}, Skipped(duplicate)={skipped_duplicate}, Skipped(unsupported_format)={skipped_format}")
+    if unsupported_formats:
+        print(f"Unsupported formats found: {unsupported_formats}")
+    
+    return {"scanned": scanned, "added": added, "errors": errors, "skipped_duplicate": skipped_duplicate, "skipped_format": skipped_format, "unsupported_formats": unsupported_formats}
