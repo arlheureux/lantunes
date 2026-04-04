@@ -180,6 +180,23 @@
                     </div>
                 </div>
                 
+                <div v-if="view === 'artist-detail'">
+                    <button @click="view = 'artists'" style="margin-bottom:20px;background:none;border:none;color:#aaa;cursor:pointer;">
+                        <i class="fas fa-arrow-left"></i> Back
+                    </button>
+                    <h1>{{ currentArtist.name }}</h1>
+                    <p style="color:#aaa;margin-bottom:20px;">{{ currentArtist.albums?.length || 0 }} albums</p>
+                    <div class="album-grid">
+                        <div class="album-card" v-for="a in currentArtist.albums" :key="a.id" @click="viewAlbum(a.id)">
+                            <div style="width:100%;aspect-ratio:1;background:#333;border-radius:4px;margin-bottom:8px;display:flex;align-items:center;justify-content:center;">
+                                <i class="fas fa-compact-disc" style="font-size:48px;color:#555;"></i>
+                            </div>
+                            <div class="name">{{ a.title }}</div>
+                            <div class="artist">{{ a.year }}</div>
+                        </div>
+                    </div>
+                </div>
+                
                 <div v-if="view === 'playlists'">
                     <button class="btn" @click="createPlaylist" style="margin-bottom:20px;">New Playlist</button>
                     <div v-if="playlists.length === 0" class="empty">No playlists yet</div>
@@ -265,6 +282,7 @@
                 const scanResult = ref('');
                 
                 const currentAlbum = ref(null);
+                const currentArtist = ref(null);
                 const playbackState = ref({ track: null, position: 0, is_playing: false, volume: 1.0, queue: [], queue_index: 0 });
                 const queue = ref([]);
                 const volume = ref(1.0);
@@ -335,7 +353,8 @@
                 }
                 
                 async function viewArtist(id) {
-                    // Could add artist detail view later
+                    const a = await apiCall('/api/library/artists/' + id);
+                    if (a) { currentArtist.value = a; view.value = 'artist-detail'; }
                 }
                 
                 async function playTrack(track) {
@@ -470,7 +489,7 @@
                 
                 return {
                     view, searchQuery, searchResults, albums, artists, playlists, config, scanResult,
-                    currentAlbum, playbackState, queue, volume, audioPlayer, progressPercent,
+                    currentAlbum, currentArtist, playbackState, queue, volume, audioPlayer, progressPercent,
                     tracks, tracksPage, tracksLimit, tracksTotalPages,
                     search, viewAlbum, viewArtist, playTrack, togglePlay, next, previous, seek, setVolume,
                     onTimeUpdate, onEnded, createPlaylist, saveConfig, scanLibrary, formatDuration, getTrackTitle,
