@@ -44,7 +44,10 @@ class PlaybackController:
                 "artist": track.artist_id,
                 "album": track.album_id,
                 "duration": track.duration,
-                "path": track.path
+                "path": track.path,
+                "file_format": track.file_format,
+                "bitrate": track.bitrate,
+                "sample_rate": track.sample_rate
             } if track else None,
             "position": state.position,
             "is_playing": state.is_playing,

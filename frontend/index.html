@@ -39,6 +39,8 @@
         .volume { width: 120px; display: flex; align-items: center; gap: 8px; }
         .volume input { width: 80px; }
         
+        .track-meta { font-size: 11px; color: #666; margin-top: 4px; }
+        
         h1 { margin-bottom: 20px; }
         
         .album-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 20px; }
@@ -252,6 +254,11 @@
                         <div class="fill" :style="{ width: progressPercent + '%' }"></div>
                     </div>
                     <span>{{ formatDuration(playbackState.track?.duration || 0) }}</span>
+                </div>
+                <div class="track-meta">
+                    <span v-if="playbackState.track?.file_format">{{ playbackState.track.file_format }}</span>
+                    <span v-if="playbackState.track?.bitrate"> · {{ playbackState.track.bitrate }}kbps</span>
+                    <span v-if="playbackState.track?.sample_rate"> · {{ playbackState.track.sample_rate }}Hz</span>
                 </div>
             </div>
             
