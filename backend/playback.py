@@ -24,7 +24,8 @@ class PlaybackController:
         disconnected = []
         for ws in self._ws_connections:
             try:
-                ws.send_text(msg)
+                import asyncio
+                asyncio.create_task(ws.send_text(msg))
             except Exception:
                 disconnected.append(ws)
         # Clean up disconnected clients
