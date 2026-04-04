@@ -1,7 +1,7 @@
 import os
-import base64
-from mutagen import File
+import requests
 from pathlib import Path
+from typing import Optional
 
 ARTWORK_DIR = Path(__file__).parent.parent / "artwork"
 
@@ -9,8 +9,116 @@ def get_artwork_path(album_id: int) -> Path:
     ARTWORK_DIR.mkdir(exist_ok=True)
     return ARTWORK_DIR / f"album_{album_id}.jpg"
 
-def extract_and_save_artwork(filepath: str, album_id: int) -> str | None:
+def fetch_cover_from_musicbrainz(artist: str, album: str, year: str = None) -> Optional[bytes]:
+    """Fetch cover from MusicBrainz/Cover Art Archive"""
     try:
+        # Search MusicBrainz for release
+        search_url = "https://musicbrainz.org/ws/2/release/"
+        params = {
+            'query': f'release:"{album}" AND artist:"{artist}"',
+            'fmt': 'json',
+            'limit': 1
+        }
+        
+        headers = {'User-Agent': 'LanTunes/1.0 (contact@example.com)'}
+        
+        resp = requests.get(search_url, params=params, headers=headers, timeout=10)
+        if resp.status_code != 200:
+            return None
+        
+        data = resp.json()
+        releases = data.get('releases', [])
+        if not releases:
+            return None
+        
+        release_id = releases[0]['id']
+        
+        # Get cover art from Cover Art Archive
+        cover_url = f"https://coverartarchive.org/release/{release_id}/front"
+        cover_resp = requests.get(cover_url, timeout=10, allow_redirects=True)
+        
+        if cover_resp.status_code == 200:
+            return cover_resp.content
+    
+    except Exception as e:
+        print(f"MusicBrainz lookup failed: {e}")
+    
+    return None
+
+def fetch_cover_from_deezer(artist: str, album: str) -> Optional[bytes]:
+    """Fetch cover from Deezer API"""
+    try:
+        # Search Deezer
+        search_url = "https://api.deezer.com/search"
+        params = {
+            'q': f'{artist} {album}',
+            'limit': 1
+        }
+        
+        resp = requests.get(search_url, params=params, timeout=10)
+        if resp.status_code != 200:
+            return None
+        
+        data = resp.json()
+        tracks = data.get('data', [])
+        if not tracks:
+            return None
+        
+        # Get album cover from track
+        album_id = tracks[0].get('album', {}).get('id')
+        if not album_id:
+            return None
+        
+        # Get album details for better cover
+        album_url = f"https://api.deezer.com/album/{album_id}"
+        album_resp = requests.get(album_url, timeout=10)
+        
+        if album_resp.status_code == 200:
+            album_data = album_resp.json()
+            cover_url = album_data.get('cover_xl') or album_data.get('cover_big') or album_data.get('cover')
+            if cover_url:
+                cover_resp = requests.get(cover_url, timeout=10)
+                if cover_resp.status_code == 200:
+                    return cover_resp.content
+    
+    except Exception as e:
+        print(f"Deezer lookup failed: {e}")
+    
+    return None
+
+def fetch_cover_from_spotify(artist: str, album: str) -> Optional[bytes]:
+    """Fetch cover from Spotify (requires API key, fallback method)"""
+    # Spotify requires API key, so we'll skip this one
+    # User can add their own API key in config if needed
+    return None
+
+def fetch_album_cover(artist: str, album: str, album_id: int, year: str = None) -> Optional[str]:
+    """Try multiple providers to fetch album cover"""
+    providers = [
+        lambda: fetch_cover_from_musicbrainz(artist, album, year),
+        lambda: fetch_cover_from_deezer(artist, album),
+    ]
+    
+    for provider in providers:
+        try:
+            artwork_data = provider()
+            if artwork_data:
+                art_path = get_artwork_path(album_id)
+                with open(art_path, 'wb') as f:
+                    f.write(artwork_data)
+                return str(art_path)
+        except Exception as e:
+            print(f"Provider failed: {e}")
+            continue
+    
+    return None
+
+def extract_and_save_artwork(filepath: str, album_id: int) -> Optional[str]:
+    """Extract embedded artwork or fetch from external provider"""
+    import base64
+    
+    try:
+        from mutagen import File
         audio = File(filepath)
         if audio is None:
             return None
@@ -26,11 +134,10 @@ def extract_and_save_artwork(filepath: str, album_id: int) -> str | None:
                     pic_data = tags['METADATA_BLOCK_PICTURE'][0]
                     if hasattr(pic_data, 'value'):
                         pic_data = pic_data.value
-                    import struct
                     pic_bytes = base64.b64decode(pic_data)
                     artwork_data = pic_bytes
                 except Exception as e:
-                    print(f"Error extracting FLAC artwork: {e}")
+                    pass
             
             # MP3 - uses APIC
             if not artwork_data and 'APIC' in tags:
@@ -39,7 +146,7 @@ def extract_and_save_artwork(filepath: str, album_id: int) -> str | None:
                     if hasattr(apic, 'data'):
                         artwork_data = apic.data
                 except Exception as e:
-                    print(f"Error extracting MP3 artwork: {e}")
+                    pass
         
         if artwork_data:
             art_path = get_artwork_path(album_id)
@@ -67,6 +174,7 @@ def extract_metadata(filepath: str) -> dict:
     }
     
     try:
+        from mutagen import File
         audio = File(filepath)
         if audio is None:
             return meta

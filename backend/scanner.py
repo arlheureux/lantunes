@@ -2,7 +2,7 @@ import os
 from mutagen import File as MutagenFile
 from pathlib import Path
 from database import SessionLocal, Artist, Album, Track
-from metadata import extract_metadata, extract_and_save_artwork
+from metadata import extract_metadata, extract_and_save_artwork, fetch_album_cover
 
 AUDIO_EXTENSIONS = {'.flac', '.mp3', '.m4a', '.ogg', '.wav', '.aac', '.wma'}
 
@@ -41,6 +41,10 @@ def scan_library(music_path: str):
                     album_title = meta.get('album') or 'Unknown Album'
                     album = db.query(Album).filter(Album.title == album_title, Album.artist_id == artist.id).first()
                     artwork_path = None
+                    
+                    # Get artist name for cover lookup
+                    artist_name = meta.get('artist') or 'Unknown'
+                    
                     if not album:
                         album = Album(
                             title=album_title,
@@ -50,8 +54,21 @@ def scan_library(music_path: str):
                         )
                         db.add(album)
                         db.flush()
-                        # Extract and save artwork for new album
+                        
+                        # Try to get artwork - first try embedded, then external providers
                         artwork_path = extract_and_save_artwork(filepath, album.id)
+                        if not artwork_path:
+                            # Try external providers
+                            year_str = str(meta.get('year')) if meta.get('year') else None
+                            artwork_path = fetch_album_cover(artist_name, album_title, album.id, year_str)
+                        
+                        if artwork_path:
+                            album.artwork_path = artwork_path
+                            db.commit()
+                    elif not album.artwork_path:
+                        # Album exists but no artwork - try external providers
+                        year_str = str(album.year) if album.year else None
+                        artwork_path = fetch_album_cover(artist_name, album_title, album.id, year_str)
                         if artwork_path:
                             album.artwork_path = artwork_path
                             db.commit()

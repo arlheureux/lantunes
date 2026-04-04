@@ -96,3 +96,23 @@ def get_artwork(album_id: int, db: Session = Depends(get_db)):
     if not os.path.exists(album.artwork_path):
         raise HTTPException(status_code=404, detail="Artwork file not found")
     return FileResponse(album.artwork_path, media_type="image/jpeg")
+
+@router.post("/fetch-covers")
+def fetch_missing_covers(db: Session = Depends(get_db)):
+    """Fetch covers for albums that don't have artwork yet"""
+    from metadata import fetch_album_cover
+    
+    albums_without_art = db.query(Album).filter(Album.artwork_path == None).all()
+    fetched = 0
+    
+    for album in albums_without_art:
+        artist = db.query(Artist).filter(Artist.id == album.artist_id).first()
+        if artist:
+            year_str = str(album.year) if album.year else None
+            artwork_path = fetch_album_cover(artist.name, album.title, album.id, year_str)
+            if artwork_path:
+                album.artwork_path = artwork_path
+                fetched += 1
+    
+    db.commit()
+    return {"fetched": fetched, "total_without_artwork": len(albums_without_art)}
