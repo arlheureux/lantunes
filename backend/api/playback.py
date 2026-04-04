@@ -82,13 +82,23 @@ def stream_track(track_id: int, db: Session = Depends(get_db)):
     
     # Transcode M4A/M4B to FLAC on-the-fly using FFmpeg
     if fmt in ('M4A', 'M4B'):
+        cmd = [
+            'ffmpeg', '-i', track.path,
+            '-f', 'flac', '-codec:a', 'flac',
+            '-compression_level', '0',
+            '-nostdin', '-loglevel', 'error'
+        ]
         process = subprocess.Popen(
-            ['ffmpeg', '-i', track.path, '-f', 'flac', 
-             '-codec:a', 'flac', '-compression_level', '0',
-             '-nostdin', '-loglevel', 'quiet'],
-            stdout=subprocess.PIPE, stderr=subprocess.PIPE
+            cmd,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            bufsize=1024
         )
-        return StreamingResponse(process.stdout, media_type="audio/flac")
+        return StreamingResponse(
+            process.stdout,
+            media_type="audio/flac",
+            headers={"Accept-Ranges": "bytes"}
+        )
     
     # Determine correct MIME type based on format for other formats
     if fmt == "FLAC":
