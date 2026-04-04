@@ -132,6 +132,7 @@
                 <div v-if="view === 'tracks'">
                     <h1>All Tracks</h1>
                     <div class="limit-selector">
+                        <button class="btn" @click="shufflePlay" style="margin-right:15px;"><i class="fas fa-random"></i> Shuffle Play</button>
                         <span>Per page:</span>
                         <input type="number" v-model.number="tracksLimit" min="10" max="500" @change="loadTracks">
                         <button class="btn" @click="loadTracks" style="padding:5px 15px;font-size:12px;">Apply</button>
@@ -261,6 +262,7 @@
                         <i :class="playbackState.is_playing ? 'fas fa-pause' : 'fas fa-play'"></i>
                     </button>
                     <button @click="next"><i class="fas fa-step-forward"></i></button>
+                    <button @click="toggleShuffle" :style="{ color: playbackState.shuffle_mode ? '#1db954' : '#fff' }"><i class="fas fa-random"></i></button>
                 </div>
                 <div class="progress">
                     <span>{{ formatDuration(playbackState.position) }}</span>
@@ -515,6 +517,24 @@
                     });
                 }
                 
+                async function toggleShuffle() {
+                    const result = await apiCall('/api/playback/shuffle', { method: 'POST' });
+                    if (result) {
+                        playbackState.value.shuffle_mode = result.shuffle_mode;
+                    }
+                }
+                
+                async function shufflePlay() {
+                    const state = await apiCall('/api/playback/shuffle-play?count=50', { method: 'POST' });
+                    if (state) {
+                        playbackState.value = state;
+                        queue.value = state.queue;
+                        if (state.track) {
+                            playStream(state.track.id);
+                        }
+                    }
+                }
+                
                 document.addEventListener('click', closeContextMenu);
                 
                 function getTrackTitle(trackId) {
@@ -544,7 +564,8 @@
                     tracks, tracksPage, tracksLimit, tracksTotalPages, contextMenu,
                     search, viewAlbum, viewArtist, playTrack, togglePlay, next, previous, seek, setVolume,
                     onTimeUpdate, onEnded, createPlaylist, saveConfig, scanLibrary, formatDuration, getTrackTitle,
-                    loadTracks, prevPage, nextPage, showContextMenu, closeContextMenu, playTrackNext, addToQueue
+                    loadTracks, prevPage, nextPage, showContextMenu, closeContextMenu, playTrackNext, addToQueue,
+                    toggleShuffle, shufflePlay
                 };
             }
         }).mount('#app');

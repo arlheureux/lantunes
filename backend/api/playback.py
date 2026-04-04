@@ -60,6 +60,14 @@ def play_next(track_id: int, db: Session = Depends(get_db)):
 def add_to_queue(track_id: int, db: Session = Depends(get_db)):
     return playback.add_to_queue(db, track_id)
 
+@router.post("/shuffle")
+def toggle_shuffle(db: Session = Depends(get_db)):
+    return playback.toggle_shuffle(db)
+
+@router.post("/shuffle-play")
+def shuffle_play(count: int = 50, db: Session = Depends(get_db)):
+    return playback.play_random(db, count)
+
 @router.get("/stream/{track_id}")
 def stream_track(track_id: int, db: Session = Depends(get_db)):
     from fastapi.responses import FileResponse

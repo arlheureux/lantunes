@@ -9,6 +9,8 @@ class PlaybackController:
         self.queue: List[int] = []
         self.current_index: int = 0
         self._ws_connections: List = []
+        self.shuffle_mode: bool = False
+        self.last_played_track_id: int = None
     
     def add_connection(self, ws):
         self._ws_connections.append(ws)
@@ -53,7 +55,8 @@ class PlaybackController:
             "is_playing": state.is_playing,
             "volume": state.volume,
             "queue": self.queue,
-            "queue_index": self.current_index
+            "queue_index": self.current_index,
+            "shuffle_mode": self.shuffle_mode
         }
     
     def play(self, db: Session, track_id: int = None, queue: List[int] = None):
@@ -107,10 +110,17 @@ class PlaybackController:
         if not self.queue:
             return self.get_state(db)
         
-        if self.current_index < len(self.queue) - 1:
-            self.current_index += 1
+        if self.shuffle_mode and len(self.queue) > 1:
+            # Pick random track, avoiding the last played one
+            available_indices = [i for i in range(len(self.queue)) if i != self.current_index]
+            if available_indices:
+                import random
+                self.current_index = random.choice(available_indices)
         else:
-            self.current_index = 0
+            if self.current_index < len(self.queue) - 1:
+                self.current_index += 1
+            else:
+                self.current_index = 0
         
         state = db.query(PlaybackState).filter(PlaybackState.id == 1).first()
         state.current_track_id = self.queue[self.current_index]
@@ -118,6 +128,7 @@ class PlaybackController:
         state.updated_at = datetime.utcnow()
         db.commit()
         
+        self.last_played_track_id = self.queue[self.current_index]
         self.broadcast("playback_state", self.get_state(db))
         return self.get_state(db)
     
@@ -195,5 +206,39 @@ class PlaybackController:
         
         self.broadcast("queue_updated", {"queue": self.queue})
         return {"added": True}
+    
+    def toggle_shuffle(self, db: Session):
+        """Toggle shuffle mode on/off"""
+        self.shuffle_mode = not self.shuffle_mode
+        self.broadcast("playback_state", self.get_state(db))
+        return {"shuffle_mode": self.shuffle_mode}
+    
+    def play_random(self, db: Session, count: int = 50):
+        """Fill queue with random tracks from library"""
+        import random
+        
+        all_tracks = db.query(Track).all()
+        if not all_tracks:
+            return {"error": "No tracks in library"}
+        
+        # Shuffle and pick 'count' tracks
+        track_ids = [t.id for t in all_tracks]
+        random.shuffle(track_ids)
+        self.queue = track_ids[:count]
+        self.current_index = 0
+        
+        # Start playing
+        state = db.query(PlaybackState).filter(PlaybackState.id == 1).first()
+        if state:
+            state.current_track_id = self.queue[self.current_index]
+            state.is_playing = True
+            state.position = 0
+            state.updated_at = datetime.utcnow()
+            db.commit()
+        
+        self.last_played_track_id = self.queue[self.current_index]
+        self.broadcast("playback_state", self.get_state(db))
+        self.broadcast("queue_updated", {"queue": self.queue})
+        return self.get_state(db)
 
 playback = PlaybackController()
