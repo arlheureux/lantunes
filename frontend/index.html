@@ -55,6 +55,12 @@
         .track-row .num { width: 30px; color: #aaa; }
         .track-row .title { flex: 1; }
         .track-row .duration { color: #aaa; }
+        .track-row .menu-btn { opacity: 0; margin-left: 10px; color: #aaa; }
+        .track-row:hover .menu-btn { opacity: 1; }
+        
+        .context-menu { position: absolute; background: #282828; border-radius: 4px; padding: 5px 0; min-width: 150px; box-shadow: 0 4px 12px rgba(0,0,0,0.5); z-index: 1000; }
+        .context-menu-item { padding: 8px 16px; cursor: pointer; color: #fff; }
+        .context-menu-item:hover { background: #3a3a3a; }
         
         .search-box { margin-bottom: 20px; }
         .search-box input { width: 100%; max-width: 400px; padding: 12px 16px; border-radius: 20px; border: none; background: #242424; color: #fff; }
@@ -131,10 +137,11 @@
                         <button class="btn" @click="loadTracks" style="padding:5px 15px;font-size:12px;">Apply</button>
                     </div>
                     <div class="track-list">
-                        <div class="track-row" v-for="t in tracks" :key="t.id" @click="playTrack(t)">
+                        <div class="track-row" v-for="t in tracks" :key="t.id" @click="playTrack(t)" @contextmenu.prevent="showContextMenu($event, t)">
                             <span class="num">{{ t.track_number || '-' }}</span>
                             <span class="title">{{ t.title }}</span>
                             <span class="duration">{{ formatDuration(t.duration) }}</span>
+                            <button class="menu-btn" @click.stop="showContextMenu($event, t)"><i class="fas fa-ellipsis-h"></i></button>
                         </div>
                     </div>
                     <div class="pagination">
@@ -143,6 +150,10 @@
                         <button class="btn" @click="nextPage" :disabled="tracksPage >= tracksTotalPages">Next</button>
                     </div>
                 </div>
+                
+                <div v-if="contextMenu.show" class="context-menu" :style="{ top: contextMenu.y + 'px', left: contextMenu.x + 'px' }">
+                    <div class="context-menu-item" @click="playTrackNext(contextMenu.track); closeContextMenu()">Play Next</div>
+                    <div class="context-menu-item" @click="addToQueue(contextMenu.track); closeContextMenu()">Add to Queue</div>
                 
                 <div v-if="view === 'albums'">
                     <div class="album-grid">
@@ -175,10 +186,11 @@
                     <h1>{{ currentAlbum.title }}</h1>
                     <p style="color:#aaa;margin-bottom:20px;">{{ currentAlbum.artist }} &middot; {{ currentAlbum.year }}</p>
                     <div class="track-list">
-                        <div class="track-row" v-for="t in currentAlbum.tracks" :key="t.id" @click="playTrack(t)">
+                        <div class="track-row" v-for="t in currentAlbum.tracks" :key="t.id" @click="playTrack(t)" @contextmenu.prevent="showContextMenu($event, t)">
                             <span class="num">{{ t.track_number }}</span>
                             <span class="title">{{ t.title }}</span>
                             <span class="duration">{{ formatDuration(t.duration) }}</span>
+                            <button class="menu-btn" @click.stop="showContextMenu($event, t)"><i class="fas fa-ellipsis-h"></i></button>
                         </div>
                     </div>
                 </div>
@@ -295,6 +307,8 @@
                 const queue = ref([]);
                 const volume = ref(1.0);
                 const audioPlayer = ref(null);
+                
+                const contextMenu = ref({ show: false, x: 0, y: 0, track: null });
                 
                 const tracks = ref([]);
                 const tracksPage = ref(1);
@@ -474,6 +488,32 @@
                     return m + ':' + sec.toString().padStart(2, '0');
                 }
                 
+                function showContextMenu(e, track) {
+                    contextMenu.value = { show: true, x: e.clientX, y: e.clientY, track: track };
+                }
+                
+                function closeContextMenu() {
+                    contextMenu.value.show = false;
+                }
+                
+                async function playTrackNext(track) {
+                    await apiCall('/api/playback/queue/play-next', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ track_id: track.id })
+                    });
+                }
+                
+                async function addToQueue(track) {
+                    await apiCall('/api/playback/queue/add', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ track_id: track.id })
+                    });
+                }
+                
+                document.addEventListener('click', closeContextMenu);
+                
                 function getTrackTitle(trackId) {
                     return 'Track ' + trackId;
                 }
@@ -498,10 +538,10 @@
                 return {
                     view, searchQuery, searchResults, albums, artists, playlists, config, scanResult,
                     currentAlbum, currentArtist, playbackState, queue, volume, audioPlayer, progressPercent,
-                    tracks, tracksPage, tracksLimit, tracksTotalPages,
+                    tracks, tracksPage, tracksLimit, tracksTotalPages, contextMenu,
                     search, viewAlbum, viewArtist, playTrack, togglePlay, next, previous, seek, setVolume,
                     onTimeUpdate, onEnded, createPlaylist, saveConfig, scanLibrary, formatDuration, getTrackTitle,
-                    loadTracks, prevPage, nextPage
+                    loadTracks, prevPage, nextPage, showContextMenu, closeContextMenu, playTrackNext, addToQueue
                 };
             }
         }).mount('#app');

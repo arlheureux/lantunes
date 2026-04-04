@@ -1,9 +1,15 @@
 import os
+import sys
 import requests
 from pathlib import Path
 from typing import Optional
 
-ARTWORK_DIR = Path(__file__).parent.parent / "artwork"
+backend_dir = Path(__file__).parent
+project_root = backend_dir.parent
+sys.path.insert(0, str(project_root))
+from backend.config import config
+
+ARTWORK_DIR = project_root / "artwork"
 
 def get_artwork_path(album_id: int) -> Path:
     ARTWORK_DIR.mkdir(exist_ok=True)
@@ -92,12 +98,65 @@ def fetch_cover_from_spotify(artist: str, album: str) -> Optional[bytes]:
     # User can add their own API key in config if needed
     return None
 
+def fetch_cover_from_lastfm(artist: str, album: str, api_key: str) -> Optional[bytes]:
+    """Fetch cover from LastFM API"""
+    if not api_key:
+        return None
+    
+    try:
+        search_url = "http://ws.audioscrobbler.com/2.0/"
+        params = {
+            'method': 'album.search',
+            'album': album,
+            'artist': artist,
+            'api_key': api_key,
+            'format': 'json',
+            'limit': 5
+        }
+        
+        resp = requests.get(search_url, params=params, timeout=10)
+        if resp.status_code != 200:
+            return None
+        
+        data = resp.json()
+        albums = data.get('results', {}).get('albums', {}).get('album', [])
+        if not albums:
+            return None
+        
+        # Get the first match's image
+        for album_data in albums:
+            images = album_data.get('image', [])
+            for img in images:
+                if img.get('size') in ['extralarge', 'large', 'medium']:
+                    if img.get('#text'):
+                        img_resp = requests.get(img['#text'], timeout=10)
+                        if img_resp.status_code == 200:
+                            return img_resp.content
+        
+        # Try largest image if no preferred size found
+        if images and images[-1].get('#text'):
+            img_resp = requests.get(images[-1]['#text'], timeout=10)
+            if img_resp.status_code == 200:
+                return img_resp.content
+    
+    except Exception as e:
+        print(f"LastFM lookup failed: {e}")
+    
+    return None
+
 def fetch_album_cover(artist: str, album: str, album_id: int, year: str = None) -> Optional[str]:
     """Try multiple providers to fetch album cover"""
+    lastfm_config = config.get('lastfm', {})
+    lastfm_api_key = lastfm_config.get('api_key') if lastfm_config else None
+    
     providers = [
         lambda: fetch_cover_from_musicbrainz(artist, album, year),
         lambda: fetch_cover_from_deezer(artist, album),
     ]
+    
+    # Add LastFM if API key is configured
+    if lastfm_api_key:
+        providers.append(lambda: fetch_cover_from_lastfm(artist, album, lastfm_api_key))
     
     for provider in providers:
         try:

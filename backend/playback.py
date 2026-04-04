@@ -172,5 +172,28 @@ class PlaybackController:
         self.broadcast("playback_state", self.get_state(db))
         self.broadcast("queue_updated", {"queue": self.queue})
         return self.get_state(db)
+    
+    def play_next(self, db: Session, track_id: int):
+        """Add a track to play next (after current track)"""
+        if track_id not in self.queue:
+            # Insert right after current position
+            insert_pos = self.current_index + 1
+            self.queue.insert(insert_pos, track_id)
+        else:
+            # Already in queue, move to just after current
+            self.queue.remove(track_id)
+            insert_pos = self.current_index + 1
+            self.queue.insert(insert_pos, track_id)
+        
+        self.broadcast("queue_updated", {"queue": self.queue})
+        return {"added": True, "position": self.queue.index(track_id)}
+    
+    def add_to_queue(self, db: Session, track_id: int):
+        """Add a track to the end of the queue"""
+        if track_id not in self.queue:
+            self.queue.append(track_id)
+        
+        self.broadcast("queue_updated", {"queue": self.queue})
+        return {"added": True}
 
 playback = PlaybackController()

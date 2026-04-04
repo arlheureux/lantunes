@@ -52,6 +52,14 @@ def set_volume(volume: float = Query(..., ge=0.0, le=1.0), db: Session = Depends
 def set_queue(track_ids: List[int], start_index: int = 0, db: Session = Depends(get_db)):
     return playback.set_queue(db, track_ids, start_index)
 
+@router.post("/queue/play-next")
+def play_next(track_id: int, db: Session = Depends(get_db)):
+    return playback.play_next(db, track_id)
+
+@router.post("/queue/add")
+def add_to_queue(track_id: int, db: Session = Depends(get_db)):
+    return playback.add_to_queue(db, track_id)
+
 @router.get("/stream/{track_id}")
 def stream_track(track_id: int, db: Session = Depends(get_db)):
     from fastapi.responses import FileResponse

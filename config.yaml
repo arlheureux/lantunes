@@ -9,3 +9,7 @@ library:
 dlna:
   enabled: false
   friendly_name: "LanTunes"
+
+lastfm:
+  api_key: ""
+  enabled: false
