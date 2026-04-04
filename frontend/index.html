@@ -147,7 +147,8 @@
                 <div v-if="view === 'albums'">
                     <div class="album-grid">
                         <div class="album-card" v-for="a in albums" :key="a.id" @click="viewAlbum(a.id)">
-                            <div style="width:100%;aspect-ratio:1;background:#333;border-radius:4px;margin-bottom:8px;display:flex;align-items:center;justify-content:center;">
+                            <img v-if="a.artwork" :src="'/api/library/artwork/' + a.id" style="width:100%;aspect-ratio:1;object-fit:cover;border-radius:4px;margin-bottom:8px;">
+                            <div v-else style="width:100%;aspect-ratio:1;background:#333;border-radius:4px;margin-bottom:8px;display:flex;align-items:center;justify-content:center;">
                                 <i class="fas fa-compact-disc" style="font-size:48px;color:#555;"></i>
                             </div>
                             <div class="name">{{ a.title }}</div>

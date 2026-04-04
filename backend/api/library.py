@@ -86,3 +86,13 @@ def trigger_scan(db: Session = Depends(get_db)):
         raise HTTPException(status_code=400, detail="Music path does not exist")
     result = scan_library(music_path)
     return result
+
+@router.get("/artwork/{album_id}")
+def get_artwork(album_id: int, db: Session = Depends(get_db)):
+    from fastapi.responses import FileResponse
+    album = db.query(Album).filter(Album.id == album_id).first()
+    if not album or not album.artwork_path:
+        raise HTTPException(status_code=404, detail="Artwork not found")
+    if not os.path.exists(album.artwork_path):
+        raise HTTPException(status_code=404, detail="Artwork file not found")
+    return FileResponse(album.artwork_path, media_type="image/jpeg")
