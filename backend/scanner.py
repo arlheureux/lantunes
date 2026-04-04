@@ -51,7 +51,7 @@ def scan_library(music_path: str):
                         db.flush()
                     
                     track = Track(
-                        title=meta.get('title', Path(filename).stem),
+                        title=meta.get('title') or Path(filename).stem,
                         album_id=album.id,
                         artist_id=artist.id,
                         disc_number=meta.get('disc', 1),
