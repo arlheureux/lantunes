@@ -21,11 +21,15 @@ class PlaybackController:
     
     def broadcast(self, event: str, data: dict):
         msg = json.dumps({"event": event, "data": data})
-        for ws in self._ws_connections[:]:
+        disconnected = []
+        for ws in self._ws_connections:
             try:
-                import asyncio
-                asyncio.create_task(ws.send_text(msg))
-            except:
+                ws.send_text(msg)
+            except Exception:
+                disconnected.append(ws)
+        # Clean up disconnected clients
+        for ws in disconnected:
+            if ws in self._ws_connections:
                 self._ws_connections.remove(ws)
     
     def get_state(self, db: Session) -> dict:

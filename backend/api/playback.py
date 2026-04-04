@@ -77,8 +77,21 @@ def stream_track(track_id: int, db: Session = Depends(get_db)):
     if not os.path.exists(track.path):
         raise HTTPException(status_code=404, detail="File not found")
     
+    # Determine correct MIME type based on format
+    fmt = track.file_format.upper() if track.file_format else ""
+    if fmt == "FLAC":
+        media_type = "audio/flac"
+    elif fmt in ("M4A", "M4B"):
+        media_type = "audio/mp4"
+    elif fmt in ("OGG", "OPUS"):
+        media_type = "audio/ogg"
+    elif fmt == "WAV":
+        media_type = "audio/wav"
+    else:
+        media_type = "audio/mpeg"
+    
     return FileResponse(
         track.path,
-        media_type="audio/flac" if track.file_format == "FLAC" else "audio/mpeg",
+        media_type=media_type,
         headers={"Accept-Ranges": "bytes"}
     )
