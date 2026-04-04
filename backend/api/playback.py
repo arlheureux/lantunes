@@ -4,11 +4,13 @@ backend_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, backend_dir)
 
 from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi.responses import FileResponse, StreamingResponse
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 from database import get_db, PlaybackState, Track
 from playback import playback
 from typing import List, Optional
+import subprocess
 
 router = APIRouter(prefix="/api/playback", tags=["playback"])
 
@@ -70,19 +72,27 @@ def shuffle_play(count: int = 50, db: Session = Depends(get_db)):
 
 @router.get("/stream/{track_id}")
 def stream_track(track_id: int, db: Session = Depends(get_db)):
-    from fastapi.responses import FileResponse
     track = db.query(Track).filter(Track.id == track_id).first()
     if not track:
         raise HTTPException(status_code=404, detail="Track not found")
     if not os.path.exists(track.path):
         raise HTTPException(status_code=404, detail="File not found")
     
-    # Determine correct MIME type based on format
     fmt = track.file_format.upper() if track.file_format else ""
+    
+    # Transcode M4A/M4B to MP3 on-the-fly using FFmpeg
+    if fmt in ('M4A', 'M4B'):
+        process = subprocess.Popen(
+            ['ffmpeg', '-i', track.path, '-f', 'mp3', 
+             '-codec:a', 'libmp3lame', '-b:a', '192k',
+             '-nostdin', '-loglevel', 'quiet'],
+            stdout=subprocess.PIPE, stderr=subprocess.PIPE
+        )
+        return StreamingResponse(process.stdout, media_type="audio/mpeg")
+    
+    # Determine correct MIME type based on format for other formats
     if fmt == "FLAC":
         media_type = "audio/flac"
-    elif fmt in ("M4A", "M4B"):
-        media_type = "audio/mp4"
     elif fmt in ("OGG", "OPUS"):
         media_type = "audio/ogg"
     elif fmt == "WAV":
