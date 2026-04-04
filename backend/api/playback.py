@@ -5,7 +5,7 @@ sys.path.insert(0, backend_dir)
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 from fastapi.responses import FileResponse, StreamingResponse
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
 from database import get_db, PlaybackState, Track
 from playback import playback
@@ -15,8 +15,8 @@ import subprocess
 router = APIRouter(prefix="/api/playback", tags=["playback"])
 
 class PlayRequest(BaseModel):
-    track_id: Optional[int] = None
-    queue: Optional[List[int]] = None
+    track_id: Optional[int] = Field(default=None)
+    queue: Optional[List[int]] = Field(default=None)
 
 @router.get("/state")
 def get_state(db: Session = Depends(get_db)):
