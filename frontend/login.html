@@ -301,28 +301,29 @@
                 }
                 
                 async function checkMode() {
+                    // Try to access a protected endpoint - if 401, we need to login
                     try {
-                        // Try to access a protected endpoint - if 401, we need to login
                         await apiCall('/api/auth/me');
-                        // If we get here, we're already logged in - redirect to main app
+                        // Already logged in - redirect to main app
                         window.location.href = '/';
+                        return;
                     } catch (e) {
-                        // Check if it's an auth error or a network error
+                        // Not logged in - check if we need setup mode
+                        // Try a test login to see if there are any users
                         try {
-                            // Try login endpoint to check if setup is needed
                             await apiCall('/api/auth/login', {
                                 method: 'POST',
                                 headers: { 'Content-Type': 'application/json' },
-                                body: JSON.stringify({ username: 'test', password: 'test' })
+                                body: JSON.stringify({ username: 'test_' + Date.now(), password: 'test' })
                             });
                         } catch (loginErr) {
-                            // If login fails with "no users", we need setup mode
-                            if (loginErr.message.includes('not allowed')) {
+                            // If error mentions "not allowed" or setup issues, show setup
+                            // Otherwise show login form
+                            const errMsg = loginErr.message || '';
+                            if (errMsg.includes('not allowed') || errMsg.includes('Setup')) {
                                 mode.value = 'setup';
-                            } else if (loginErr.message.includes('Invalid username or password')) {
-                                // Normal login flow - users exist
-                                mode.value = 'login';
                             } else {
+                                // Any other error means users exist - show login
                                 mode.value = 'login';
                             }
                         }
