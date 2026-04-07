@@ -1060,8 +1060,15 @@
                     ws.onmessage = (e) => {
                         const msg = JSON.parse(e.data);
                         if (msg.event === 'playback_state') {
+                            const wasPlaying = playbackState.value.is_playing;
                             playbackState.value = msg.data;
                             queue.value = msg.data.queue || [];
+                            
+                            // Auto-play if this device is the player and should be playing
+                            const isPlayer = !selectedPlayerId.value || selectedPlayerId.value === deviceId;
+                            if (isPlayer && msg.data.track?.stream_url && msg.data.is_playing && !wasPlaying) {
+                                playStream(msg.data.track.id);
+                            }
                         } else if (msg.event === 'queue_updated') {
                             queue.value = msg.data.queue || [];
                         } else if (msg.event === 'devices') {
@@ -1072,10 +1079,22 @@
                     };
                 }
                 
-                onMounted(() => {
+                onMounted(async () => {
                     loadLibrary();
                     loadTracks();
                     connectWS();
+                    
+                    // Check if we should be playing (if this device is the player)
+                    setTimeout(async () => {
+                        const isPlayer = !selectedPlayerId.value || selectedPlayerId.value === deviceId;
+                        if (isPlayer) {
+                            const state = await apiCall('/api/playback/state');
+                            if (state && state.is_playing && state.track?.stream_url) {
+                                playbackState.value = state;
+                                playStream(state.track.id);
+                            }
+                        }
+                    }, 1000);
                 });
                 
                 return {
