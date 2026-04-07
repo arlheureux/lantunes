@@ -103,18 +103,24 @@ class PlaybackController:
                     except Exception:
                         pass
         else:
-            # Send to all (for regular broadcasts like pause, next, etc - no stream_url)
-            for ws in self._ws_connections:
+            # Send to all using ThreadPoolExecutor
+            import concurrent.futures
+            def send_msg(ws):
                 try:
-                    import asyncio
-                    asyncio.create_task(ws.send_text(msg))
-                except Exception:
-                    disconnected.append(ws)
-        
-        # Clean up disconnected clients
-        for ws in disconnected:
-            if ws in self._ws_connections:
-                self._ws_connections.remove(ws)
+                    loop = asyncio.new_event_loop()
+                    asyncio.set_event_loop(loop)
+                    loop.run_until_complete(ws.send_text(msg))
+                    loop.close()
+                except Exception as e:
+                    print(f"Error sending broadcast: {e}")
+                    return ws
+                return None
+            
+            with concurrent.futures.ThreadPoolExecutor(max_workers=4) as executor:
+                results = list(executor.map(send_msg, self._ws_connections))
+                for ws in results:
+                    if ws and ws in self._ws_connections:
+                        self._ws_connections.remove(ws)
     
     def broadcast_playback_state(self):
         """Broadcast playback state to all devices, with stream_url only for player"""
