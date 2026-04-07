@@ -401,8 +401,10 @@
                 }
                 
                 function nextPage() {
-                    const a = await apiCall('/api/library/albums/' + id);
-                    if (a) { currentAlbum.value = a; view.value = 'album-detail'; }
+                    if (tracksPage.value < tracksTotalPages.value) {
+                        tracksPage.value++;
+                        loadTracks();
+                    }
                 }
                 
                 async function viewArtist(id) {
