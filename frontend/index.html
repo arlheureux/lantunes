@@ -1067,9 +1067,9 @@
                             playbackState.value = msg.data;
                             queue.value = msg.data.queue || [];
                             
-                            // Auto-play: if this device has stream_url and is now playing
+                            // Auto-play: if this device has stream_url and is playing, start audio
                             console.log('Has stream_url:', !!msg.data.track?.stream_url, 'is_playing:', msg.data.is_playing, 'was playing:', prevPlaying);
-                            if (msg.data.track?.stream_url && msg.data.is_playing && !prevPlaying) {
+                            if (msg.data.track?.stream_url && msg.data.is_playing) {
                                 console.log('Auto-playing track:', msg.data.track.id);
                                 playStream(msg.data.track.id);
                             }
