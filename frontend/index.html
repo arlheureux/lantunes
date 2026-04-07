@@ -121,7 +121,7 @@
                     <div v-if="searchQuery && (searchResults.tracks.length || searchResults.albums.length || searchResults.artists.length)">
                         <h3>Tracks</h3>
                         <div class="track-list">
-                            <div class="track-row" v-for="t in searchResults.tracks" :key="t.id" @click="playTrack(t)">
+                            <div class="track-row" v-for="t in searchResults.tracks" :key="t.id" @click="playTrack(t)" @contextmenu.prevent="showContextMenu($event, t)">
                                 <span class="num">{{ t.track_number || '-' }}</span>
                                 <span class="title">{{ t.title }}</span>
                                 <span class="duration">{{ formatDuration(t.duration) }}</span>
@@ -162,7 +162,7 @@
                         </div>
                         <h3>Recent Tracks</h3>
                         <div class="track-list">
-                            <div class="track-row" v-for="t in tracks.slice(0,10)" :key="t.id" @click="playTrack(t)">
+                            <div class="track-row" v-for="t in tracks.slice(0,10)" :key="t.id" @click="playTrack(t)" @contextmenu.prevent="showContextMenu($event, t)">
                                 <span class="num">{{ t.track_number || '-' }}</span>
                                 <span class="title">{{ t.title }}</span>
                                 <span class="duration">{{ formatDuration(t.duration) }}</span>
@@ -549,18 +549,14 @@
                 }
                 
                 async function playTrackNext(track) {
-                    await apiCall('/api/playback/queue/play-next', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ track_id: track.id })
+                    await apiCall('/api/playback/queue/play-next?track_id=' + track.id, {
+                        method: 'POST'
                     });
                 }
                 
                 async function addToQueue(track) {
-                    await apiCall('/api/playback/queue/add', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ track_id: track.id })
+                    await apiCall('/api/playback/queue/add?track_id=' + track.id, {
+                        method: 'POST'
                     });
                 }
                 
