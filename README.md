@@ -1,6 +1,6 @@
 # LanTunes
 
-A self-hosted LAN music streaming server with multi-client sync, authentication, and device casting.
+A self-hosted LAN music streaming server with multi-client sync and device casting.
 
 ## Features
 
@@ -9,7 +9,6 @@ A self-hosted LAN music streaming server with multi-client sync, authentication,
 - **M4A/AAC Support** - Automatic transcoding for browser compatibility  
 - **Multi-Client Sync** - All connected devices stay in sync via WebSockets
 - **Device Casting** - "Play To" feature to send audio to a specific device
-- **Authentication** - User management with admin approval workflow
 - **Library Management** - Automatic scanning with metadata extraction
 - **Playlists** - Create and manage playlists
 - **Search** - Search across tracks, albums, and artists
@@ -37,10 +36,9 @@ The server will:
 
 ### First-Time Setup
 
-1. Open http://localhost:8080 - you'll be redirected to login
-2. Click "Create Admin Account" to set up your first admin user
-3. After login, go to Settings and set your music path
-4. Click "Scan Library" to index your music
+1. Open http://localhost:8080
+2. Go to Settings and set your music path
+3. Click "Scan Library" to index your music
 
 ### For Other Devices on Your Network
 
@@ -48,19 +46,6 @@ Access from any device on your LAN:
 ```
 http://<your-server-ip>:8080
 ```
-
-## User Management
-
-### Registration Flow
-1. Users register through the login page
-2. New users start with "pending" status
-3. Admin must approve users before they can login
-4. Approved users can access the full application
-
-### Admin Tasks
-- View all users in Settings
-- Approve pending users
-- Delete/reject users
 
 ## Cast Play To
 
@@ -70,18 +55,6 @@ When multiple devices are connected:
 3. The other devices act as remote controls
 
 ## API Endpoints
-
-### Authentication
-- `POST /api/auth/setup` - Create first admin (only when no users exist)
-- `POST /api/auth/register` - Register new user (requires approval)
-- `POST /api/auth/login` - Login and get tokens
-- `POST /api/auth/refresh` - Refresh access token
-- `GET /api/auth/me` - Get current user
-
-### User Management (Admin)
-- `GET /api/auth/users` - List all users
-- `POST /api/auth/users/{id}/approve` - Approve user
-- `DELETE /api/auth/users/{id}` - Delete user
 
 ### Library
 - `GET /api/library/tracks` - List tracks
