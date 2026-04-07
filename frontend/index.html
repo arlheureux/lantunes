@@ -805,7 +805,11 @@
                 }
                 
                 function getAuthHeader() {
-                    async function apiCall(url, opts = {}) {
+                    const token = localStorage.getItem('access_token');
+                    return token ? { 'Authorization': 'Bearer ' + token } : {};
+                }
+                
+                async function apiCall(url, opts = {}) {
                     try {
                         const res = await fetch(API + url, opts);
                         
