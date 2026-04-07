@@ -11,7 +11,6 @@
             --bg-primary: #121212;
             --bg-secondary: #181818;
             --bg-tertiary: #1a1a1a;
-            --bg-elevated: #282828;
             --accent: #1db954;
             --accent-hover: #1ed760;
             --text-primary: #fff;
@@ -93,7 +92,6 @@
         .form-group input:focus {
             outline: none;
             border-color: var(--accent);
-            box-shadow: 0 0 0 2px rgba(29, 185, 84, 0.2);
         }
         
         .btn {
@@ -111,25 +109,11 @@
         
         .btn:hover {
             background: var(--accent-hover);
-            transform: scale(1.02);
         }
         
         .btn:disabled {
             background: #444;
             cursor: not-allowed;
-            transform: none;
-        }
-        
-        .btn-secondary {
-            background: transparent;
-            border: 1px solid #555;
-            color: var(--text-primary);
-            margin-top: 12px;
-        }
-        
-        .btn-secondary:hover {
-            border-color: var(--text-primary);
-            background: rgba(255,255,255,0.05);
         }
         
         .error {
@@ -140,60 +124,6 @@
             border-radius: var(--border-radius-md);
             margin-bottom: 20px;
             font-size: 14px;
-        }
-        
-        .success {
-            background: rgba(29, 185, 84, 0.1);
-            border: 1px solid rgba(29, 185, 84, 0.3);
-            color: var(--accent);
-            padding: 12px 16px;
-            border-radius: var(--border-radius-md);
-            margin-bottom: 20px;
-            font-size: 14px;
-            text-align: center;
-        }
-        
-        .tabs {
-            display: flex;
-            margin-bottom: 24px;
-            border-bottom: 1px solid #333;
-        }
-        
-        .tab {
-            flex: 1;
-            padding: 12px;
-            text-align: center;
-            cursor: pointer;
-            color: var(--text-muted);
-            border-bottom: 2px solid transparent;
-            transition: all var(--transition-fast);
-        }
-        
-        .tab.active {
-            color: var(--accent);
-            border-bottom-color: var(--accent);
-        }
-        
-        .setup-notice {
-            text-align: center;
-            color: var(--text-muted);
-            font-size: 13px;
-            margin-top: 20px;
-            padding: 16px;
-            background: rgba(29, 185, 84, 0.1);
-            border-radius: var(--border-radius-md);
-        }
-        
-        .loading {
-            text-align: center;
-            color: var(--text-muted);
-            padding: 20px;
-        }
-        
-        @media (max-width: 480px) {
-            .login-card {
-                padding: 24px;
-            }
         }
     </style>
 </head>
@@ -206,7 +136,7 @@
             </div>
             
             <div class="login-card">
-                <!-- Setup Mode (no users exist) -->
+                <!-- Setup Mode (no admin exists) -->
                 <div v-if="mode === 'setup'">
                     <h2>Create Admin Account</h2>
                     <div v-if="error" class="error">{{ error }}</div>
@@ -226,9 +156,7 @@
                 <!-- Login Mode -->
                 <div v-else-if="mode === 'login'">
                     <h2>Login</h2>
-                    
                     <div v-if="error" class="error">{{ error }}</div>
-                    
                     <div class="form-group">
                         <label>Username</label>
                         <input type="text" v-model="username" placeholder="Enter username">
@@ -246,8 +174,6 @@
     </div>
 
     <script>
-        const API = '';
-        
         const { createApp, ref, onMounted } = Vue;
         
         createApp({
@@ -255,13 +181,12 @@
                 const mode = ref('loading');
                 const loading = ref(false);
                 const error = ref('');
-                
                 const username = ref('');
                 const password = ref('');
                 
                 async function apiCall(url, opts = {}) {
                     try {
-                        const res = await fetch(API + url, opts);
+                        const res = await fetch(url, opts);
                         const text = await res.text();
                         let data;
                         try {
@@ -282,20 +207,18 @@
                     // Check if already logged in
                     const token = localStorage.getItem('access_token');
                     if (token) {
-                        // Try to verify with /api/auth/me
                         try {
                             await apiCall('/api/auth/me');
                             window.location.href = '/';
                             return;
                         } catch (e) {
-                            // Token invalid - clear it
                             localStorage.removeItem('access_token');
                             localStorage.removeItem('refresh_token');
                             localStorage.removeItem('user');
                         }
                     }
                     
-                    // Show login form by default
+                    // Show login by default
                     mode.value = 'login';
                 }
                 
@@ -315,12 +238,9 @@
                             body: JSON.stringify({ username: username.value, password: password.value })
                         });
                         
-                        // Save tokens
                         localStorage.setItem('access_token', data.access_token);
                         localStorage.setItem('refresh_token', data.refresh_token);
                         localStorage.setItem('user', JSON.stringify(data.user));
-                        
-                        // Redirect to main app
                         window.location.href = '/';
                     } catch (e) {
                         error.value = e.message;
@@ -345,12 +265,9 @@
                             body: JSON.stringify({ username: username.value, password: password.value })
                         });
                         
-                        // Save tokens
                         localStorage.setItem('access_token', data.access_token);
                         localStorage.setItem('refresh_token', data.refresh_token);
                         localStorage.setItem('user', JSON.stringify(data.user));
-                        
-                        // Redirect to main app
                         window.location.href = '/';
                     } catch (e) {
                         error.value = e.message;
@@ -366,18 +283,6 @@
                 return {
                     mode, loading, error, username, password,
                     doSetup, doLogin
-                };
-            }
-        }).mount('#app');
-                
-                onMounted(() => {
-                    checkMode();
-                });
-                
-                return {
-                    mode, tab, loading, error, message,
-                    username, password, regUsername, regPassword,
-                    doSetup, doLogin, doRegister
                 };
             }
         }).mount('#app');
