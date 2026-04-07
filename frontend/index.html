@@ -359,6 +359,14 @@
                         if (r) searchResults.value = r;
                     }, 300);
                 }
+                
+                async function apiCall(url, opts = {}) {
+                    try {
+                        const res = await fetch(API + url, opts);
+                        if (!res.ok) {
+                            console.error('API error:', res.status, await res.text());
+                            return null;
+                        }
                         return await res.json();
                     } catch (e) { console.error('API exception:', e); return null; }
                 }
@@ -393,19 +401,6 @@
                 }
                 
                 function nextPage() {
-                    if (tracksPage.value < tracksTotalPages.value) {
-                        tracksPage.value++;
-                        loadTracks();
-                    }
-                }
-                
-                async function search() {
-                    if (!searchQuery.value) { searchResults.value = { tracks: [], albums: [], artists: [] }; return; }
-                    const r = await apiCall('/api/library/search?q=' + encodeURIComponent(searchQuery.value));
-                    if (r) searchResults.value = r;
-                }
-                
-                async function viewAlbum(id) {
                     const a = await apiCall('/api/library/albums/' + id);
                     if (a) { currentAlbum.value = a; view.value = 'album-detail'; }
                 }
