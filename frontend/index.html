@@ -314,6 +314,7 @@
                 const contextMenu = ref({ show: false, x: 0, y: 0, track: null });
                 
                 const tracks = ref([]);
+                const trackCache = ref({});
                 const tracksPage = ref(1);
                 const tracksLimit = ref(100);
                 const tracksTotal = ref(0);
@@ -351,6 +352,9 @@
                     if (r) {
                         tracks.value = r.tracks || [];
                         tracksTotal.value = r.total || 0;
+                        r.tracks?.forEach(t => {
+                            trackCache.value[t.id] = t;
+                        });
                     }
                 }
                 
@@ -538,6 +542,15 @@
                 document.addEventListener('click', closeContextMenu);
                 
                 function getTrackTitle(trackId) {
+                    if (trackCache.value[trackId]) {
+                        return trackCache.value[trackId].title;
+                    }
+                    apiCall('/api/library/tracks/' + trackId).then(t => {
+                        if (t) {
+                            trackCache.value[trackId] = t;
+                            return t.title;
+                        }
+                    });
                     return 'Track ' + trackId;
                 }
                 
