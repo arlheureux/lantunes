@@ -51,26 +51,26 @@ async def auth_middleware(request: Request, call_next):
     # For all other endpoints, check auth
     auth_header = request.headers.get("Authorization")
     if not auth_header or not auth_header.startswith("Bearer "):
-        # For HTML pages, redirect to login
-        if path.endswith('.html') or path == '/' or not path.startswith('/api'):
-            return HTMLResponse(open(os.path.join(frontend_path, 'login.html')).read())
-        return HTMLResponse(
-            content='{"detail":"Authentication required"}',
-            status_code=401,
-            headers={"WWW-Authenticate": "Bearer"}
-        )
+        # API endpoints return JSON, HTML pages return login
+        if path.startswith('/api'):
+            return HTMLResponse(
+                content='{"detail":"Authentication required"}',
+                status_code=401,
+                headers={"WWW-Authenticate": "Bearer"}
+            )
+        return HTMLResponse(open(os.path.join(frontend_path, 'login.html')).read())
     
     token = auth_header.split(" ")[1]
     payload = verify_access_token(token)
     
     if not payload:
-        if path.endswith('.html') or path == '/' or not path.startswith('/api'):
-            return HTMLResponse(open(os.path.join(frontend_path, 'login.html')).read())
-        return HTMLResponse(
-            content='{"detail":"Invalid or expired token"}',
-            status_code=401,
-            headers={"WWW-Authenticate": "Bearer"}
-        )
+        if path.startswith('/api'):
+            return HTMLResponse(
+                content='{"detail":"Invalid or expired token"}',
+                status_code=401,
+                headers={"WWW-Authenticate": "Bearer"}
+            )
+        return HTMLResponse(open(os.path.join(frontend_path, 'login.html')).read())
     
     # Attach user to request state for later use
     request.state.user_id = payload.get("user_id")

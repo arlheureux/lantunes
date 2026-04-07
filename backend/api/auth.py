@@ -134,28 +134,6 @@ def register(req: RegisterRequest, db: Session = Depends(get_db)):
             "message": "Registration successful! You are the first user and have been granted admin access."
         }
     )
-    
-    user = User(
-        username=req.username,
-        password_hash=hash_password(req.password),
-        role="user",
-        status="pending"  # Requires approval
-    )
-    db.add(user)
-    db.commit()
-    db.refresh(user)
-    
-    return TokenResponse(
-        access_token="",
-        refresh_token="",
-        user={
-            "id": user.id,
-            "username": user.username,
-            "role": user.role,
-            "status": user.status,
-            "message": "Registration pending approval"
-        }
-    )
 
 
 @router.post("/login", response_model=TokenResponse)
