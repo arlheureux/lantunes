@@ -15,6 +15,7 @@ from auth import verify_access_token
 app = FastAPI(title="LanTunes")
 
 # Public endpoints that don't require auth
+# Only authentication endpoints - all content endpoints require auth
 PUBLIC_ENDPOINTS = [
     "/api/auth/login",
     "/api/auth/setup",
@@ -30,7 +31,7 @@ PUBLIC_PATHS = [
 ]
 
 # Endpoints that should never require auth (for streaming etc)
-ALWAYS_PUBLIC = ["/ws", "/api/playback/stream", "/api/library/artwork"]
+ALWAYS_PUBLIC = ["/ws"]
 
 @app.middleware("http")
 async def auth_middleware(request: Request, call_next):
