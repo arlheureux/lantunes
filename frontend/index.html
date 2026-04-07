@@ -437,6 +437,11 @@
                     if (a) { currentArtist.value = a; view.value = 'artist-detail'; }
                 }
                 
+                async function viewAlbum(id) {
+                    const a = await apiCall('/api/library/albums/' + id);
+                    if (a) { currentAlbum.value = a; view.value = 'album-detail'; }
+                }
+                
                 async function playTrack(track) {
                     console.log('Playing track:', track);
                     const state = await apiCall('/api/playback/play', {
