@@ -1,0 +1,26 @@
+name: lantunes_app
+description: "LanTunes - Self-hosted LAN music streaming client"
+publish_to: 'none'
+version: 1.0.0+1
+
+environment:
+  sdk: ^3.11.4
+
+dependencies:
+  flutter:
+    sdk: flutter
+  cupertino_icons: ^1.0.8
+  dio: ^5.4.0
+  web_socket_channel: ^2.4.0
+  just_audio: ^0.9.36
+  provider: ^6.1.1
+  cached_network_image: ^3.3.0
+  shared_preferences: ^2.2.2
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^6.0.0
+
+flutter:
+  uses-material-design: true
