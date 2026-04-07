@@ -886,10 +886,18 @@
                         await apiCall('/api/playback/pause', { method: 'POST' });
                         audioPlayer.value?.pause();
                     } else {
-                        await apiCall('/api/playback/play', { method: 'POST' });
-                        audioPlayer.value?.play();
+                        // Resume playback - send with current target player
+                        const targetPlayer = selectedPlayerId.value || deviceId;
+                        const url = '/api/playback/play?player=' + encodeURIComponent(targetPlayer);
+                        const state = await apiCall(url, { method: 'POST' });
+                        if (state) {
+                            playbackState.value = state;
+                            const amIPlayer = !selectedPlayerId.value || selectedPlayerId.value === deviceId;
+                            if (amIPlayer && state.track?.stream_url) {
+                                if (state.track) playStream(state.track.id);
+                            }
+                        }
                     }
-                    playbackState.value.is_playing = !playbackState.value.is_playing;
                 }
                 
                 async function next() {
