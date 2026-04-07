@@ -21,6 +21,7 @@ PUBLIC_ENDPOINTS = [
     "/api/auth/setup",
     "/api/auth/refresh",
     "/api/auth/status",
+    "/api/auth/me",
     "/docs",
     "/openapi.json",
     "/redoc"

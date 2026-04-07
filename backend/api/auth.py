@@ -1,9 +1,10 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from pydantic import BaseModel
+from typing import Optional
 from database import get_db, User
 from auth import hash_password, verify_password, create_access_token, create_refresh_token, verify_refresh_token
-from dependencies import get_current_user
+from dependencies import get_optional_user
 
 router = APIRouter(prefix="/api/auth", tags=["auth"])
 
@@ -225,9 +226,12 @@ def auth_status(db: Session = Depends(get_db)):
 
 
 @router.get("/me")
-def get_me(current_user: User = Depends(get_current_user)):
-    """Get current user info"""
+def get_me(current_user: Optional[User] = Depends(get_optional_user)):
+    """Get current user info - returns null if not authenticated"""
+    if not current_user:
+        return {"authenticated": False}
     return {
+        "authenticated": True,
         "id": current_user.id,
         "username": current_user.username,
         "role": current_user.role,
