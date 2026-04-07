@@ -903,37 +903,41 @@
                 }
                 
                 async function togglePlay() {
+                    const targetPlayer = selectedPlayerId.value || deviceId;
                     if (playbackState.value.is_playing) {
-                        await apiCall('/api/playback/pause', { method: 'POST' });
-                        audioPlayer.value?.pause();
+                        await apiCall('/api/playback/pause?player=' + encodeURIComponent(targetPlayer), { method: 'POST' });
+                        const amIPlayer = !selectedPlayerId.value || selectedPlayerId.value === deviceId;
+                        if (amIPlayer) audioPlayer.value?.pause();
                     } else {
-                        // Resume playback - send with current target player
-                        const targetPlayer = selectedPlayerId.value || deviceId;
                         const url = '/api/playback/play?player=' + encodeURIComponent(targetPlayer);
                         const state = await apiCall(url, { method: 'POST' });
                         if (state) {
                             playbackState.value = state;
                             const amIPlayer = !selectedPlayerId.value || selectedPlayerId.value === deviceId;
                             if (amIPlayer && state.track?.stream_url) {
-                                if (state.track) playStream(state.track.id);
+                                playStream(state.track.id);
                             }
                         }
                     }
                 }
                 
                 async function next() {
-                    const state = await apiCall('/api/playback/next', { method: 'POST' });
+                    const targetPlayer = selectedPlayerId.value || deviceId;
+                    const state = await apiCall('/api/playback/next?player=' + encodeURIComponent(targetPlayer), { method: 'POST' });
                     if (state) {
                         playbackState.value = state;
-                        if (state.track) playStream(state.track.id);
+                        const amIPlayer = !selectedPlayerId.value || selectedPlayerId.value === deviceId;
+                        if (amIPlayer && state.track?.stream_url) playStream(state.track.id);
                     }
                 }
                 
                 async function previous() {
-                    const state = await apiCall('/api/playback/previous', { method: 'POST' });
+                    const targetPlayer = selectedPlayerId.value || deviceId;
+                    const state = await apiCall('/api/playback/previous?player=' + encodeURIComponent(targetPlayer), { method: 'POST' });
                     if (state) {
                         playbackState.value = state;
-                        if (state.track) playStream(state.track.id);
+                        const amIPlayer = !selectedPlayerId.value || selectedPlayerId.value === deviceId;
+                        if (amIPlayer && state.track?.stream_url) playStream(state.track.id);
                     }
                 }
                 
@@ -941,12 +945,14 @@
                     const rect = e.target.getBoundingClientRect();
                     const percent = (e.clientX - rect.left) / rect.width;
                     const pos = Math.floor(percent * playbackState.value.track.duration);
-                    await apiCall('/api/playback/seek?position=' + pos, { method: 'POST' });
+                    const targetPlayer = selectedPlayerId.value || deviceId;
+                    await apiCall('/api/playback/seek?position=' + pos + '&player=' + encodeURIComponent(targetPlayer), { method: 'POST' });
                     playbackState.value.position = pos;
                 }
                 
                 async function setVolume() {
-                    await apiCall('/api/playback/volume?volume=' + volume.value, { method: 'POST' });
+                    const targetPlayer = selectedPlayerId.value || deviceId;
+                    await apiCall('/api/playback/volume?volume=' + volume.value + '&player=' + encodeURIComponent(targetPlayer), { method: 'POST' });
                 }
                 
                 function onTimeUpdate() {
@@ -1013,20 +1019,21 @@
                 }
                 
                 async function toggleShuffle() {
-                    const result = await apiCall('/api/playback/shuffle', { method: 'POST' });
+                    const targetPlayer = selectedPlayerId.value || deviceId;
+                    const result = await apiCall('/api/playback/shuffle?player=' + encodeURIComponent(targetPlayer), { method: 'POST' });
                     if (result) {
                         playbackState.value.shuffle_mode = result.shuffle_mode;
                     }
                 }
                 
                 async function shufflePlay() {
-                    const state = await apiCall('/api/playback/shuffle-play?count=50', { method: 'POST' });
+                    const targetPlayer = selectedPlayerId.value || deviceId;
+                    const state = await apiCall('/api/playback/shuffle-play?count=50&player=' + encodeURIComponent(targetPlayer), { method: 'POST' });
                     if (state) {
                         playbackState.value = state;
                         queue.value = state.queue;
-                        if (state.track) {
-                            playStream(state.track.id);
-                        }
+                        const amIPlayer = !selectedPlayerId.value || selectedPlayerId.value === deviceId;
+                        if (amIPlayer && state.track?.stream_url) playStream(state.track.id);
                     }
                 }
                 

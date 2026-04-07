@@ -49,28 +49,39 @@ async def websocket_endpoint(websocket: WebSocket):
             elif event == "control":
                 action = payload.get("action")
                 position = payload.get("position")
+                player = playback.get_player_device_id()
                 
                 if action == "play":
-                    playback.play(db)
+                    is_player = device_id == player
+                    playback.play(db, player_device_id=device_id, is_player=is_player)
                 elif action == "pause":
-                    playback.pause(db)
+                    is_player = device_id == player
+                    playback.pause(db, is_player)
                 elif action == "stop":
-                    playback.stop(db)
+                    is_player = device_id == player
+                    playback.stop(db, is_player)
                 elif action == "next":
-                    playback.next(db)
+                    is_player = device_id == player
+                    playback.next(db, is_player)
                 elif action == "previous":
-                    playback.previous(db)
+                    is_player = device_id == player
+                    playback.previous(db, is_player)
                 elif action == "seek" and position is not None:
-                    playback.seek(db, position)
+                    is_player = device_id == player
+                    playback.seek(db, position, is_player)
             
             elif event == "set_volume":
                 volume = payload.get("volume", 1.0)
-                playback.set_volume(db, volume)
+                player = playback.get_player_device_id()
+                is_player = device_id == player
+                playback.set_volume(db, volume, is_player)
             
             elif event == "set_queue":
                 track_ids = payload.get("track_ids", [])
                 start_index = payload.get("start_index", 0)
-                playback.set_queue(db, track_ids, start_index)
+                player = playback.get_player_device_id()
+                is_player = device_id == player
+                playback.set_queue(db, track_ids, start_index, is_player)
             
             db.close()
             

@@ -191,7 +191,7 @@ class PlaybackController:
         
         return result
     
-    def play(self, db: Session, track_id: int = None, queue: List[int] = None, player_device_id: str = None):
+    def play(self, db: Session, track_id: int = None, queue: List[int] = None, player_device_id: str = None, is_player: bool = True):
         state = db.query(PlaybackState).filter(PlaybackState.id == 1).first()
         if not state:
             state = PlaybackState(id=1)
@@ -213,24 +213,20 @@ class PlaybackController:
             state.updated_at = datetime.utcnow()
             db.commit()
             
-            # Track is playing, so broadcast personalized state to each device
             self.broadcast_playback_state()
         
-        # Return personalized state to the caller
-        # The caller is the device that made the request - it should only get stream_url if IT is the player
-        is_caller_player = self._player_device_id and (self._player_device_id == player_device_id)
-        return self.get_state(db, is_caller_player)
+        return self.get_state(db, is_player)
     
-    def pause(self, db: Session):
+    def pause(self, db: Session, is_player: bool = True):
         state = db.query(PlaybackState).filter(PlaybackState.id == 1).first()
         if state:
             state.is_playing = False
             state.updated_at = datetime.utcnow()
             db.commit()
             self.broadcast("playback_state", self.get_state(db))
-        return self.get_state(db)
+        return self.get_state(db, is_player)
     
-    def stop(self, db: Session):
+    def stop(self, db: Session, is_player: bool = True):
         state = db.query(PlaybackState).filter(PlaybackState.id == 1).first()
         if state:
             state.is_playing = False
@@ -239,11 +235,11 @@ class PlaybackController:
             state.updated_at = datetime.utcnow()
             db.commit()
             self.broadcast("playback_state", self.get_state(db))
-        return self.get_state(db)
+        return self.get_state(db, is_player)
     
-    def next(self, db: Session):
+    def next(self, db: Session, is_player: bool = True):
         if not self.queue:
-            return self.get_state(db)
+            return self.get_state(db, is_player)
         
         if self.shuffle_mode and len(self.queue) > 1:
             # Pick random track, avoiding the last played one
@@ -265,7 +261,7 @@ class PlaybackController:
         
         self.last_played_track_id = self.queue[self.current_index]
         self.broadcast("playback_state", self.get_state(db))
-        return self.get_state(db)
+        return self.get_state(db, is_player)
     
     def previous(self, db: Session):
         if not self.queue:
@@ -292,18 +288,18 @@ class PlaybackController:
             state.updated_at = datetime.utcnow()
             db.commit()
             self.broadcast("playback_state", self.get_state(db))
-        return self.get_state(db)
+        return self.get_state(db, is_player)
     
-    def set_volume(self, db: Session, volume: float):
+    def set_volume(self, db: Session, volume: float, is_player: bool = True):
         state = db.query(PlaybackState).filter(PlaybackState.id == 1).first()
         if state:
             state.volume = max(0.0, min(1.0, volume))
             state.updated_at = datetime.utcnow()
             db.commit()
             self.broadcast("playback_state", self.get_state(db))
-        return self.get_state(db)
+        return self.get_state(db, is_player)
     
-    def set_queue(self, db: Session, track_ids: List[int], start_index: int = 0):
+    def set_queue(self, db: Session, track_ids: List[int], start_index: int = 0, is_player: bool = True):
         self.queue = track_ids
         self.current_index = start_index if start_index < len(track_ids) else 0
         
@@ -317,7 +313,7 @@ class PlaybackController:
         
         self.broadcast("playback_state", self.get_state(db))
         self.broadcast("queue_updated", {"queue": self.queue})
-        return self.get_state(db)
+        return self.get_state(db, is_player)
     
     def play_next(self, db: Session, track_id: int):
         """Add a track to play next (after current track)"""
@@ -342,13 +338,13 @@ class PlaybackController:
         self.broadcast("queue_updated", {"queue": self.queue})
         return {"added": True}
     
-    def toggle_shuffle(self, db: Session):
+    def toggle_shuffle(self, db: Session, is_player: bool = True):
         """Toggle shuffle mode on/off"""
         self.shuffle_mode = not self.shuffle_mode
         self.broadcast("playback_state", self.get_state(db))
-        return {"shuffle_mode": self.shuffle_mode}
+        return {"shuffle_mode": self.shuffle_mode, "is_player": is_player}
     
-    def play_random(self, db: Session, count: int = 50):
+    def play_random(self, db: Session, count: int = 50, is_player: bool = True):
         """Fill queue with random tracks from library"""
         import random
         
@@ -374,6 +370,6 @@ class PlaybackController:
         self.last_played_track_id = self.queue[self.current_index]
         self.broadcast("playback_state", self.get_state(db))
         self.broadcast("queue_updated", {"queue": self.queue})
-        return self.get_state(db)
+        return self.get_state(db, is_player)
 
 playback = PlaybackController()

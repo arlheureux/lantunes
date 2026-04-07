@@ -38,57 +38,68 @@ class PlayRequest(BaseModel):
     queue: Optional[List[int]] = Field(default=None)
 
 @router.get("/state")
-def get_state(db: Session = Depends(get_db)):
-    return playback.get_state(db)
+def get_state(player: str = Query(None), db: Session = Depends(get_db)):
+    is_player = player == playback.get_player_device_id()
+    return playback.get_state(db, is_player)
 
 @router.post("/play")
 def play(track_id: int = None, queue: str = None, player: str = Query(None), db: Session = Depends(get_db)):
     queue_list = [int(x) for x in queue.split(',')] if queue else None
-    return playback.play(db, track_id, queue_list, player)
+    is_player = player == playback.get_player_device_id()
+    return playback.play(db, track_id, queue_list, player, is_player)
 
 @router.post("/pause")
-def pause(db: Session = Depends(get_db)):
-    return playback.pause(db)
+def pause(player: str = Query(None), db: Session = Depends(get_db)):
+    is_player = player == playback.get_player_device_id()
+    return playback.pause(db, is_player)
 
 @router.post("/stop")
-def stop(db: Session = Depends(get_db)):
-    return playback.stop(db)
+def stop(player: str = Query(None), db: Session = Depends(get_db)):
+    is_player = player == playback.get_player_device_id()
+    return playback.stop(db, is_player)
 
 @router.post("/next")
-def next_track(db: Session = Depends(get_db)):
-    return playback.next(db)
+def next_track(player: str = Query(None), db: Session = Depends(get_db)):
+    is_player = player == playback.get_player_device_id()
+    return playback.next(db, is_player)
 
 @router.post("/previous")
-def previous_track(db: Session = Depends(get_db)):
-    return playback.previous(db)
+def previous_track(player: str = Query(None), db: Session = Depends(get_db)):
+    is_player = player == playback.get_player_device_id()
+    return playback.previous(db, is_player)
 
 @router.post("/seek")
-def seek(position: int = Query(...), db: Session = Depends(get_db)):
-    return playback.seek(db, position)
+def seek(position: int = Query(...), player: str = Query(None), db: Session = Depends(get_db)):
+    is_player = player == playback.get_player_device_id()
+    return playback.seek(db, position, is_player)
 
 @router.post("/volume")
-def set_volume(volume: float = Query(..., ge=0.0, le=1.0), db: Session = Depends(get_db)):
-    return playback.set_volume(db, volume)
+def set_volume(volume: float = Query(..., ge=0.0, le=1.0), player: str = Query(None), db: Session = Depends(get_db)):
+    is_player = player == playback.get_player_device_id()
+    return playback.set_volume(db, volume, is_player)
 
 @router.post("/queue")
-def set_queue(track_ids: List[int], start_index: int = 0, db: Session = Depends(get_db)):
-    return playback.set_queue(db, track_ids, start_index)
+def set_queue(track_ids: List[int], start_index: int = 0, player: str = Query(None), db: Session = Depends(get_db)):
+    is_player = player == playback.get_player_device_id()
+    return playback.set_queue(db, track_ids, start_index, is_player)
 
 @router.post("/queue/play-next")
-def play_next(track_id: int, db: Session = Depends(get_db)):
+def play_next(track_id: int, player: str = Query(None), db: Session = Depends(get_db)):
     return playback.play_next(db, track_id)
 
 @router.post("/queue/add")
-def add_to_queue(track_id: int, db: Session = Depends(get_db)):
+def add_to_queue(track_id: int, player: str = Query(None), db: Session = Depends(get_db)):
     return playback.add_to_queue(db, track_id)
 
 @router.post("/shuffle")
-def toggle_shuffle(db: Session = Depends(get_db)):
-    return playback.toggle_shuffle(db)
+def toggle_shuffle(player: str = Query(None), db: Session = Depends(get_db)):
+    is_player = player == playback.get_player_device_id()
+    return playback.toggle_shuffle(db, is_player)
 
 @router.post("/shuffle-play")
-def shuffle_play(count: int = 50, db: Session = Depends(get_db)):
-    return playback.play_random(db, count)
+def shuffle_play(count: int = 50, player: str = Query(None), db: Session = Depends(get_db)):
+    is_player = player == playback.get_player_device_id()
+    return playback.play_random(db, count, is_player)
 
 @router.get("/stream/{track_id}")
 def stream_track(track_id: int, db: Session = Depends(get_db)):
