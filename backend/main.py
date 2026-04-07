@@ -3,17 +3,14 @@ import os
 backend_dir = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, backend_dir)
 
-from fastapi import FastAPI, WebSocket, Request
+from fastapi import FastAPI, WebSocket
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse, HTMLResponse
 from api import library, playback, playlists, config
-from api import auth, users
 from websocket import websocket_endpoint
 
 app = FastAPI(title="LanTunes")
 
-app.include_router(auth.router)
-app.include_router(users.router)
 app.include_router(library.router)
 app.include_router(playback.router)
 app.include_router(playlists.router)
@@ -25,7 +22,6 @@ async def ws(websocket: WebSocket):
 
 frontend_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), "frontend")
 index_path = os.path.join(frontend_path, "index.html")
-login_path = os.path.join(frontend_path, "login.html")
 
 @app.get("/")
 async def root():
