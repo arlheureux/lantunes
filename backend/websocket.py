@@ -11,6 +11,9 @@ async def websocket_endpoint(websocket: WebSocket):
     await websocket.accept()
     playback.add_connection(websocket)
     
+    # Initialize device_id as None until registered
+    device_id = None
+    
     try:
         while True:
             data = await websocket.receive_text()
@@ -21,7 +24,29 @@ async def websocket_endpoint(websocket: WebSocket):
             from database import SessionLocal
             db = SessionLocal()
             
-            if event == "control":
+            if event == "register":
+                # Client registers with device info
+                device_id = payload.get("device_id")
+                device_name = payload.get("device_name", "Unknown Device")
+                if device_id:
+                    playback.register_device(websocket, device_id, device_name)
+                    playback.broadcast_devices()
+            
+            elif event == "set_player":
+                # Set which device should play audio
+                target_device_id = payload.get("device_id")
+                if target_device_id and playback.set_player_device(target_device_id):
+                    playback.broadcast_devices()
+            
+            elif event == "update_device_name":
+                # Update device name
+                device_id = payload.get("device_id")
+                device_name = payload.get("device_name")
+                if device_id and device_name:
+                    playback.update_device_name(device_id, device_name)
+                    playback.broadcast_devices()
+            
+            elif event == "control":
                 action = payload.get("action")
                 position = payload.get("position")
                 

@@ -11,6 +11,72 @@ class PlaybackController:
         self._ws_connections: List = []
         self.shuffle_mode: bool = False
         self.last_played_track_id: int = None
+        # Device management for "cast play to" feature
+        self._devices: dict = {}  # {device_id: {"ws": websocket, "name": str, "is_player": bool}}
+        self._player_device_id: str = None  # Which device plays audio
+    
+    def register_device(self, ws, device_id: str, device_name: str):
+        """Register a new device or update existing"""
+        self._devices[device_id] = {"ws": ws, "name": device_name, "is_player": False}
+        # If first device, make it the player
+        if not self._player_device_id:
+            self._player_device_id = device_id
+            self._devices[device_id]["is_player"] = True
+    
+    def update_device_name(self, device_id: str, device_name: str):
+        """Update device name"""
+        if device_id in self._devices:
+            self._devices[device_id]["name"] = device_name
+    
+    def remove_device(self, ws):
+        """Remove device on disconnect"""
+        device_id_to_remove = None
+        for dev_id, dev_info in self._devices.items():
+            if dev_info["ws"] == ws:
+                device_id_to_remove = dev_id
+                break
+        
+        if device_id_to_remove:
+            del self._devices[device_id_to_remove]
+            # If removed device was player, assign new player
+            if self._player_device_id == device_id_to_remove:
+                self._player_device_id = None
+                # Assign first available device as player
+                if self._devices:
+                    self._player_device_id = next(iter(self._devices.keys()))
+                    if self._player_device_id:
+                        self._devices[self._player_device_id]["is_player"] = True
+    
+    def set_player_device(self, device_id: str):
+        """Set which device should play audio"""
+        # Disable current player
+        if self._player_device_id and self._player_device_id in self._devices:
+            self._devices[self._player_device_id]["is_player"] = False
+        
+        # Enable new player
+        if device_id in self._devices:
+            self._player_device_id = device_id
+            self._devices[device_id]["is_player"] = True
+            return True
+        return False
+    
+    def get_devices(self) -> List[dict]:
+        """Get list of connected devices"""
+        return [
+            {"id": dev_id, "name": dev_info["name"], "is_player": dev_info["is_player"]}
+            for dev_id, dev_info in self._devices.items()
+        ]
+    
+    def get_player_device_id(self) -> str:
+        """Get the current player device ID"""
+        return self._player_device_id
+    
+    def is_device_player(self, device_id: str) -> bool:
+        """Check if device is the player"""
+        return device_id == self._player_device_id
+    
+    def add_connection(self, ws):
+        self._ws_connections.append(ws)
     
     def add_connection(self, ws):
         self._ws_connections.append(ws)
@@ -18,6 +84,8 @@ class PlaybackController:
     def remove_connection(self, ws):
         if ws in self._ws_connections:
             self._ws_connections.remove(ws)
+        # Also remove device on disconnect
+        self.remove_device(ws)
     
     def broadcast(self, event: str, data: dict):
         msg = json.dumps({"event": event, "data": data})
@@ -32,6 +100,11 @@ class PlaybackController:
         for ws in disconnected:
             if ws in self._ws_connections:
                 self._ws_connections.remove(ws)
+    
+    def broadcast_devices(self):
+        """Broadcast list of connected devices to all clients"""
+        devices = self.get_devices()
+        self.broadcast("devices", {"devices": devices})
     
     def get_state(self, db: Session) -> dict:
         state = db.query(PlaybackState).filter(PlaybackState.id == 1).first()

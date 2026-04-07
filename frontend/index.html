@@ -117,6 +117,11 @@
         .volume input { flex: 1; -webkit-appearance: none; appearance: none; height: 4px; background: #404040; border-radius: 2px; cursor: pointer; }
         .volume input::-webkit-slider-thumb { -webkit-appearance: none; width: 12px; height: 12px; background: var(--text-primary); border-radius: 50%; cursor: pointer; }
         
+        /* Device Selector */
+        .device-selector { margin-left: 16px; }
+        .device-selector select { background: #333; color: var(--text-primary); border: none; padding: 8px 12px; border-radius: 20px; font-size: 13px; cursor: pointer; outline: none; }
+        .device-selector select:hover { background: #444; }
+        
         .track-meta { font-size: 11px; color: var(--text-muted); margin-top: 4px; }
         
         /* Buttons */
@@ -378,6 +383,13 @@
                 
                 <div v-if="view === 'settings'">
                     <h1>Settings</h1>
+                    
+                    <div style="margin-bottom:24px;padding:16px;background:var(--bg-elevated);border-radius:var(--border-radius-md);">
+                        <h3 style="margin-bottom:12px;">Device Name</h3>
+                        <input type="text" v-model="deviceName" @change="updateDeviceName" placeholder="Enter device name..." style="width:100%;max-width:300px;padding:10px;background:#333;border:none;color:#fff;border-radius:var(--border-radius-sm);">
+                        <p style="margin-top:8px;color:var(--text-muted);font-size:12px;">This name will appear in the device list for other clients</p>
+                    </div>
+                    
                     <div style="margin-bottom:20px;">
                         <label>Music Path</label>
                         <input type="text" v-model="config.library.music_path" style="width:100%;max-width:400px;padding:10px;margin-top:8px;background:#242424;border:1px solid #444;color:#fff;border-radius:4px;">
@@ -416,6 +428,15 @@
                     </button>
                     <button @click="next" title="Next"><i class="fas fa-step-forward"></i></button>
                     <button @click="toggleShuffle" :style="{ color: playbackState.shuffle_mode ? 'var(--accent)' : 'var(--text-secondary)' }" title="Shuffle"><i class="fas fa-random"></i></button>
+                    
+                    <!-- Device Selector -->
+                    <div class="device-selector" v-if="devices.length > 1">
+                        <select v-model="selectedPlayerId" @change="setPlayerDevice(selectedPlayerId)" title="Select playback device">
+                            <option v-for="d in devices" :key="d.id" :value="d.id">
+                                {{ d.is_player ? '🎵 ' : '📱 ' }}{{ d.name }}
+                            </option>
+                        </select>
+                    </div>
                 </div>
                 <div class="progress">
                     <span>{{ formatDuration(playbackState.position) }}</span>
@@ -471,6 +492,40 @@
                 const tracksPage = ref(1);
                 const tracksLimit = ref(100);
                 const tracksTotal = ref(0);
+                
+                // Device management for "cast play to" feature
+                let deviceId = localStorage.getItem('lantunes_device_id');
+                if (!deviceId) {
+                    deviceId = 'device_' + Math.random().toString(36).substr(2, 9);
+                    localStorage.setItem('lantunes_device_id', deviceId);
+                }
+                
+                const deviceName = ref(localStorage.getItem('lantunes_device_name') || 'My Device');
+                const devices = ref([]);
+                const selectedPlayerId = ref(null);
+                
+                function sendWS(event, data) {
+                    if (ws && ws.readyState === WebSocket.OPEN) {
+                        ws.send(JSON.stringify({ event, data }));
+                    }
+                }
+                
+                function registerDevice() {
+                    sendWS('register', { device_id: deviceId, device_name: deviceName.value });
+                }
+                
+                function setPlayerDevice(targetDeviceId) {
+                    sendWS('set_player', { device_id: targetDeviceId });
+                }
+                
+                function updateDeviceName() {
+                    localStorage.setItem('lantunes_device_name', deviceName.value);
+                    sendWS('update_device_name', { device_id: deviceId, device_name: deviceName.value });
+                }
+                
+                function isThisDevicePlayer() {
+                    return selectedPlayerId.value === deviceId || (!selectedPlayerId.value && devices.value.length <= 1);
+                }
                 
                 const progressPercent = computed(() => {
                     if (!playbackState.value.track?.duration) return 0;
@@ -709,6 +764,9 @@
                 
                 function connectWS() {
                     ws = new WebSocket('ws://' + location.host + '/ws');
+                    ws.onopen = () => {
+                        registerDevice();
+                    };
                     ws.onmessage = (e) => {
                         const msg = JSON.parse(e.data);
                         if (msg.event === 'playback_state') {
@@ -716,6 +774,10 @@
                             queue.value = msg.data.queue || [];
                         } else if (msg.event === 'queue_updated') {
                             queue.value = msg.data.queue || [];
+                        } else if (msg.event === 'devices') {
+                            devices.value = msg.data.devices || [];
+                            const player = devices.value.find(d => d.is_player);
+                            selectedPlayerId.value = player ? player.id : null;
                         }
                     };
                 }
@@ -733,7 +795,8 @@
                     search, viewAlbum, viewArtist, playTrack, togglePlay, next, previous, seek, setVolume,
                     onTimeUpdate, onEnded, createPlaylist, saveConfig, scanLibrary, formatDuration, getTrackTitle,
                     loadTracks, prevPage, nextPage, showContextMenu, closeContextMenu, playTrackNext, addToQueue,
-                    toggleShuffle, shufflePlay
+                    toggleShuffle, shufflePlay,
+                    devices, selectedPlayerId, deviceName, updateDeviceName
                 };
             }
         }).mount('#app');
