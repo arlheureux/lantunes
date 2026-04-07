@@ -204,7 +204,6 @@
                 }
                 
                 async function checkMode() {
-                    // Check if already logged in
                     const token = localStorage.getItem('access_token');
                     if (token) {
                         try {
@@ -218,8 +217,12 @@
                         }
                     }
                     
-                    // Show login by default
-                    mode.value = 'login';
+                    try {
+                        const status = await apiCall('/api/auth/status');
+                        mode.value = status.needs_setup ? 'setup' : 'login';
+                    } catch (e) {
+                        mode.value = 'login';
+                    }
                 }
                 
                 async function doSetup() {

@@ -214,6 +214,16 @@ def refresh(refresh_token: str, db: Session = Depends(get_db)):
     )
 
 
+@router.get("/status")
+def auth_status(db: Session = Depends(get_db)):
+    """Check if admin exists - public endpoint for login page"""
+    active_admin_count = db.query(User).filter(
+        User.role == "admin",
+        User.status == "active"
+    ).count()
+    return {"needs_setup": active_admin_count == 0}
+
+
 @router.get("/me")
 def get_me(current_user: User = Depends(get_current_user)):
     """Get current user info"""
