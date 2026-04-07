@@ -602,7 +602,9 @@
                 
                 async function playTrack(track) {
                     console.log('Playing track:', track);
-                    const state = await apiCall('/api/playback/play', {
+                    // Send play request with device_id so server knows if this device should get stream URL
+                    const url = '/api/playback/play?player=' + encodeURIComponent(deviceId);
+                    const state = await apiCall(url, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({ track_id: track.id, queue: [track.id] })
@@ -611,7 +613,11 @@
                     if (state) {
                         playbackState.value = state;
                         queue.value = state.queue;
-                        playStream(track.id);
+                        // Check if this device should play - either it's the player, or there's only one device
+                        const isPlayer = selectedPlayerId.value === deviceId || devices.value.length <= 1;
+                        if (isPlayer && state.track?.stream_url) {
+                            playStream(track.id);
+                        }
                     }
                 }
                 

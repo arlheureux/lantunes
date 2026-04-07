@@ -106,7 +106,7 @@ class PlaybackController:
         devices = self.get_devices()
         self.broadcast("devices", {"devices": devices})
     
-    def get_state(self, db: Session) -> dict:
+    def get_state(self, db: Session, is_player: bool = True) -> dict:
         state = db.query(PlaybackState).filter(PlaybackState.id == 1).first()
         if not state:
             state = PlaybackState(id=1)
@@ -117,7 +117,7 @@ class PlaybackController:
         if state.current_track_id:
             track = db.query(Track).filter(Track.id == state.current_track_id).first()
         
-        return {
+        result = {
             "track": {
                 "id": track.id,
                 "title": track.title,
@@ -134,10 +134,17 @@ class PlaybackController:
             "volume": state.volume,
             "queue": self.queue,
             "queue_index": self.current_index,
-            "shuffle_mode": self.shuffle_mode
+            "shuffle_mode": self.shuffle_mode,
+            "player_device_id": self._player_device_id
         }
+        
+        # Only include stream URL for the player device
+        if is_player and track:
+            result["track"]["stream_url"] = f"/api/playback/stream/{track.id}"
+        
+        return result
     
-    def play(self, db: Session, track_id: int = None, queue: List[int] = None):
+    def play(self, db: Session, track_id: int = None, queue: List[int] = None, is_player: bool = True):
         state = db.query(PlaybackState).filter(PlaybackState.id == 1).first()
         if not state:
             state = PlaybackState(id=1)
@@ -160,9 +167,9 @@ class PlaybackController:
             db.commit()
             
             track = db.query(Track).filter(Track.id == state.current_track_id).first()
-            self.broadcast("playback_state", self.get_state(db))
+            self.broadcast("playback_state", self.get_state(db, is_player))
         
-        return self.get_state(db)
+        return self.get_state(db, is_player)
     
     def pause(self, db: Session):
         state = db.query(PlaybackState).filter(PlaybackState.id == 1).first()

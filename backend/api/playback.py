@@ -42,8 +42,9 @@ def get_state(db: Session = Depends(get_db)):
     return playback.get_state(db)
 
 @router.post("/play")
-def play(req: PlayRequest, db: Session = Depends(get_db)):
-    return playback.play(db, req.track_id, req.queue)
+def play(req: PlayRequest, player: str = None, db: Session = Depends(get_db)):
+    is_player = player and playback.is_device_player(player)
+    return playback.play(db, req.track_id, req.queue, is_player)
 
 @router.post("/pause")
 def pause(db: Session = Depends(get_db)):
