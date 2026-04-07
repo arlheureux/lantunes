@@ -281,7 +281,7 @@ class PlaybackController:
         self.broadcast("playback_state", self.get_state(db))
         return self.get_state(db)
     
-    def seek(self, db: Session, position: int):
+    def seek(self, db: Session, position: int, is_player: bool = True):
         state = db.query(PlaybackState).filter(PlaybackState.id == 1).first()
         if state:
             state.position = position
