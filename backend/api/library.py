@@ -68,13 +68,24 @@ def get_artist(artist_id: int, db: Session = Depends(get_db)):
 @router.get("/search")
 def search(q: str = Query(...), db: Session = Depends(get_db)):
     q_lower = f"%{q.lower()}%"
-    tracks = db.query(Track).filter(Track.title.ilike(q_lower)).limit(20).all()
-    albums = db.query(Album).filter(Album.title.ilike(q_lower)).limit(10).all()
-    artists = db.query(Artist).filter(Artist.name.ilike(q_lower)).limit(10).all()
+    
+    # Search tracks by title or artist name
+    tracks = db.query(Track).join(Artist).filter(
+        (Track.title.ilike(q_lower)) | (Artist.name.ilike(q_lower))
+    ).limit(50).all()
+    
+    # Search albums by title or artist name
+    albums = db.query(Album).join(Artist).filter(
+        (Album.title.ilike(q_lower)) | (Artist.name.ilike(q_lower))
+    ).limit(30).all()
+    
+    # Search artists by name
+    artists = db.query(Artist).filter(Artist.name.ilike(q_lower)).limit(30).all()
+    
     return {
         "tracks": [t.as_dict() for t in tracks],
-        "albums": [{"id": a.id, "title": a.title, "artist": a.artist.name if a.artist else "Unknown"} for a in albums],
-        "artists": [{"id": a.id, "name": a.name} for a in artists]
+        "albums": [{"id": a.id, "title": a.title, "artist": a.artist.name if a.artist else "Unknown", "year": a.year, "artwork": a.artwork_path} for a in albums],
+        "artists": [{"id": a.id, "name": a.name, "artwork": a.artwork_path} for a in artists]
     }
 
 @router.post("/scan")

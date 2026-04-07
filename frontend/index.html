@@ -127,16 +127,19 @@
                                 <span class="duration">{{ formatDuration(t.duration) }}</span>
                             </div>
                         </div>
+                        <div v-if="searchResults.tracks.length === 0" class="empty">No tracks found</div>
                         <h3 style="margin-top:20px;">Albums</h3>
                         <div class="album-grid">
                             <div class="album-card" v-for="a in searchResults.albums" :key="a.id" @click="viewAlbum(a.id)">
-                                <div style="width:100%;aspect-ratio:1;background:#333;border-radius:4px;margin-bottom:8px;display:flex;align-items:center;justify-content:center;">
+                                <img v-if="a.artwork" :src="'/api/library/artwork/' + a.id" style="width:100%;aspect-ratio:1;object-fit:cover;border-radius:4px;margin-bottom:8px;">
+                                <div v-else style="width:100%;aspect-ratio:1;background:#333;border-radius:4px;margin-bottom:8px;display:flex;align-items:center;justify-content:center;">
                                     <i class="fas fa-compact-disc" style="font-size:48px;color:#555;"></i>
                                 </div>
                                 <div class="name">{{ a.title }}</div>
                                 <div class="artist">{{ a.artist }}</div>
                             </div>
                         </div>
+                        <div v-if="searchResults.albums.length === 0" class="empty">No albums found</div>
                         <h3 style="margin-top:20px;">Artists</h3>
                         <div class="album-grid">
                             <div class="album-card" v-for="a in searchResults.artists" :key="a.id" @click="viewArtist(a.id)">
@@ -146,6 +149,11 @@
                                 <div class="name">{{ a.name }}</div>
                             </div>
                         </div>
+                        <div v-if="searchResults.artists.length === 0" class="empty">No artists found</div>
+                    </div>
+                    
+                    <div v-else-if="searchQuery && !searchResults.tracks.length && !searchResults.albums.length && !searchResults.artists.length">
+                        <div class="empty">No results found for "{{ searchQuery }}"</div>
                     </div>
                     
                     <div v-else>
@@ -341,40 +349,16 @@
                 const view = ref('library');
                 const searchQuery = ref('');
                 const searchResults = ref({ tracks: [], albums: [], artists: [] });
-                const albums = ref([]);
-                const artists = ref([]);
-                const playlists = ref([]);
-                const config = ref({ library: { music_path: '' } });
-                const scanResult = ref('');
+                let searchTimeout = null;
                 
-                const currentAlbum = ref(null);
-                const currentArtist = ref(null);
-                const playbackState = ref({ track: null, position: 0, is_playing: false, volume: 1.0, queue: [], queue_index: 0 });
-                const queue = ref([]);
-                const volume = ref(1.0);
-                const audioPlayer = ref(null);
-                
-                const contextMenu = ref({ show: false, x: 0, y: 0, track: null });
-                
-                const tracks = ref([]);
-                const trackCache = ref({});
-                const tracksPage = ref(1);
-                const tracksLimit = ref(100);
-                const tracksTotal = ref(0);
-                const tracksTotalPages = computed(() => Math.ceil(tracksTotal.value / tracksLimit.value));
-                
-                const progressPercent = computed(() => {
-                    if (!playbackState.value.track?.duration) return 0;
-                    return (playbackState.value.position / playbackState.value.track.duration) * 100;
-                });
-                
-                async function apiCall(url, opts = {}) {
-                    try {
-                        const res = await fetch(API + url, opts);
-                        if (!res.ok) {
-                            console.error('API error:', res.status, await res.text());
-                            return null;
-                        }
+                async function search() {
+                    if (searchTimeout) clearTimeout(searchTimeout);
+                    searchTimeout = setTimeout(async () => {
+                        if (!searchQuery.value) { searchResults.value = { tracks: [], albums: [], artists: [] }; return; }
+                        const r = await apiCall('/api/library/search?q=' + encodeURIComponent(searchQuery.value));
+                        if (r) searchResults.value = r;
+                    }, 300);
+                }
                         return await res.json();
                     } catch (e) { console.error('API exception:', e); return null; }
                 }
