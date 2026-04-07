@@ -1053,30 +1053,37 @@
                 }
                 
                 function connectWS() {
+                    console.log('Connecting WebSocket...');
                     ws = new WebSocket('ws://' + location.host + '/ws');
                     ws.onopen = () => {
+                        console.log('WebSocket connected, registering device:', deviceId);
                         registerDevice();
                     };
                     ws.onmessage = (e) => {
                         const msg = JSON.parse(e.data);
+                        console.log('WebSocket message:', msg.event, msg.data);
                         if (msg.event === 'playback_state') {
-                            const wasPlaying = playbackState.value.is_playing;
+                            const prevPlaying = playbackState.value.is_playing;
                             playbackState.value = msg.data;
                             queue.value = msg.data.queue || [];
                             
-                            // Auto-play if this device is the player and should be playing
-                            const isPlayer = !selectedPlayerId.value || selectedPlayerId.value === deviceId;
-                            if (isPlayer && msg.data.track?.stream_url && msg.data.is_playing && !wasPlaying) {
+                            // Auto-play: if this device has stream_url and is now playing
+                            console.log('Has stream_url:', !!msg.data.track?.stream_url, 'is_playing:', msg.data.is_playing, 'was playing:', prevPlaying);
+                            if (msg.data.track?.stream_url && msg.data.is_playing && !prevPlaying) {
+                                console.log('Auto-playing track:', msg.data.track.id);
                                 playStream(msg.data.track.id);
                             }
                         } else if (msg.event === 'queue_updated') {
                             queue.value = msg.data.queue || [];
                         } else if (msg.event === 'devices') {
+                            console.log('Devices updated:', msg.data.devices);
                             devices.value = msg.data.devices || [];
                             const player = devices.value.find(d => d.is_player);
                             selectedPlayerId.value = player ? player.id : null;
                         }
                     };
+                    ws.onerror = (e) => console.error('WebSocket error:', e);
+                    ws.onclose = () => console.log('WebSocket closed');
                 }
                 
                 onMounted(async () => {
@@ -1086,15 +1093,12 @@
                     
                     // Check if we should be playing (if this device is the player)
                     setTimeout(async () => {
-                        const isPlayer = !selectedPlayerId.value || selectedPlayerId.value === deviceId;
-                        if (isPlayer) {
-                            const state = await apiCall('/api/playback/state');
-                            if (state && state.is_playing && state.track?.stream_url) {
-                                playbackState.value = state;
-                                playStream(state.track.id);
-                            }
+                        const state = await apiCall('/api/playback/state?player=' + encodeURIComponent(deviceId));
+                        if (state && state.is_playing && state.track?.stream_url) {
+                            playbackState.value = state;
+                            playStream(state.track.id);
                         }
-                    }, 1000);
+                    }, 1500);
                 });
                 
                 return {
