@@ -3,7 +3,7 @@ import sys
 from datetime import datetime, timedelta
 from typing import Optional
 import jwt
-from passlib.hash import bcrypt
+import bcrypt
 
 SECRET_KEY = os.getenv("SECRET_KEY", "lantunes-super-secret-key-change-in-production")
 ALGORITHM = "HS256"
@@ -13,12 +13,15 @@ REFRESH_TOKEN_EXPIRE_DAYS = 7
 
 def hash_password(password: str) -> str:
     """Hash a password using bcrypt"""
-    return bcrypt.hash(password)
+    return bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
 
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:
     """Verify a password against its hash"""
-    return bcrypt.verify(plain_password, hashed_password)
+    try:
+        return bcrypt.checkpw(plain_password.encode('utf-8'), hashed_password.encode('utf-8'))
+    except Exception:
+        return False
 
 
 def create_access_token(data: dict, expires_delta: Optional[timedelta] = None) -> str:
