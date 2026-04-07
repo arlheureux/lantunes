@@ -714,8 +714,12 @@
                 
                 async function playTrack(track) {
                     console.log('Playing track:', track);
-                    // Send play request with device_id so server knows if this device should get stream URL
-                    const url = '/api/playback/play?player=' + encodeURIComponent(deviceId);
+                    // Determine which device should play
+                    // If selectedPlayerId is set, that device plays. Otherwise, the requesting device plays.
+                    const targetPlayer = selectedPlayerId.value || deviceId;
+                    
+                    // Send play request with the target player device ID
+                    const url = '/api/playback/play?player=' + encodeURIComponent(targetPlayer);
                     const state = await apiCall(url, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
@@ -725,9 +729,9 @@
                     if (state) {
                         playbackState.value = state;
                         queue.value = state.queue;
-                        // Check if this device should play - either it's the player, or there's only one device
-                        const isPlayer = selectedPlayerId.value === deviceId || devices.value.length <= 1;
-                        if (isPlayer && state.track?.stream_url) {
+                        // Only play locally if we ARE the target player (or if stream_url is present in response)
+                        const amIPlayer = !selectedPlayerId.value || selectedPlayerId.value === deviceId;
+                        if (amIPlayer && state.track?.stream_url) {
                             playStream(track.id);
                         }
                     }

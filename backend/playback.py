@@ -217,7 +217,8 @@ class PlaybackController:
             self.broadcast_playback_state()
         
         # Return personalized state to the caller
-        is_caller_player = player_device_id == self._player_device_id
+        # The caller is the device that made the request - it should only get stream_url if IT is the player
+        is_caller_player = self._player_device_id and (self._player_device_id == player_device_id)
         return self.get_state(db, is_caller_player)
     
     def pause(self, db: Session):
