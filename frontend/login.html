@@ -225,46 +225,22 @@
                 
                 <!-- Login Mode -->
                 <div v-else-if="mode === 'login'">
-                    <div class="tabs">
-                        <div class="tab" :class="{ active: tab === 'login' }" @click="tab = 'login'">Login</div>
-                        <div class="tab" :class="{ active: tab === 'register' }" @click="tab = 'register'">Register</div>
-                    </div>
+                    <h2>Login</h2>
                     
                     <div v-if="error" class="error">{{ error }}</div>
-                    <div v-if="message" class="success">{{ message }}</div>
                     
-                    <div v-if="tab === 'login'">
-                        <div class="form-group">
-                            <label>Username</label>
-                            <input type="text" v-model="username" placeholder="Enter username">
-                        </div>
-                        <div class="form-group">
-                            <label>Password</label>
-                            <input type="password" v-model="password" placeholder="Enter password">
-                        </div>
-                        <button class="btn" @click="doLogin" :disabled="loading">
-                            {{ loading ? 'Logging in...' : 'Login' }}
-                        </button>
+                    <div class="form-group">
+                        <label>Username</label>
+                        <input type="text" v-model="username" placeholder="Enter username">
                     </div>
-                    
-                    <div v-else>
-                        <div class="form-group">
-                            <label>Username</label>
-                            <input type="text" v-model="regUsername" placeholder="Choose a username">
-                        </div>
-                        <div class="form-group">
-                            <label>Password</label>
-                            <input type="password" v-model="regPassword" placeholder="Choose a password">
-                        </div>
-                        <button class="btn" @click="doRegister" :disabled="loading">
-                            {{ loading ? 'Registering...' : 'Register' }}
-                        </button>
+                    <div class="form-group">
+                        <label>Password</label>
+                        <input type="password" v-model="password" placeholder="Enter password">
                     </div>
+                    <button class="btn" @click="doLogin" :disabled="loading">
+                        {{ loading ? 'Logging in...' : 'Login' }}
+                    </button>
                 </div>
-            </div>
-            
-            <div v-if="mode === 'login'" class="setup-notice">
-                New registrations require admin approval before login.
             </div>
         </div>
     </div>
@@ -277,15 +253,11 @@
         createApp({
             setup() {
                 const mode = ref('loading');
-                const tab = ref('login');
                 const loading = ref(false);
                 const error = ref('');
-                const message = ref('');
                 
                 const username = ref('');
                 const password = ref('');
-                const regUsername = ref('');
-                const regPassword = ref('');
                 
                 async function apiCall(url, opts = {}) {
                     try {
@@ -365,7 +337,6 @@
                     
                     loading.value = true;
                     error.value = '';
-                    message.value = '';
                     
                     try {
                         const data = await apiCall('/api/auth/login', {
@@ -388,42 +359,16 @@
                     }
                 }
                 
-                async function doRegister() {
-                    if (!regUsername.value || !regPassword.value) {
-                        error.value = 'Please enter username and password';
-                        return;
-                    }
-                    
-                    loading.value = true;
-                    error.value = '';
-                    message.value = '';
-                    
-                    try {
-                        const data = await apiCall('/api/auth/register', {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ username: regUsername.value, password: regPassword.value })
-                        });
-                        
-                        // If user was created as admin (has access token), login immediately
-                        if (data.access_token) {
-                            localStorage.setItem('access_token', data.access_token);
-                            localStorage.setItem('refresh_token', data.refresh_token);
-                            localStorage.setItem('user', JSON.stringify(data.user));
-                            window.location.href = '/';
-                        } else {
-                            // User needs approval
-                            message.value = 'Registration successful! Please wait for admin approval.';
-                            tab.value = 'login';
-                            username.value = regUsername.value;
-                            password.value = '';
-                        }
-                    } catch (e) {
-                        error.value = e.message;
-                    } finally {
-                        loading.value = false;
-                    }
-                }
+                onMounted(() => {
+                    checkMode();
+                });
+                
+                return {
+                    mode, loading, error, username, password,
+                    doSetup, doLogin
+                };
+            }
+        }).mount('#app');
                 
                 onMounted(() => {
                     checkMode();

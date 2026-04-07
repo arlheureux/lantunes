@@ -17,7 +17,6 @@ app = FastAPI(title="LanTunes")
 # Public endpoints that don't require auth
 PUBLIC_ENDPOINTS = [
     "/api/auth/login",
-    "/api/auth/register", 
     "/api/auth/setup",
     "/api/auth/refresh",
     "/docs",

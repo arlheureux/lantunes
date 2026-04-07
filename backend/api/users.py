@@ -4,8 +4,16 @@ from pydantic import BaseModel
 from database import get_db, User
 from dependencies import get_current_admin
 from datetime import datetime
+from auth import hash_password
 
 router = APIRouter(prefix="/api/auth/users", tags=["users"])
+
+
+class CreateUserRequest(BaseModel):
+    username: str
+    password: str
+    role: str = "user"
+    status: str = "active"
 
 
 class UserResponse(BaseModel):
@@ -19,6 +27,42 @@ class UserResponse(BaseModel):
 
     class Config:
         from_attributes = True
+
+
+@router.post("")
+def create_user(
+    req: CreateUserRequest,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_admin)
+):
+    """Create a new user (admin only)"""
+    # Check if username exists
+    existing = db.query(User).filter(User.username == req.username).first()
+    if existing:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Username already exists"
+        )
+    
+    user = User(
+        username=req.username,
+        password_hash=hash_password(req.password),
+        role=req.role if req.role in ["admin", "user"] else "user",
+        status=req.status if req.status in ["active", "inactive"] else "active"
+    )
+    db.add(user)
+    db.commit()
+    db.refresh(user)
+    
+    return {
+        "id": user.id,
+        "username": user.username,
+        "role": user.role,
+        "status": user.status,
+        "created_at": user.created_at.isoformat() if user.created_at else None,
+        "approved_by": user.approved_by,
+        "approved_at": user.approved_at.isoformat() if user.approved_at else None
+    }
 
 
 @router.get("")
