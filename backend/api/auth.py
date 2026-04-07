@@ -67,7 +67,7 @@ def setup_first_admin(req: SetupAdminRequest, db: Session = Depends(get_db)):
 
 @router.post("/register", response_model=TokenResponse)
 def register(req: RegisterRequest, db: Session = Depends(get_db)):
-    """Register a new user - requires admin to approve"""
+    """Register a new user - requires admin to approve, except first user becomes admin"""
     # Check if username exists
     existing = db.query(User).filter(User.username == req.username).first()
     if existing:
@@ -75,6 +75,56 @@ def register(req: RegisterRequest, db: Session = Depends(get_db)):
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Username already exists"
         )
+    
+    # Check if this is the first user - if so, make them admin and active
+    user_count = db.query(User).count()
+    if user_count == 0:
+        # First user becomes admin automatically
+        user = User(
+            username=req.username,
+            password_hash=hash_password(req.password),
+            role="admin",
+            status="active"
+        )
+    else:
+        # Regular user - requires admin approval
+        user = User(
+            username=req.username,
+            password_hash=hash_password(req.password),
+            role="user",
+            status="pending"
+        )
+    
+    db.add(user)
+    db.commit()
+    db.refresh(user)
+    
+    # Only return token if user is active
+    if user.status == "active":
+        access_token = create_access_token({"user_id": user.id, "username": user.username})
+        refresh_token = create_refresh_token({"user_id": user.id})
+        return TokenResponse(
+            access_token=access_token,
+            refresh_token=refresh_token,
+            user={
+                "id": user.id,
+                "username": user.username,
+                "role": user.role,
+                "status": user.status
+            }
+        )
+    
+    return TokenResponse(
+        access_token="",
+        refresh_token="",
+        user={
+            "id": user.id,
+            "username": user.username,
+            "role": user.role,
+            "status": user.status,
+            "message": "Registration successful! You are the first user and have been granted admin access."
+        }
+    )
     
     user = User(
         username=req.username,
