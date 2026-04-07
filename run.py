@@ -2,8 +2,6 @@
 import sys
 import os
 import subprocess
-import shutil
-import pkg_resources
 
 project_root = os.path.dirname(os.path.abspath(__file__))
 venv_path = os.path.join(project_root, 'venv')
@@ -16,17 +14,22 @@ REQUIRED_DEPS = [
     'python-multipart', 'websockets', 'requests', 'PyJWT', 'bcrypt'
 ]
 
-def get_installed_packages():
-    """Get list of installed packages"""
+def check_and_install_deps():
+    """Check if deps are installed, install missing ones"""
+    # Try pip list first
     try:
-        return {pkg.key for pkg in pkg_resources.working_set}
+        result = subprocess.run([pip_path, 'list', '--format=freeze'], 
+                              capture_output=True, text=True, cwd=project_root)
+        installed = result.stdout.lower()
     except Exception:
-        return set()
-
-def install_missing_packages():
-    """Install any missing required packages"""
-    installed = get_installed_packages()
-    missing = [dep for dep in REQUIRED_DEPS if dep.lower() not in installed]
+        installed = ""
+    
+    # Check each required dep
+    missing = []
+    for dep in REQUIRED_DEPS:
+        dep_lower = dep.lower()
+        if dep_lower not in installed and dep.lower().replace('-', '_') not in installed:
+            missing.append(dep)
     
     if missing:
         print(f"Installing missing packages: {', '.join(missing)}")
@@ -40,7 +43,7 @@ in_venv = sys.prefix != sys.base_prefix or os.path.basename(sys.prefix) == 'venv
 if not in_venv:
     if os.path.exists(venv_python):
         # Check and install missing packages before running
-        install_missing_packages()
+        check_and_install_deps()
         os.execv(venv_python, [venv_python] + sys.argv)
     else:
         print("Creating virtual environment...")
@@ -52,7 +55,7 @@ if not in_venv:
         os.execv(venv_python, [venv_python] + sys.argv)
 
 # We're in the venv - check for missing packages anyway
-install_missing_packages()
+check_and_install_deps()
 
 sys.path.insert(0, os.path.join(project_root, 'backend'))
 os.chdir(project_root)
