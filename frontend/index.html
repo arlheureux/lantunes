@@ -1171,10 +1171,27 @@
                     };
                 }
                 
-                onMounted(() => {
+                onMounted(async () => {
                     // Check authentication
                     const token = localStorage.getItem('access_token');
                     if (!token) {
+                        window.location.href = '/login.html';
+                        return;
+                    }
+                    
+                    // Verify token is valid
+                    try {
+                        const me = await fetch(API + '/api/auth/me', {
+                            headers: { 'Authorization': 'Bearer ' + token }
+                        });
+                        if (!me.ok || !(await me.json()).authenticated) {
+                            localStorage.removeItem('access_token');
+                            localStorage.removeItem('refresh_token');
+                            localStorage.removeItem('user');
+                            window.location.href = '/login.html';
+                            return;
+                        }
+                    } catch (e) {
                         window.location.href = '/login.html';
                         return;
                     }
