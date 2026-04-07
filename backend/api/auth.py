@@ -32,12 +32,17 @@ class TokenResponse(BaseModel):
 
 @router.post("/setup", response_model=TokenResponse)
 def setup_first_admin(req: SetupAdminRequest, db: Session = Depends(get_db)):
-    """Setup first admin user - only works when no users exist"""
-    user_count = db.query(User).count()
-    if user_count > 0:
+    """Setup first admin user - only works when no active admin exists"""
+    # Check if there are any ACTIVE admin users
+    active_admin_count = db.query(User).filter(
+        User.role == "admin",
+        User.status == "active"
+    ).count()
+    
+    if active_admin_count > 0:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail="Setup not allowed. Users already exist."
+            detail="Admin already exists. Please login."
         )
     
     user = User(
@@ -67,7 +72,7 @@ def setup_first_admin(req: SetupAdminRequest, db: Session = Depends(get_db)):
 
 @router.post("/register", response_model=TokenResponse)
 def register(req: RegisterRequest, db: Session = Depends(get_db)):
-    """Register a new user - requires admin to approve, except first user becomes admin"""
+    """Register a new user - requires admin to approve, except when no active admin exists"""
     # Check if username exists
     existing = db.query(User).filter(User.username == req.username).first()
     if existing:
@@ -76,10 +81,14 @@ def register(req: RegisterRequest, db: Session = Depends(get_db)):
             detail="Username already exists"
         )
     
-    # Check if this is the first user - if so, make them admin and active
-    user_count = db.query(User).count()
-    if user_count == 0:
-        # First user becomes admin automatically
+    # Check if there are any ACTIVE admin users
+    active_admin_count = db.query(User).filter(
+        User.role == "admin",
+        User.status == "active"
+    ).count()
+    
+    if active_admin_count == 0:
+        # No active admin exists - make this user admin and active
         user = User(
             username=req.username,
             password_hash=hash_password(req.password),
@@ -87,7 +96,7 @@ def register(req: RegisterRequest, db: Session = Depends(get_db)):
             status="active"
         )
     else:
-        # Regular user - requires admin approval
+        # Active admin exists - require approval
         user = User(
             username=req.username,
             password_hash=hash_password(req.password),
