@@ -118,27 +118,25 @@ class PlaybackController:
     
     def broadcast_playback_state(self):
         """Broadcast playback state to all devices, with stream_url only for player"""
-        # Get current state
         from database import SessionLocal
         db = SessionLocal()
         
-        # Get basic state without stream_url
-        base_state = self.get_state(db, False)  # No stream_url
-        
-        # Broadcast to each device
         for dev_id, dev_info in self._devices.items():
             ws = dev_info.get("ws")
             if ws:
-                # Create state for this device - include stream_url only if this is the player
                 is_this_player = dev_info.get("is_player", False)
                 device_state = self.get_state(db, is_this_player)
-                
                 msg = json.dumps({"event": "playback_state", "data": device_state})
                 try:
                     import asyncio
-                    asyncio.create_task(ws.send_text(msg))
-                except Exception:
-                    pass
+                    loop = asyncio.new_event_loop()
+                    asyncio.set_event_loop(loop)
+                    try:
+                        loop.run_until_complete(ws.send_text(msg))
+                    finally:
+                        loop.close()
+                except Exception as e:
+                    print(f"Error sending playback state to {dev_id}: {e}")
         
         db.close()
     
@@ -149,9 +147,14 @@ class PlaybackController:
         for ws in self._ws_connections:
             try:
                 import asyncio
-                asyncio.create_task(ws.send_text(msg))
-            except Exception:
-                pass
+                loop = asyncio.new_event_loop()
+                asyncio.set_event_loop(loop)
+                try:
+                    loop.run_until_complete(ws.send_text(msg))
+                finally:
+                    loop.close()
+            except Exception as e:
+                print(f"Error broadcasting devices: {e}")
     
     def get_state(self, db: Session, is_player: bool = True) -> dict:
         state = db.query(PlaybackState).filter(PlaybackState.id == 1).first()
