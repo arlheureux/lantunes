@@ -1076,11 +1076,13 @@
                         } else if (msg.event === 'queue_updated') {
                             queue.value = msg.data.queue || [];
                         } else if (msg.event === 'devices') {
-                            console.log('Devices received:', msg.data.devices);
+                            console.log('Devices received:', JSON.stringify(msg.data.devices));
                             devices.value = msg.data.devices || [];
-                            console.log('devices.value is now:', devices.value, 'length:', devices.value.length);
+                            console.log('devices array updated, length:', devices.value.length, 'devices:', JSON.stringify(devices.value));
+                            console.log('Device selector should show:', devices.value.length > 1);
                             const player = devices.value.find(d => d.is_player);
                             selectedPlayerId.value = player ? player.id : null;
+                            console.log('selectedPlayerId:', selectedPlayerId.value);
                         }
                     };
                     ws.onerror = (e) => console.error('WebSocket error:', e);
