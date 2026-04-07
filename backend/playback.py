@@ -120,6 +120,7 @@ class PlaybackController:
         """Broadcast playback state to all devices, with stream_url only for player"""
         from database import SessionLocal
         import asyncio
+        import concurrent.futures
         
         db = SessionLocal()
         
@@ -131,29 +132,44 @@ class PlaybackController:
         
         db.close()
         
-        # Send to each device
-        for dev_id, state in device_states.items():
+        # Send to each device using a thread pool
+        def send_msg(ws, msg):
             try:
+                loop = asyncio.new_event_loop()
+                asyncio.set_event_loop(loop)
+                loop.run_until_complete(ws.send_text(msg))
+                loop.close()
+            except Exception as e:
+                print(f"Error sending: {e}")
+        
+        with concurrent.futures.ThreadPoolExecutor(max_workers=4) as executor:
+            for dev_id, state in device_states.items():
                 ws = self._devices.get(dev_id, {}).get("ws")
                 if ws:
                     msg = json.dumps({"event": "playback_state", "data": state})
-                    asyncio.run(ws.send_text(msg))
-            except Exception as e:
-                print(f"Error sending playback state to {dev_id}: {e}")
+                    executor.submit(send_msg, ws, msg)
     
     def broadcast_devices(self):
         """Broadcast list of connected devices to all clients"""
         import asyncio
+        import concurrent.futures
         
         devices = self.get_devices()
         print(f"[Broadcast] Broadcasting devices: {devices}")
         msg = json.dumps({"event": "devices", "data": {"devices": devices}})
         
-        for ws in self._ws_connections:
+        def send_msg(ws):
             try:
-                asyncio.run(ws.send_text(msg))
+                loop = asyncio.new_event_loop()
+                asyncio.set_event_loop(loop)
+                loop.run_until_complete(ws.send_text(msg))
+                loop.close()
             except Exception as e:
-                print(f"Error broadcasting devices: {e}")
+                print(f"Error sending: {e}")
+        
+        with concurrent.futures.ThreadPoolExecutor(max_workers=4) as executor:
+            for ws in self._ws_connections:
+                executor.submit(send_msg, ws)
     
     def get_state(self, db: Session, is_player: bool = True) -> dict:
         state = db.query(PlaybackState).filter(PlaybackState.id == 1).first()
