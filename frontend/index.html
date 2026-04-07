@@ -852,12 +852,10 @@
                     // If selectedPlayerId is set, that device plays. Otherwise, the requesting device plays.
                     const targetPlayer = selectedPlayerId.value || deviceId;
                     
-                    // Send play request with the target player device ID
-                    const url = '/api/playback/play?player=' + encodeURIComponent(targetPlayer);
+                    // Send play request with the target player device ID (as query params)
+                    const url = '/api/playback/play?track_id=' + track.id + '&queue=' + track.id + '&player=' + encodeURIComponent(targetPlayer);
                     const state = await apiCall(url, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ track_id: track.id, queue: [track.id] })
+                        method: 'POST'
                     });
                     console.log('Play response:', state);
                     if (state) {
