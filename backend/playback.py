@@ -119,42 +119,57 @@ class PlaybackController:
     def broadcast_playback_state(self):
         """Broadcast playback state to all devices, with stream_url only for player"""
         from database import SessionLocal
+        import threading
+        
         db = SessionLocal()
         
+        # Pre-compute state for each device
+        device_states = {}
         for dev_id, dev_info in self._devices.items():
-            ws = dev_info.get("ws")
-            if ws:
-                is_this_player = dev_info.get("is_player", False)
-                device_state = self.get_state(db, is_this_player)
-                msg = json.dumps({"event": "playback_state", "data": device_state})
-                try:
-                    import asyncio
-                    loop = asyncio.new_event_loop()
-                    asyncio.set_event_loop(loop)
-                    try:
-                        loop.run_until_complete(ws.send_text(msg))
-                    finally:
-                        loop.close()
-                except Exception as e:
-                    print(f"Error sending playback state to {dev_id}: {e}")
+            is_this_player = dev_info.get("is_player", False)
+            device_states[dev_id] = self.get_state(db, is_this_player)
         
         db.close()
+        
+        def send_to_device(dev_id, state):
+            try:
+                ws = self._devices.get(dev_id, {}).get("ws")
+                if ws:
+                    msg = json.dumps({"event": "playback_state", "data": state})
+                    ws.send_text(msg)
+            except Exception as e:
+                print(f"Error sending playback state to {dev_id}: {e}")
+        
+        threads = []
+        for dev_id, state in device_states.items():
+            t = threading.Thread(target=send_to_device, args=(dev_id, state))
+            t.start()
+            threads.append(t)
+        
+        for t in threads:
+            t.join()
     
     def broadcast_devices(self):
         """Broadcast list of connected devices to all clients"""
+        import threading
+        
         devices = self.get_devices()
         msg = json.dumps({"event": "devices", "data": {"devices": devices}})
-        for ws in self._ws_connections:
+        
+        def send_to_ws(ws):
             try:
-                import asyncio
-                loop = asyncio.new_event_loop()
-                asyncio.set_event_loop(loop)
-                try:
-                    loop.run_until_complete(ws.send_text(msg))
-                finally:
-                    loop.close()
+                ws.send_text(msg)
             except Exception as e:
                 print(f"Error broadcasting devices: {e}")
+        
+        threads = []
+        for ws in self._ws_connections:
+            t = threading.Thread(target=send_to_ws, args=(ws,))
+            t.start()
+            threads.append(t)
+        
+        for t in threads:
+            t.join()
     
     def get_state(self, db: Session, is_player: bool = True) -> dict:
         state = db.query(PlaybackState).filter(PlaybackState.id == 1).first()
