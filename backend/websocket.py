@@ -28,8 +28,10 @@ async def websocket_endpoint(websocket: WebSocket):
                 # Client registers with device info
                 device_id = payload.get("device_id")
                 device_name = payload.get("device_name", "Unknown Device")
+                print(f"[WS] Register: device_id={device_id}, name={device_name}")
                 if device_id:
                     playback.register_device(websocket, device_id, device_name)
+                    print(f"[WS] Devices after register: {list(playback._devices.keys())}")
                     playback.broadcast_devices()
             
             elif event == "set_player":

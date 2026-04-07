@@ -154,6 +154,7 @@ class PlaybackController:
         import threading
         
         devices = self.get_devices()
+        print(f"[Broadcast] Broadcasting devices: {devices}")
         msg = json.dumps({"event": "devices", "data": {"devices": devices}})
         
         def send_to_ws(ws):

@@ -1076,8 +1076,9 @@
                         } else if (msg.event === 'queue_updated') {
                             queue.value = msg.data.queue || [];
                         } else if (msg.event === 'devices') {
-                            console.log('Devices updated:', msg.data.devices);
+                            console.log('Devices received:', msg.data.devices);
                             devices.value = msg.data.devices || [];
+                            console.log('devices.value is now:', devices.value, 'length:', devices.value.length);
                             const player = devices.value.find(d => d.is_player);
                             selectedPlayerId.value = player ? player.id : null;
                         }
