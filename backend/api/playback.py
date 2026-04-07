@@ -1,8 +1,10 @@
 import sys
 import os
-backend_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-sys.path.insert(0, backend_dir)
-
+import tempfile
+import logging
+import atexit
+import glob
+import subprocess
 from fastapi import APIRouter, Depends, HTTPException, Query
 from fastapi.responses import FileResponse, StreamingResponse
 from pydantic import BaseModel, Field
@@ -10,7 +12,24 @@ from sqlalchemy.orm import Session
 from database import get_db, PlaybackState, Track
 from playback import playback
 from typing import List, Optional
-import subprocess
+
+router = APIRouter(prefix="/api/playback", tags=["playback"])
+
+TRANSCODE_DIR = os.path.join(os.path.dirname(os.path.dirname(__file__)), "cache", "transcode")
+os.makedirs(TRANSCODE_DIR, exist_ok=True)
+
+def cleanup_old_transcodes():
+    """Remove transcoded files older than 1 hour"""
+    import time
+    now = time.time()
+    for f in glob.glob(os.path.join(TRANSCODE_DIR, "*.mp3")):
+        if os.path.getmtime(f) < now - 3600:
+            try:
+                os.remove(f)
+            except OSError:
+                pass
+
+atexit.register(cleanup_old_transcodes)
 
 router = APIRouter(prefix="/api/playback", tags=["playback"])
 
@@ -80,28 +99,24 @@ def stream_track(track_id: int, db: Session = Depends(get_db)):
     
     fmt = track.file_format.upper() if track.file_format else ""
     
-    # Transcode M4A/M4B to MP3 on-the-fly using FFmpeg (browser compatible)
+    # Transcode M4A/M4B to MP3 using FFmpeg (browser compatible)
     if fmt in ('M4A', 'M4B'):
-        import logging
-        logging.warning(f"Transcoding M4A: {track.path}")
+        temp_path = os.path.join(TRANSCODE_DIR, f"track_{track_id}.mp3")
         
-        cmd = [
-            'ffmpeg', '-i', track.path,
-            '-f', 'mp3', '-codec:a', 'libmp3lame',
-            '-b:a', '320k', '-nostdin', '-loglevel', 'error'
-        ]
+        if not os.path.exists(temp_path):
+            cmd = [
+                'ffmpeg', '-i', track.path, '-y',
+                '-f', 'mp3', '-codec:a', 'libmp3lame',
+                '-b:a', '320k', '-nostdin',
+                temp_path
+            ]
+            result = subprocess.run(cmd, capture_output=True, text=True)
+            if result.returncode != 0:
+                logging.error(f"FFmpeg transcoding failed: {result.stderr}")
+                raise HTTPException(status_code=500, detail="Transcoding failed")
         
-        def generate_stream():
-            process = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-            while True:
-                chunk = process.stdout.read(8192)
-                if not chunk:
-                    break
-                yield chunk
-            process.wait()
-        
-        return StreamingResponse(
-            generate_stream(),
+        return FileResponse(
+            temp_path,
             media_type="audio/mpeg",
             headers={"Accept-Ranges": "bytes"}
         )
