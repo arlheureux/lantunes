@@ -407,10 +407,19 @@
                             body: JSON.stringify({ username: regUsername.value, password: regPassword.value })
                         });
                         
-                        message.value = 'Registration successful! Please wait for admin approval.';
-                        tab.value = 'login';
-                        username.value = regUsername.value;
-                        password.value = '';
+                        // If user was created as admin (has access token), login immediately
+                        if (data.access_token) {
+                            localStorage.setItem('access_token', data.access_token);
+                            localStorage.setItem('refresh_token', data.refresh_token);
+                            localStorage.setItem('user', JSON.stringify(data.user));
+                            window.location.href = '/';
+                        } else {
+                            // User needs approval
+                            message.value = 'Registration successful! Please wait for admin approval.';
+                            tab.value = 'login';
+                            username.value = regUsername.value;
+                            password.value = '';
+                        }
                     } catch (e) {
                         error.value = e.message;
                     } finally {
