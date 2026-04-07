@@ -895,7 +895,7 @@
                                     const newTokens = await fetch(API + '/api/auth/refresh', {
                                         method: 'POST',
                                         headers: { 'Content-Type': 'application/json' },
-                                        body: JSON.stringify(refreshToken)
+                                        body: JSON.stringify({ refresh_token: refreshToken })
                                     });
                                     if (newTokens.ok) {
                                         const data = await newTokens.json();

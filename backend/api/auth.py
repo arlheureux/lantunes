@@ -181,10 +181,14 @@ def login(req: LoginRequest, db: Session = Depends(get_db)):
     )
 
 
+class RefreshRequest(BaseModel):
+    refresh_token: str
+
+
 @router.post("/refresh", response_model=TokenResponse)
-def refresh(refresh_token: str, db: Session = Depends(get_db)):
+def refresh(req: RefreshRequest, db: Session = Depends(get_db)):
     """Refresh access token using refresh token"""
-    payload = verify_refresh_token(refresh_token)
+    payload = verify_refresh_token(req.refresh_token)
     if not payload:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
