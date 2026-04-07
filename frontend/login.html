@@ -290,9 +290,15 @@
                 async function apiCall(url, opts = {}) {
                     try {
                         const res = await fetch(API + url, opts);
-                        const data = await res.json();
+                        const text = await res.text();
+                        let data;
+                        try {
+                            data = text ? JSON.parse(text) : {};
+                        } catch {
+                            data = {};
+                        }
                         if (!res.ok) {
-                            throw new Error(data.detail || 'Request failed');
+                            throw new Error(data.detail || data.message || `Request failed (${res.status})`);
                         }
                         return data;
                     } catch (e) {
@@ -301,33 +307,24 @@
                 }
                 
                 async function checkMode() {
-                    // Try to access a protected endpoint - if 401, we need to login
-                    try {
-                        await apiCall('/api/auth/me');
-                        // Already logged in - redirect to main app
-                        window.location.href = '/';
-                        return;
-                    } catch (e) {
-                        // Not logged in - check if we need setup mode
-                        // Try a test login to see if there are any users
+                    // Check if already logged in
+                    const token = localStorage.getItem('access_token');
+                    if (token) {
+                        // Try to verify with /api/auth/me
                         try {
-                            await apiCall('/api/auth/login', {
-                                method: 'POST',
-                                headers: { 'Content-Type': 'application/json' },
-                                body: JSON.stringify({ username: 'test_' + Date.now(), password: 'test' })
-                            });
-                        } catch (loginErr) {
-                            // If error mentions "not allowed" or setup issues, show setup
-                            // Otherwise show login form
-                            const errMsg = loginErr.message || '';
-                            if (errMsg.includes('not allowed') || errMsg.includes('Setup')) {
-                                mode.value = 'setup';
-                            } else {
-                                // Any other error means users exist - show login
-                                mode.value = 'login';
-                            }
+                            await apiCall('/api/auth/me');
+                            window.location.href = '/';
+                            return;
+                        } catch (e) {
+                            // Token invalid - clear it
+                            localStorage.removeItem('access_token');
+                            localStorage.removeItem('refresh_token');
+                            localStorage.removeItem('user');
                         }
                     }
+                    
+                    // Show login form by default
+                    mode.value = 'login';
                 }
                 
                 async function doSetup() {
