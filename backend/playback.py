@@ -119,7 +119,7 @@ class PlaybackController:
     def broadcast_playback_state(self):
         """Broadcast playback state to all devices, with stream_url only for player"""
         from database import SessionLocal
-        import threading
+        import asyncio
         
         db = SessionLocal()
         
@@ -131,46 +131,29 @@ class PlaybackController:
         
         db.close()
         
-        def send_to_device(dev_id, state):
+        # Send to each device
+        for dev_id, state in device_states.items():
             try:
                 ws = self._devices.get(dev_id, {}).get("ws")
                 if ws:
                     msg = json.dumps({"event": "playback_state", "data": state})
-                    ws.send_text(msg)
+                    asyncio.run(ws.send_text(msg))
             except Exception as e:
                 print(f"Error sending playback state to {dev_id}: {e}")
-        
-        threads = []
-        for dev_id, state in device_states.items():
-            t = threading.Thread(target=send_to_device, args=(dev_id, state))
-            t.start()
-            threads.append(t)
-        
-        for t in threads:
-            t.join()
     
     def broadcast_devices(self):
         """Broadcast list of connected devices to all clients"""
-        import threading
+        import asyncio
         
         devices = self.get_devices()
         print(f"[Broadcast] Broadcasting devices: {devices}")
         msg = json.dumps({"event": "devices", "data": {"devices": devices}})
         
-        def send_to_ws(ws):
+        for ws in self._ws_connections:
             try:
-                ws.send_text(msg)
+                asyncio.run(ws.send_text(msg))
             except Exception as e:
                 print(f"Error broadcasting devices: {e}")
-        
-        threads = []
-        for ws in self._ws_connections:
-            t = threading.Thread(target=send_to_ws, args=(ws,))
-            t.start()
-            threads.append(t)
-        
-        for t in threads:
-            t.join()
     
     def get_state(self, db: Session, is_player: bool = True) -> dict:
         state = db.query(PlaybackState).filter(PlaybackState.id == 1).first()
