@@ -91,30 +91,38 @@ class PlaybackController:
         msg = json.dumps({"event": event, "data": data})
         disconnected = []
         
-        # If this is for player only, we need to track which ws is which device
-        if for_player_only and hasattr(self, '_device_ws_map'):
+        import concurrent.futures
+        import asyncio
+        
+        def send_msg(ws):
+            try:
+                loop = asyncio.new_event_loop()
+                asyncio.set_event_loop(loop)
+                loop.run_until_complete(ws.send_text(msg))
+                loop.close()
+            except Exception as e:
+                print(f"Error sending broadcast: {e}")
+                return ws
+            return None
+        
+        if for_player_only:
             # Only send to player device
+            ws = None
             for dev_id, dev_info in self._devices.items():
                 if dev_info.get("is_player") and dev_info.get("ws"):
                     ws = dev_info["ws"]
-                    try:
-                        import asyncio
-                        asyncio.create_task(ws.send_text(msg))
-                    except Exception:
-                        pass
+                    break
+            if ws:
+                result = send_msg(ws)
+                if result:
+                    disconnected.append(result)
         else:
-            # Send to all using ThreadPoolExecutor
-            import concurrent.futures
-            def send_msg(ws):
-                try:
-                    loop = asyncio.new_event_loop()
-                    asyncio.set_event_loop(loop)
-                    loop.run_until_complete(ws.send_text(msg))
-                    loop.close()
-                except Exception as e:
-                    print(f"Error sending broadcast: {e}")
-                    return ws
-                return None
+            # Send to all
+            with concurrent.futures.ThreadPoolExecutor(max_workers=4) as executor:
+                results = list(executor.map(send_msg, self._ws_connections))
+                for ws in results:
+                    if ws and ws in self._ws_connections:
+                        self._ws_connections.remove(ws)
             
             with concurrent.futures.ThreadPoolExecutor(max_workers=4) as executor:
                 results = list(executor.map(send_msg, self._ws_connections))

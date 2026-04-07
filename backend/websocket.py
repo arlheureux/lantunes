@@ -37,7 +37,9 @@ async def websocket_endpoint(websocket: WebSocket):
             elif event == "set_player":
                 # Set which device should play audio
                 target_device_id = payload.get("device_id")
+                print(f"[WS] set_player called with target: {target_device_id}")
                 if target_device_id and playback.set_player_device(target_device_id):
+                    print(f"[WS] Player set to: {target_device_id}, all devices: {list(playback._devices.keys())}")
                     playback.broadcast_devices()
             
             elif event == "update_device_name":
