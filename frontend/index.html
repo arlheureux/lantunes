@@ -159,16 +159,99 @@
         
         /* Mobile Responsive */
         @media (max-width: 768px) {
-            .sidebar { display: none; }
+            .sidebar { 
+                display: none;
+            }
+            .mobile-nav {
+                display: flex;
+                position: fixed;
+                bottom: 0;
+                left: 0;
+                right: 0;
+                background: #181818;
+                border-top: 1px solid #333;
+                padding: 8px 0;
+                z-index: 100;
+                justify-content: space-around;
+            }
+            .mobile-nav-item {
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                font-size: 10px;
+                color: var(--text-muted);
+                cursor: pointer;
+                padding: 4px 12px;
+            }
+            .mobile-nav-item.active {
+                color: var(--accent);
+            }
+            .mobile-nav-item i {
+                font-size: 20px;
+                margin-bottom: 2px;
+            }
             .queue-section { display: none; }
-            .player-bar { flex-wrap: wrap; height: auto; padding: 12px; gap: 12px; }
-            .track-info { width: 100%; order: 1; }
-            .player-controls { order: 2; width: 100%; }
+            .player-bar { 
+                flex-wrap: wrap; 
+                height: auto; 
+                padding: 12px 8px; 
+                gap: 8px; 
+                padding-bottom: 80px;
+            }
+            .track-info { 
+                width: 100%; 
+                order: 1; 
+                flex-direction: row;
+                gap: 12px;
+            }
+            .track-artwork {
+                width: 48px;
+                height: 48px;
+                flex-shrink: 0;
+            }
+            .track-info > div {
+                overflow: hidden;
+            }
+            .player-controls { 
+                order: 2; 
+                width: 100%; 
+            }
             .volume { display: none; }
             .album-grid { grid-template-columns: repeat(2, 1fr); gap: 16px; }
-            .content { padding: 16px; }
+            .content { 
+                padding: 16px; 
+                padding-bottom: 100px;
+            }
             h1 { font-size: 24px; }
+            .search-box input {
+                font-size: 16px;
+            }
+            .control-buttons {
+                gap: 16px;
+            }
+            .control-buttons button {
+                font-size: 20px;
+            }
+            .device-selector {
+                margin-left: 8px;
+            }
+            .device-selector select {
+                font-size: 11px;
+                padding: 6px 10px;
+            }
+            .main-content {
+                flex-direction: column;
+            }
+            .track-row {
+                padding: 12px 8px;
+            }
+            .album-card {
+                margin-bottom: 8px;
+            }
         }
+
+        /* Hide mobile nav by default (desktop) */
+        .mobile-nav { display: none; }
 
         /* Animations */
         .fade-enter-active, .fade-leave-active { transition: opacity 0.3s ease; }
@@ -409,6 +492,30 @@
             </div>
         </div>
         
+        <!-- Mobile Navigation -->
+        <div class="mobile-nav">
+            <div class="mobile-nav-item" :class="{ active: view === 'library' }" @click="view = 'library'">
+                <i class="fas fa-home"></i>
+                Home
+            </div>
+            <div class="mobile-nav-item" :class="{ active: view === 'search' }" @click="view = 'library'; focusSearch()">
+                <i class="fas fa-search"></i>
+                Search
+            </div>
+            <div class="mobile-nav-item" :class="{ active: view === 'tracks' }" @click="view = 'tracks'">
+                <i class="fas fa-music"></i>
+                Tracks
+            </div>
+            <div class="mobile-nav-item" :class="{ active: view === 'albums' }" @click="view = 'albums'">
+                <i class="fas fa-compact-disc"></i>
+                Albums
+            </div>
+            <div class="mobile-nav-item" :class="{ active: view === 'settings' }" @click="view = 'settings'">
+                <i class="fas fa-cog"></i>
+                Settings
+            </div>
+        </div>
+        
         <div class="player-bar">
             <div class="track-info">
                 <div class="track-artwork">
@@ -521,6 +628,11 @@
                 function updateDeviceName() {
                     localStorage.setItem('lantunes_device_name', deviceName.value);
                     sendWS('update_device_name', { device_id: deviceId, device_name: deviceName.value });
+                }
+                
+                function focusSearch() {
+                    const input = document.querySelector('.search-box input');
+                    if (input) input.focus();
                 }
                 
                 function isThisDevicePlayer() {
@@ -802,7 +914,7 @@
                     onTimeUpdate, onEnded, createPlaylist, saveConfig, scanLibrary, formatDuration, getTrackTitle,
                     loadTracks, prevPage, nextPage, showContextMenu, closeContextMenu, playTrackNext, addToQueue,
                     toggleShuffle, shufflePlay,
-                    devices, selectedPlayerId, deviceName, updateDeviceName
+                    devices, selectedPlayerId, deviceName, updateDeviceName, focusSearch
                 };
             }
         }).mount('#app');

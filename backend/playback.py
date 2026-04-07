@@ -87,24 +87,71 @@ class PlaybackController:
         # Also remove device on disconnect
         self.remove_device(ws)
     
-    def broadcast(self, event: str, data: dict):
+    def broadcast(self, event: str, data: dict, for_player_only: bool = False):
         msg = json.dumps({"event": event, "data": data})
         disconnected = []
-        for ws in self._ws_connections:
-            try:
-                import asyncio
-                asyncio.create_task(ws.send_text(msg))
-            except Exception:
-                disconnected.append(ws)
+        
+        # If this is for player only, we need to track which ws is which device
+        if for_player_only and hasattr(self, '_device_ws_map'):
+            # Only send to player device
+            for dev_id, dev_info in self._devices.items():
+                if dev_info.get("is_player") and dev_info.get("ws"):
+                    ws = dev_info["ws"]
+                    try:
+                        import asyncio
+                        asyncio.create_task(ws.send_text(msg))
+                    except Exception:
+                        pass
+        else:
+            # Send to all (for regular broadcasts like pause, next, etc - no stream_url)
+            for ws in self._ws_connections:
+                try:
+                    import asyncio
+                    asyncio.create_task(ws.send_text(msg))
+                except Exception:
+                    disconnected.append(ws)
+        
         # Clean up disconnected clients
         for ws in disconnected:
             if ws in self._ws_connections:
                 self._ws_connections.remove(ws)
     
+    def broadcast_playback_state(self):
+        """Broadcast playback state to all devices, with stream_url only for player"""
+        # Get current state
+        from database import SessionLocal
+        db = SessionLocal()
+        
+        # Get basic state without stream_url
+        base_state = self.get_state(db, False)  # No stream_url
+        
+        # Broadcast to each device
+        for dev_id, dev_info in self._devices.items():
+            ws = dev_info.get("ws")
+            if ws:
+                # Create state for this device - include stream_url only if this is the player
+                is_this_player = dev_info.get("is_player", False)
+                device_state = self.get_state(db, is_this_player)
+                
+                msg = json.dumps({"event": "playback_state", "data": device_state})
+                try:
+                    import asyncio
+                    asyncio.create_task(ws.send_text(msg))
+                except Exception:
+                    pass
+        
+        db.close()
+    
     def broadcast_devices(self):
         """Broadcast list of connected devices to all clients"""
         devices = self.get_devices()
-        self.broadcast("devices", {"devices": devices})
+        msg = json.dumps({"event": "devices", "data": {"devices": devices}})
+        for ws in self._ws_connections:
+            try:
+                import asyncio
+                asyncio.create_task(ws.send_text(msg))
+            except Exception:
+                pass
     
     def get_state(self, db: Session, is_player: bool = True) -> dict:
         state = db.query(PlaybackState).filter(PlaybackState.id == 1).first()
@@ -144,7 +191,7 @@ class PlaybackController:
         
         return result
     
-    def play(self, db: Session, track_id: int = None, queue: List[int] = None, is_player: bool = True):
+    def play(self, db: Session, track_id: int = None, queue: List[int] = None, player_device_id: str = None):
         state = db.query(PlaybackState).filter(PlaybackState.id == 1).first()
         if not state:
             state = PlaybackState(id=1)
@@ -166,10 +213,12 @@ class PlaybackController:
             state.updated_at = datetime.utcnow()
             db.commit()
             
-            track = db.query(Track).filter(Track.id == state.current_track_id).first()
-            self.broadcast("playback_state", self.get_state(db, is_player))
+            # Track is playing, so broadcast personalized state to each device
+            self.broadcast_playback_state()
         
-        return self.get_state(db, is_player)
+        # Return personalized state to the caller
+        is_caller_player = player_device_id == self._player_device_id
+        return self.get_state(db, is_caller_player)
     
     def pause(self, db: Session):
         state = db.query(PlaybackState).filter(PlaybackState.id == 1).first()
