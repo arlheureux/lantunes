@@ -351,6 +351,31 @@
                 const searchResults = ref({ tracks: [], albums: [], artists: [] });
                 let searchTimeout = null;
                 
+                const albums = ref([]);
+                const artists = ref([]);
+                const playlists = ref([]);
+                const config = ref({ library: { music_path: '' } });
+                const scanResult = ref('');
+                const currentAlbum = ref(null);
+                const currentArtist = ref(null);
+                const playbackState = ref({ track: null, position: 0, is_playing: false, volume: 1.0, queue: [], queue_index: 0 });
+                const queue = ref([]);
+                const volume = ref(1.0);
+                const audioPlayer = ref(null);
+                const contextMenu = ref({ show: false, x: 0, y: 0, track: null });
+                const tracks = ref([]);
+                const trackCache = ref({});
+                const tracksPage = ref(1);
+                const tracksLimit = ref(100);
+                const tracksTotal = ref(0);
+                
+                const progressPercent = computed(() => {
+                    if (!playbackState.value.track?.duration) return 0;
+                    return (playbackState.value.position / playbackState.value.track.duration) * 100;
+                });
+                
+                const tracksTotalPages = computed(() => Math.ceil(tracksTotal.value / tracksLimit.value));
+                
                 async function search() {
                     if (searchTimeout) clearTimeout(searchTimeout);
                     searchTimeout = setTimeout(async () => {
