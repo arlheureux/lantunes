@@ -1,0 +1,434 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LanTunes - Login</title>
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        :root {
+            --bg-primary: #121212;
+            --bg-secondary: #181818;
+            --bg-tertiary: #1a1a1a;
+            --bg-elevated: #282828;
+            --accent: #1db954;
+            --accent-hover: #1ed760;
+            --text-primary: #fff;
+            --text-secondary: #b3b3b3;
+            --text-muted: #6a6a6a;
+            --border-radius-md: 8px;
+            --transition-fast: 0.15s ease;
+        }
+        
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .login-container {
+            width: 100%;
+            max-width: 400px;
+            padding: 20px;
+        }
+        
+        .login-logo {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+        
+        .login-logo i {
+            font-size: 48px;
+            color: var(--accent);
+            margin-bottom: 16px;
+        }
+        
+        .login-logo h1 {
+            font-size: 32px;
+            font-weight: 700;
+        }
+        
+        .login-card {
+            background: var(--bg-secondary);
+            border-radius: var(--border-radius-md);
+            padding: 32px;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.5);
+        }
+        
+        .login-card h2 {
+            font-size: 20px;
+            margin-bottom: 24px;
+            text-align: center;
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        .form-group label {
+            display: block;
+            font-size: 13px;
+            color: var(--text-secondary);
+            margin-bottom: 8px;
+        }
+        
+        .form-group input {
+            width: 100%;
+            padding: 14px 16px;
+            background: var(--bg-tertiary);
+            border: 1px solid #333;
+            border-radius: var(--border-radius-md);
+            color: var(--text-primary);
+            font-size: 15px;
+            transition: all var(--transition-fast);
+        }
+        
+        .form-group input:focus {
+            outline: none;
+            border-color: var(--accent);
+            box-shadow: 0 0 0 2px rgba(29, 185, 84, 0.2);
+        }
+        
+        .btn {
+            width: 100%;
+            padding: 14px 24px;
+            background: var(--accent);
+            color: #000;
+            border: none;
+            border-radius: 500px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 15px;
+            transition: all var(--transition-fast);
+        }
+        
+        .btn:hover {
+            background: var(--accent-hover);
+            transform: scale(1.02);
+        }
+        
+        .btn:disabled {
+            background: #444;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        .btn-secondary {
+            background: transparent;
+            border: 1px solid #555;
+            color: var(--text-primary);
+            margin-top: 12px;
+        }
+        
+        .btn-secondary:hover {
+            border-color: var(--text-primary);
+            background: rgba(255,255,255,0.05);
+        }
+        
+        .error {
+            background: rgba(255, 59, 48, 0.1);
+            border: 1px solid rgba(255, 59, 48, 0.3);
+            color: #ff3b30;
+            padding: 12px 16px;
+            border-radius: var(--border-radius-md);
+            margin-bottom: 20px;
+            font-size: 14px;
+        }
+        
+        .success {
+            background: rgba(29, 185, 84, 0.1);
+            border: 1px solid rgba(29, 185, 84, 0.3);
+            color: var(--accent);
+            padding: 12px 16px;
+            border-radius: var(--border-radius-md);
+            margin-bottom: 20px;
+            font-size: 14px;
+            text-align: center;
+        }
+        
+        .tabs {
+            display: flex;
+            margin-bottom: 24px;
+            border-bottom: 1px solid #333;
+        }
+        
+        .tab {
+            flex: 1;
+            padding: 12px;
+            text-align: center;
+            cursor: pointer;
+            color: var(--text-muted);
+            border-bottom: 2px solid transparent;
+            transition: all var(--transition-fast);
+        }
+        
+        .tab.active {
+            color: var(--accent);
+            border-bottom-color: var(--accent);
+        }
+        
+        .setup-notice {
+            text-align: center;
+            color: var(--text-muted);
+            font-size: 13px;
+            margin-top: 20px;
+            padding: 16px;
+            background: rgba(29, 185, 84, 0.1);
+            border-radius: var(--border-radius-md);
+        }
+        
+        .loading {
+            text-align: center;
+            color: var(--text-muted);
+            padding: 20px;
+        }
+        
+        @media (max-width: 480px) {
+            .login-card {
+                padding: 24px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div id="app">
+        <div class="login-container">
+            <div class="login-logo">
+                <i class="fas fa-music"></i>
+                <h1>LanTunes</h1>
+            </div>
+            
+            <div class="login-card">
+                <!-- Setup Mode (no users exist) -->
+                <div v-if="mode === 'setup'">
+                    <h2>Create Admin Account</h2>
+                    <div v-if="error" class="error">{{ error }}</div>
+                    <div class="form-group">
+                        <label>Username</label>
+                        <input type="text" v-model="username" placeholder="Enter username">
+                    </div>
+                    <div class="form-group">
+                        <label>Password</label>
+                        <input type="password" v-model="password" placeholder="Enter password">
+                    </div>
+                    <button class="btn" @click="doSetup" :disabled="loading">
+                        {{ loading ? 'Creating...' : 'Create Admin' }}
+                    </button>
+                </div>
+                
+                <!-- Login Mode -->
+                <div v-else-if="mode === 'login'">
+                    <div class="tabs">
+                        <div class="tab" :class="{ active: tab === 'login' }" @click="tab = 'login'">Login</div>
+                        <div class="tab" :class="{ active: tab === 'register' }" @click="tab = 'register'">Register</div>
+                    </div>
+                    
+                    <div v-if="error" class="error">{{ error }}</div>
+                    <div v-if="message" class="success">{{ message }}</div>
+                    
+                    <div v-if="tab === 'login'">
+                        <div class="form-group">
+                            <label>Username</label>
+                            <input type="text" v-model="username" placeholder="Enter username">
+                        </div>
+                        <div class="form-group">
+                            <label>Password</label>
+                            <input type="password" v-model="password" placeholder="Enter password">
+                        </div>
+                        <button class="btn" @click="doLogin" :disabled="loading">
+                            {{ loading ? 'Logging in...' : 'Login' }}
+                        </button>
+                    </div>
+                    
+                    <div v-else>
+                        <div class="form-group">
+                            <label>Username</label>
+                            <input type="text" v-model="regUsername" placeholder="Choose a username">
+                        </div>
+                        <div class="form-group">
+                            <label>Password</label>
+                            <input type="password" v-model="regPassword" placeholder="Choose a password">
+                        </div>
+                        <button class="btn" @click="doRegister" :disabled="loading">
+                            {{ loading ? 'Registering...' : 'Register' }}
+                        </button>
+                    </div>
+                </div>
+            </div>
+            
+            <div v-if="mode === 'login'" class="setup-notice">
+                New registrations require admin approval before login.
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API = '';
+        
+        const { createApp, ref, onMounted } = Vue;
+        
+        createApp({
+            setup() {
+                const mode = ref('loading');
+                const tab = ref('login');
+                const loading = ref(false);
+                const error = ref('');
+                const message = ref('');
+                
+                const username = ref('');
+                const password = ref('');
+                const regUsername = ref('');
+                const regPassword = ref('');
+                
+                async function apiCall(url, opts = {}) {
+                    try {
+                        const res = await fetch(API + url, opts);
+                        const data = await res.json();
+                        if (!res.ok) {
+                            throw new Error(data.detail || 'Request failed');
+                        }
+                        return data;
+                    } catch (e) {
+                        throw e;
+                    }
+                }
+                
+                async function checkMode() {
+                    try {
+                        // Try to access a protected endpoint - if 401, we need to login
+                        await apiCall('/api/auth/me');
+                        // If we get here, we're already logged in - redirect to main app
+                        window.location.href = '/';
+                    } catch (e) {
+                        // Check if it's an auth error or a network error
+                        try {
+                            // Try login endpoint to check if setup is needed
+                            await apiCall('/api/auth/login', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ username: 'test', password: 'test' })
+                            });
+                        } catch (loginErr) {
+                            // If login fails with "no users", we need setup mode
+                            if (loginErr.message.includes('not allowed')) {
+                                mode.value = 'setup';
+                            } else if (loginErr.message.includes('Invalid username or password')) {
+                                // Normal login flow - users exist
+                                mode.value = 'login';
+                            } else {
+                                mode.value = 'login';
+                            }
+                        }
+                    }
+                }
+                
+                async function doSetup() {
+                    if (!username.value || !password.value) {
+                        error.value = 'Please enter username and password';
+                        return;
+                    }
+                    
+                    loading.value = true;
+                    error.value = '';
+                    
+                    try {
+                        const data = await apiCall('/api/auth/setup', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ username: username.value, password: password.value })
+                        });
+                        
+                        // Save tokens
+                        localStorage.setItem('access_token', data.access_token);
+                        localStorage.setItem('refresh_token', data.refresh_token);
+                        localStorage.setItem('user', JSON.stringify(data.user));
+                        
+                        // Redirect to main app
+                        window.location.href = '/';
+                    } catch (e) {
+                        error.value = e.message;
+                    } finally {
+                        loading.value = false;
+                    }
+                }
+                
+                async function doLogin() {
+                    if (!username.value || !password.value) {
+                        error.value = 'Please enter username and password';
+                        return;
+                    }
+                    
+                    loading.value = true;
+                    error.value = '';
+                    message.value = '';
+                    
+                    try {
+                        const data = await apiCall('/api/auth/login', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ username: username.value, password: password.value })
+                        });
+                        
+                        // Save tokens
+                        localStorage.setItem('access_token', data.access_token);
+                        localStorage.setItem('refresh_token', data.refresh_token);
+                        localStorage.setItem('user', JSON.stringify(data.user));
+                        
+                        // Redirect to main app
+                        window.location.href = '/';
+                    } catch (e) {
+                        error.value = e.message;
+                    } finally {
+                        loading.value = false;
+                    }
+                }
+                
+                async function doRegister() {
+                    if (!regUsername.value || !regPassword.value) {
+                        error.value = 'Please enter username and password';
+                        return;
+                    }
+                    
+                    loading.value = true;
+                    error.value = '';
+                    message.value = '';
+                    
+                    try {
+                        const data = await apiCall('/api/auth/register', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ username: regUsername.value, password: regPassword.value })
+                        });
+                        
+                        message.value = 'Registration successful! Please wait for admin approval.';
+                        tab.value = 'login';
+                        username.value = regUsername.value;
+                        password.value = '';
+                    } catch (e) {
+                        error.value = e.message;
+                    } finally {
+                        loading.value = false;
+                    }
+                }
+                
+                onMounted(() => {
+                    checkMode();
+                });
+                
+                return {
+                    mode, tab, loading, error, message,
+                    username, password, regUsername, regPassword,
+                    doSetup, doLogin, doRegister
+                };
+            }
+        }).mount('#app');
+    </script>
+</body>
+</html>

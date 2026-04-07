@@ -95,6 +95,17 @@ class PlaybackState(Base):
     volume = Column(Float, default=1.0)
     updated_at = Column(DateTime, default=func.now(), onupdate=func.now())
 
+class User(Base):
+    __tablename__ = "users"
+    id = Column(Integer, primary_key=True)
+    username = Column(String(50), unique=True, nullable=False)
+    password_hash = Column(String(255), nullable=False)
+    role = Column(String(20), default="user")  # "admin" or "user"
+    status = Column(String(20), default="pending")  # "pending", "active", "inactive"
+    created_at = Column(DateTime, default=func.now())
+    approved_by = Column(Integer, ForeignKey("users.id"), nullable=True)
+    approved_at = Column(DateTime, nullable=True)
+
 Base.metadata.create_all(bind=engine)
 
 def get_db():

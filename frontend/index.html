@@ -789,9 +789,49 @@
                     }, 300);
                 }
                 
+                function getAuthHeader() {
+                    const token = localStorage.getItem('access_token');
+                    return token ? { 'Authorization': 'Bearer ' + token } : {};
+                }
+                
                 async function apiCall(url, opts = {}) {
                     try {
-                        const res = await fetch(API + url, opts);
+                        // Add auth header to all requests
+                        const headers = { ...getAuthHeader(), ...opts.headers };
+                        const res = await fetch(API + url, { ...opts, headers });
+                        
+                        if (res.status === 401) {
+                            // Token expired - try to refresh
+                            const refreshToken = localStorage.getItem('refresh_token');
+                            if (refreshToken) {
+                                try {
+                                    const newTokens = await fetch(API + '/api/auth/refresh', {
+                                        method: 'POST',
+                                        headers: { 'Content-Type': 'application/json' },
+                                        body: JSON.stringify(refreshToken)
+                                    });
+                                    if (newTokens.ok) {
+                                        const data = await newTokens.json();
+                                        localStorage.setItem('access_token', data.access_token);
+                                        localStorage.setItem('refresh_token', data.refresh_token);
+                                        // Retry original request
+                                        const retryHeaders = { ...getAuthHeader(), ...opts.headers };
+                                        const retryRes = await fetch(API + url, { ...opts, headers: retryHeaders });
+                                        if (!retryRes.ok) {
+                                            console.error('API error:', retryRes.status, await retryRes.text());
+                                            return null;
+                                        }
+                                        return await retryRes.json();
+                                    }
+                                } catch (e) {
+                                    console.error('Token refresh failed:', e);
+                                }
+                            }
+                            // Redirect to login
+                            window.location.href = '/login.html';
+                            return null;
+                        }
+                        
                         if (!res.ok) {
                             console.error('API error:', res.status, await res.text());
                             return null;
@@ -1045,6 +1085,13 @@
                 }
                 
                 onMounted(() => {
+                    // Check authentication
+                    const token = localStorage.getItem('access_token');
+                    if (!token) {
+                        window.location.href = '/login.html';
+                        return;
+                    }
+                    
                     loadLibrary();
                     loadTracks();
                     connectWS();
