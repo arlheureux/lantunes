@@ -19,7 +19,7 @@ if not in_venv:
         
         print("Installing dependencies...")
         pip_path = os.path.join(venv_path, 'bin', 'pip')
-        deps = ['fastapi', 'uvicorn', 'sqlalchemy', 'mutagen', 'pyyaml', 'python-multipart', 'websockets', 'requests']
+        deps = ['fastapi', 'uvicorn', 'sqlalchemy', 'mutagen', 'pyyaml', 'python-multipart', 'websockets', 'requests', 'PyJWT', 'passlib', 'bcrypt']
         subprocess.run([pip_path, 'install'] + deps, cwd=project_root)
         
         os.execv(venv_python, [venv_python] + sys.argv)
