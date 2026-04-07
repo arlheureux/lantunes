@@ -600,6 +600,8 @@
                         if (msg.event === 'playback_state') {
                             playbackState.value = msg.data;
                             queue.value = msg.data.queue || [];
+                        } else if (msg.event === 'queue_updated') {
+                            queue.value = msg.data.queue || [];
                         }
                     };
                 }
