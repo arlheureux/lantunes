@@ -960,27 +960,7 @@
                     <div class="dialog">
                         <h3>Add to Playlist</h3>
                         <div v-if="playlists.length === 0" style="color: var(--text-secondary); padding: 16px 0;">No playlists yet</div>
-                    <div v-else-if="loading.library">
-                        <h1>Your Music</h1>
-                        <h2>Recent Albums</h2>
-                        <div class="album-grid" style="margin-bottom:32px;">
-                            <div v-for="n in 8" :key="n" class="album-card">
-                                <div class="album-cover skeleton skeleton-album"></div>
-                                <div class="skeleton skeleton-text" style="width:80%;"></div>
-                                <div class="skeleton skeleton-text" style="width:50%;"></div>
-                            </div>
-                        </div>
-                        <h2>Recent Tracks</h2>
-                        <div class="track-list">
-                            <div v-for="n in 10" :key="n" class="skeleton-track">
-                                <div class="num skeleton"></div>
-                                <div class="title skeleton"></div>
-                                <div class="duration skeleton"></div>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <div v-else>
+                        <div v-else>
                             <div class="dialog-item" v-for="p in playlists" :key="p.id" @click="addToPlaylist(p.id)">
                                 <i class="fas fa-music" style="margin-right: 12px;"></i>{{ p.name }}
                             </div>
@@ -1418,13 +1398,6 @@
                 const isMobile = ref(window.innerWidth <= 768);
                 const showMobileQueue = ref(false);
                 const showDeviceModal = ref(false);
-                
-                // Ensure dialogs are closed on mount
-                onMounted(() => {
-                    playlistDialog.value.show = false;
-                    albumEditDialog.value.show = false;
-                    showDeviceModal.value = false;
-                });
                 
                 // Update isMobile on resize
                 window.addEventListener('resize', () => {
