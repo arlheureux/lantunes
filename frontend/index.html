@@ -755,8 +755,12 @@
         }
 
         /* Animations */
-        .fade-enter-active, .fade-leave-active { transition: opacity 0.3s ease; }
-        .fade-enter-from, .fade-leave-to { opacity: 0; }
+        .fade-enter-active, .fade-leave-active { transition: opacity 0.3s ease, transform 0.3s ease; }
+        .fade-enter-from, .fade-leave-to { opacity: 0; transform: translateY(10px); }
+        
+        .slide-enter-active, .slide-leave-active { transition: transform 0.25s ease, opacity 0.25s ease; }
+        .slide-enter-from { transform: translateX(20px); opacity: 0; }
+        .slide-leave-to { transform: translateX(-20px); opacity: 0; }
     </style>
 </head>
 <body>
@@ -793,7 +797,7 @@
                 </div>
             </div>
             
-            <div class="content" :class="{ 'pulling': isPulling }" @touchstart="onTouchStart" @touchmove="onTouchMove" @touchend="onTouchEnd">
+            <div class="content" :class="{ 'pulling': isPulling }" @touchstart="onTouchStart" @touchmove="onTouchMove" @touchend="onTouchEnd" :key="view">
                 <div v-if="isPulling" class="pull-indicator">
                     <i class="fas fa-sync-alt" :class="{ 'fa-spin': loading.library }"></i>
                     <span>{{ loading.library ? 'Refreshing...' : 'Pull to refresh' }}</span>
