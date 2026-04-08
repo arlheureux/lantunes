@@ -519,9 +519,9 @@
                 font-size: 16px;
             }
             
-            /* Album Grid - 2 columns, smaller covers */
+            /* Album Grid - 3 columns, smaller covers */
             .album-grid { 
-                grid-template-columns: repeat(2, 1fr); 
+                grid-template-columns: repeat(3, 1fr); 
                 gap: 12px;
             }
             .album-card {
@@ -1382,14 +1382,14 @@
             </div>
         </div>
         
-        <div class="player-bar">
+        <div class="player-bar" v-if="playbackState.track">
             <div class="track-info">
                 <div class="track-artwork" @click="showPlayerModal = true" style="cursor:pointer;">
                     <img v-if="playbackState.track?.artwork" :src="'/api/library/artwork/' + playbackState.track.album_id" @error="$event.target.style.display='none'">
                 </div>
                 <div>
-                    <div class="title">{{ playbackState.track?.title || 'No track playing' }}</div>
-                    <div class="artist">{{ playbackState.track?.artist || '' }}</div>
+                    <div class="title">{{ playbackState.track?.title }}</div>
+                    <div class="artist">{{ playbackState.track?.artist }}</div>
                 </div>
             </div>
             
