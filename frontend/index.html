@@ -900,18 +900,6 @@
                         </div>
                     </div>
                 </div>
-                        </div>
-                        
-                        <div v-if="!loading.library && tracks.length === 0" class="empty-state">
-                            <div class="empty-state-icon">
-                                <svg viewBox="0 0 24 24"><path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z"/></svg>
-                            </div>
-                            <h3>Your library is empty</h3>
-                            <p>Add some music to get started. Go to Settings to scan your music folder.</p>
-                            <button class="btn" @click="view = 'settings'">Go to Settings</button>
-                        </div>
-                    </div>
-                </div>
                 
                 <div v-if="view === 'tracks'">
                     <h1>All Tracks</h1>
