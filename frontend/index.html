@@ -1380,6 +1380,14 @@
                         <i class="fas fa-redo"></i>
                     </button>
                 </div>
+                <div style="display:flex;justify-content:center;gap:16px;margin-top:16px;">
+                    <button @click="showDeviceModal = true" style="background:none;border:none;color:var(--text-secondary);font-size:20px;" title="Device">
+                        <i class="fas fa-volume-up"></i>
+                    </button>
+                    <button @click="showMobileQueue = true; showPlayerModal = false" style="background:none;border:none;color:var(--text-secondary);font-size:20px;" title="Queue">
+                        <i class="fas fa-list"></i>
+                    </button>
+                </div>
             </div>
         </div>
         
@@ -1963,7 +1971,11 @@
                                 const amIPlayer = !selectedPlayerId.value || selectedPlayerId.value === deviceId;
                                 if (amIPlayer && state.track?.stream_url) {
                                     if (audioPlayer.value && audioPlayer.value.src) {
-                                        audioPlayer.value.play().catch(e => playStream(state.track.id));
+                                        const wasPlaying = state.position > 0;
+                                        await audioPlayer.value.play();
+                                        if (wasPlaying && state.position > 0) {
+                                            audioPlayer.value.currentTime = state.position;
+                                        }
                                     } else {
                                         playStream(state.track.id);
                                     }
