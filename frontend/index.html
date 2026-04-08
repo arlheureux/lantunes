@@ -1267,9 +1267,26 @@
                 
                 async function toggleShuffle() {
                     const targetPlayer = selectedPlayerId.value || deviceId;
+                    const wasShuffleOn = playbackState.value.shuffle_mode;
                     const result = await apiCall('/api/playback/shuffle?player=' + encodeURIComponent(targetPlayer), { method: 'POST' });
                     if (result) {
                         playbackState.value.shuffle_mode = result.shuffle_mode;
+                        // If shuffle was just turned ON, reorder the queue
+                        if (!wasShuffleOn && result.shuffle_mode && queue.value && queue.value.length > 1) {
+                            const currentTrackId = playbackState.value.track?.id;
+                            const shuffled = [...queue.value].sort(() => Math.random() - 0.5);
+                            // Move current track to front if playing
+                            if (currentTrackId) {
+                                const idx = shuffled.indexOf(currentTrackId);
+                                if (idx > 0) {
+                                    shuffled.splice(idx, 1);
+                                    shuffled.unshift(currentTrackId);
+                                }
+                            }
+                            const startIdx = currentTrackId ? 0 : 0;
+                            await apiCall('/api/playback/queue?track_ids=' + shuffled.join(',') + '&start_index=' + startIdx + '&player=' + encodeURIComponent(targetPlayer), { method: 'POST' });
+                            queue.value = shuffled;
+                        }
                     }
                 }
                 
