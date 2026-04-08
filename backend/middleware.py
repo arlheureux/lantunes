@@ -6,6 +6,7 @@ from auth import verify_token
 # Public endpoints that don't require auth
 PUBLIC_ENDPOINTS = [
     "/api/auth/login",
+    "/api/auth/setup",
     "/api/auth/status",
     "/docs",
     "/openapi.json",
