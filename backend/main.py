@@ -7,10 +7,17 @@ from fastapi import FastAPI, WebSocket
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse, HTMLResponse
 from api import library, playback, playlists, config
+from api import auth, users
 from websocket import websocket_endpoint
+from middleware import AuthMiddleware
 
 app = FastAPI(title="LanTunes")
 
+# Add auth middleware
+app.add_middleware(AuthMiddleware)
+
+app.include_router(auth.router)
+app.include_router(users.router)
 app.include_router(library.router)
 app.include_router(playback.router)
 app.include_router(playlists.router)
@@ -22,13 +29,20 @@ async def ws(websocket: WebSocket):
 
 frontend_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), "frontend")
 index_path = os.path.join(frontend_path, "index.html")
+login_path = os.path.join(frontend_path, "login.html")
 
 @app.get("/")
 async def root():
     return HTMLResponse(open(index_path).read())
 
+@app.get("/login.html")
+async def serve_login():
+    return HTMLResponse(open(login_path).read())
+
 @app.get("/{path:path}")
 async def serve_frontend(path: str):
+    if path == "login.html":
+        return HTMLResponse(open(login_path).read())
     file_path = os.path.join(frontend_path, path)
     if os.path.exists(file_path):
         return FileResponse(file_path)

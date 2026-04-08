@@ -629,6 +629,41 @@
                     <button class="btn" @click="saveConfig">Save Config</button>
                     <button class="btn" @click="scanLibrary" style="margin-left:10px;margin-top:10px;">Scan Library</button>
                     <p style="margin-top:20px;color:#aaa;font-size:13px;">{{ scanResult }}</p>
+                    
+                    <!-- User Management (Admin only) -->
+                    <div v-if="isAdmin" style="margin-top:32px;">
+                        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+                            <h2>User Management</h2>
+                            <button class="btn" @click="showUserForm = !showUserForm" style="padding:8px 16px;font-size:13px;">
+                                {{ showUserForm ? 'Cancel' : '+ Create User' }}
+                            </button>
+                        </div>
+                        
+                        <!-- Create User Form -->
+                        <div v-if="showUserForm" class="settings-section">
+                            <h3>Create New User</h3>
+                            <input type="text" v-model="newUser.username" placeholder="Username" style="width:100%;padding:10px;margin-bottom:10px;background:#333;border:none;color:#fff;border-radius:4px;box-sizing:border-box;">
+                            <input type="password" v-model="newUser.password" placeholder="Password" style="width:100%;padding:10px;margin-bottom:10px;background:#333;border:none;color:#fff;border-radius:4px;box-sizing:border-box;">
+                            <select v-model="newUser.role" style="width:100%;padding:10px;background:#333;border:none;color:#fff;border-radius:4px;margin-bottom:10px;box-sizing:border-box;">
+                                <option value="user">User</option>
+                                <option value="admin">Admin</option>
+                            </select>
+                            <button class="btn" @click="createUser" style="margin-top:10px;">Create User</button>
+                        </div>
+                        
+                        <!-- User List -->
+                        <div>
+                            <div v-for="u in users" :key="u.id" style="display:flex;justify-content:space-between;align-items:center;padding:10px;background:#282828;border-radius:4px;margin-bottom:8px;">
+                                <div>
+                                    <span style="font-weight:600;">{{ u.username }}</span>
+                                    <span style="margin-left:8px;color:var(--text-muted);font-size:12px;">({{ u.role }})</span>
+                                    <span :style="{ color: u.status === 'active' ? 'var(--accent)' : '#ff3b30', marginLeft: '8px', fontSize: '12px' }">{{ u.status }}</span>
+                                </div>
+                                <button @click="deleteUser(u.id)" style="background:#ff3b30;color:#fff;border:none;padding:6px 12px;border-radius:4px;cursor:pointer;">Delete</button>
+                            </div>
+                            <div v-if="users.length === 0" style="color:var(--text-muted);">No users found</div>
+                        </div>
+                    </div>
                 </div>
             </div>
             
@@ -727,6 +762,8 @@
         createApp({
             setup() {
                 const view = ref('library');
+                const currentUser = ref(JSON.parse(localStorage.getItem('user') || '{}'));
+                const isAdmin = ref(currentUser.value.role === 'admin');
                 const searchQuery = ref('');
                 const searchResults = ref({ tracks: [], albums: [], artists: [] });
                 let searchTimeout = null;
@@ -759,6 +796,41 @@
                 const deviceName = ref(localStorage.getItem('lantunes_device_name') || 'My Device');
                 const devices = ref([]);
                 const selectedPlayerId = ref(null);
+                
+                // User management
+                const users = ref([]);
+                const showUserForm = ref(false);
+                const newUser = ref({ username: '', password: '', role: 'user' });
+                
+                async function loadUsers() {
+                    if (!isAdmin.value) return;
+                    const u = await apiCall('/api/users');
+                    if (u) users.value = u;
+                }
+                
+                async function createUser() {
+                    if (!newUser.value.username || !newUser.value.password) {
+                        alert('Please fill in username and password');
+                        return;
+                    }
+                    const u = await apiCall('/api/users', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(newUser.value)
+                    });
+                    if (u) {
+                        showUserForm.value = false;
+                        newUser.value = { username: '', password: '', role: 'user' };
+                        loadUsers();
+                    }
+                }
+                
+                async function deleteUser(userId) {
+                    if (confirm('Delete this user?')) {
+                        await apiCall('/api/users/' + userId, { method: 'DELETE' });
+                        loadUsers();
+                    }
+                }
                 
                 function sendWS(event, data) {
                     if (ws && ws.readyState === WebSocket.OPEN) {
@@ -810,8 +882,22 @@
                 }
                 
                 async function apiCall(url, opts = {}) {
+                    const token = localStorage.getItem('access_token');
+                    const headers = {
+                        ...opts.headers
+                    };
+                    if (token) {
+                        headers['Authorization'] = 'Bearer ' + token;
+                    }
+                    
                     try {
-                        const res = await fetch(API + url, opts);
+                        const res = await fetch(API + url, { ...opts, headers });
+                        
+                        if (res.status === 401) {
+                            localStorage.removeItem('access_token');
+                            window.location.href = '/login.html';
+                            return null;
+                        }
                         
                         if (!res.ok) {
                             console.error('API error:', res.status, await res.text());
@@ -1090,9 +1176,17 @@
                 }
                 
                 onMounted(async () => {
+                    // Check authentication
+                    const token = localStorage.getItem('access_token');
+                    if (!token) {
+                        window.location.href = '/login.html';
+                        return;
+                    }
+                    
                     loadLibrary();
                     loadTracks();
                     connectWS();
+                    loadUsers();
                     
                     // Check if we should be playing (if this device is the player)
                     setTimeout(async () => {
@@ -1112,7 +1206,8 @@
                     onTimeUpdate, onEnded, createPlaylist, saveConfig, scanLibrary, formatDuration, getTrackTitle,
                     loadTracks, prevPage, nextPage, showContextMenu, closeContextMenu, playTrackNext, addToQueue,
                     toggleShuffle, shufflePlay,
-                    devices, selectedPlayerId, deviceName, updateDeviceName, focusSearch, setPlayerDevice
+                    devices, selectedPlayerId, deviceName, updateDeviceName, focusSearch, setPlayerDevice,
+                    users, showUserForm, newUser, isAdmin, loadUsers, createUser, deleteUser
                 };
             }
         }).mount('#app');
