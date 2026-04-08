@@ -1560,6 +1560,34 @@
                     }
                 }
                 
+                async function saveAlbumMetadata() {
+                    if (!albumEditDialog.value.id) return;
+                    const url = '/api/library/albums/' + albumEditDialog.value.id + 
+                        '?title=' + encodeURIComponent(albumEditDialog.value.title) +
+                        '&year=' + (albumEditDialog.value.year || '') +
+                        '&genre=' + encodeURIComponent(albumEditDialog.value.genre || '');
+                    const result = await apiCall(url, { method: 'PUT' });
+                    if (result) {
+                        if (currentAlbum.value && currentAlbum.value.id === result.id) {
+                            currentAlbum.value = { ...currentAlbum.value, ...result };
+                        }
+                        const a = await apiCall('/api/library/albums');
+                        if (a) albums.value = a;
+                    }
+                    albumEditDialog.value.show = false;
+                }
+                
+                async function removeAlbumArtwork() {
+                    if (!albumEditDialog.value.id) return;
+                    await apiCall('/api/library/albums/' + albumEditDialog.value.id + '/artwork', { method: 'DELETE' });
+                    albumEditDialog.value.artwork = null;
+                    if (currentAlbum.value && currentAlbum.value.id === albumEditDialog.value.id) {
+                        currentAlbum.value.artwork = null;
+                    }
+                    const a = await apiCall('/api/library/albums');
+                    if (a) albums.value = a;
+                }
+                
                 async function togglePlay() {
                     const targetPlayer = selectedPlayerId.value || deviceId;
                     if (playbackState.value.is_playing) {
