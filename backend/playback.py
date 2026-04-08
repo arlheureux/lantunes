@@ -193,18 +193,35 @@ class PlaybackController:
             db.commit()
         
         # Load queue from DB if not in memory (for persistence across restarts)
-        if not self.queue and state.queue:
+        if not self.queue:
             try:
-                self.queue = [int(x) for x in state.queue.split(',') if x]
+                if state.queue:
+                    self.queue = [int(x) for x in state.queue.split(',') if x]
             except:
                 self.queue = []
         
-        # Sync shuffle mode from DB
-        self.shuffle_mode = state.shuffle_mode if hasattr(state, 'shuffle_mode') else False
+        # Sync shuffle mode from DB (handle if column doesn't exist yet)
+        try:
+            self.shuffle_mode = getattr(state, 'shuffle_mode', False) if state else False
+        except:
+            self.shuffle_mode = False
         
         track = None
         if state.current_track_id:
             track = db.query(Track).filter(Track.id == state.current_track_id).first()
+        
+        # Handle case where track might not exist
+        if not track:
+            return {
+                "track": None,
+                "position": 0,
+                "is_playing": False,
+                "volume": 1.0,
+                "queue": [],
+                "queue_index": 0,
+                "shuffle_mode": self.shuffle_mode,
+                "player_device_id": self._player_device_id
+            }
         
         result = {
             "track": {
