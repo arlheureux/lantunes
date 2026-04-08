@@ -24,10 +24,16 @@ def get_config():
 @router.post("")
 def update_config(data: ConfigUpdate):
     config_path = Path(__file__).parent.parent.parent / "config.yaml"
+    
+    # Validate path - prevent path traversal
+    music_path = data.music_path.strip()
+    if music_path and (".." in music_path or music_path.startswith("/etc") or music_path.startswith("/root")):
+        raise HTTPException(status_code=400, detail="Invalid path")
+    
     with open(config_path) as f:
         config = yaml.safe_load(f)
     
-    config["library"]["music_path"] = data.music_path
+    config["library"]["music_path"] = music_path
     
     with open(config_path, "w") as f:
         yaml.dump(config, f)
@@ -52,6 +58,9 @@ def run_migration():
     
     if "shuffle_mode" not in columns:
         cursor.execute("ALTER TABLE playback_state ADD COLUMN shuffle_mode INTEGER DEFAULT 0")
+    
+    if "repeat_mode" not in columns:
+        cursor.execute("ALTER TABLE playback_state ADD COLUMN repeat_mode TEXT DEFAULT 'off'")
     
     conn.commit()
     conn.close()

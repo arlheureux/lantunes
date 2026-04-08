@@ -11,6 +11,11 @@ def scan_library(music_path: str):
     if not music_path or not os.path.isdir(music_path):
         return {"scanned": 0, "added": 0, "errors": 0}
     
+    # Path traversal prevention
+    abs_path = os.path.abspath(music_path)
+    if ".." in music_path or not abs_path.startswith("/"):
+        return {"scanned": 0, "added": 0, "errors": 1, "error": "Invalid path"}
+    
     db = SessionLocal()
     scanned = 0
     added = 0
