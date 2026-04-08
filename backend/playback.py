@@ -403,6 +403,14 @@ class PlaybackController:
         self.broadcast("queue_updated", {"queue": self.queue})
         return {"added": True}
     
+    def remove_from_queue(self, index: int):
+        """Remove a track from the queue by index"""
+        if 0 <= index < len(self.queue):
+            self.queue.pop(index)
+            self.broadcast("queue_updated", {"queue": self.queue})
+            return {"removed": True}
+        return {"removed": False}
+    
     def toggle_shuffle(self, db: Session, is_player: bool = True):
         """Toggle shuffle mode on/off"""
         self.shuffle_mode = not self.shuffle_mode

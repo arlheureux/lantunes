@@ -91,6 +91,10 @@ def play_next(track_id: int, player: str = Query(None), db: Session = Depends(ge
 def add_to_queue(track_id: int, player: str = Query(None), db: Session = Depends(get_db)):
     return playback.add_to_queue(db, track_id)
 
+@router.post("/queue/remove")
+def remove_from_queue(index: int, player: str = Query(None), db: Session = Depends(get_db)):
+    return playback.remove_from_queue(index)
+
 @router.post("/shuffle")
 def toggle_shuffle(player: str = Query(None), db: Session = Depends(get_db)):
     is_player = player == playback.get_player_device_id()

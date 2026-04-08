@@ -1139,13 +1139,20 @@
             </div>
             
             <div class="queue-section" v-if="queue.length">
-                <h3>Queue <span style="font-weight:normal;font-size:12px;color:var(--text-muted);">({{ queue.length }})</span></h3>
-                <div v-for="(id, i) in queue" :key="i" class="queue-item" style="padding:4px 0;cursor:pointer;" :style="{ background: playbackState.queue_index === i ? 'rgba(29,185,84,0.1)' : '' }" @click="playFromQueue(i)">
+                <h3>Queue <span style="font-weight:normal;font-size:12px;color:var(--text-muted);">({{ queue.length }})</span>
+                    <button @click="saveQueueAsPlaylist" style="margin-left:8px;background:none;border:none;color:var(--text-muted);cursor:pointer;font-size:12px;" title="Save as playlist">
+                        <i class="fas fa-save"></i> Save
+                    </button>
+                </h3>
+                <div v-for="(id, i) in queue" :key="i" class="queue-item" style="padding:4px 0;cursor:pointer;display:flex;align-items:center;" :style="{ background: playbackState.queue_index === i ? 'rgba(29,185,84,0.1)' : '' }" @click="playFromQueue(i)">
                     <span style="color:var(--text-muted);min-width:24px;">
                         <span v-if="playbackState.queue_index === i"><i class="fas fa-volume-up" style="color:var(--accent);"></i></span>
                         <span v-else>{{ i + 1 }}</span>
                     </span>
                     <span style="flex:1;font-size:14px;">{{ getTrackTitle(id) }}</span>
+                    <button @click.stop="removeFromQueue(i)" style="background:none;border:none;color:var(--text-muted);cursor:pointer;padding:4px;opacity:0.5;" title="Remove from queue">
+                        <i class="fas fa-times"></i>
+                    </button>
                 </div>
             </div>
         </div>
@@ -1451,6 +1458,25 @@
                 
                 async function addToQueue(track) {
                     await apiCall('/api/playback/queue/add?track_id=' + track.id, { method: 'POST' });
+                }
+                
+                async function removeFromQueue(index) {
+                    await apiCall('/api/playback/queue/remove?index=' + index, { method: 'POST' });
+                }
+                
+                async function saveQueueAsPlaylist() {
+                    const name = prompt('Enter playlist name:');
+                    if (!name) return;
+                    
+                    const trackIds = queue.value;
+                    if (trackIds.length === 0) return;
+                    
+                    await apiCall('/api/playlists', {
+                        method: 'POST',
+                        body: JSON.stringify({ name: name, track_ids: trackIds })
+                    });
+                    loadLibrary();
+                    alert('Playlist "' + name + '" created!');
                 }
                 
                 function openPlaylistDialog(track) {
@@ -1963,6 +1989,7 @@
                     search, viewAlbum, viewArtist, playTrack, playAlbum, togglePlay, next, previous, seek, setVolume,
                     onTimeUpdate, onEnded, createPlaylist, saveConfig, scanLibrary, formatDuration, getTrackTitle,
                     loadTracks, prevPage, nextPage, showContextMenu, closeContextMenu, playTrackNext, addToQueue,
+                    removeFromQueue, saveQueueAsPlaylist,
                     toggleShuffle, shufflePlay,
                     openPlaylistDialog, addToPlaylist, createAndAddToPlaylist, newPlaylistName,
                     showAlbumContextMenu, closeAlbumContextMenu, openAlbumPlaylistDialog,
