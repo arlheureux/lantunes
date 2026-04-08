@@ -1228,6 +1228,11 @@
                     albumContextMenu.value.show = false;
                 }
                 
+                async function setVolume() {
+                    const targetPlayer = selectedPlayerId.value || deviceId;
+                    await apiCall('/api/playback/volume?volume=' + volume.value + '&player=' + encodeURIComponent(targetPlayer), { method: 'POST' });
+                }
+                
                 function sendWS(event, data) {
                     if (ws && ws.readyState === WebSocket.OPEN) {
                         ws.send(JSON.stringify({ event, data }));
