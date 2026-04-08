@@ -100,6 +100,11 @@ def toggle_shuffle(player: str = Query(None), db: Session = Depends(get_db)):
     is_player = player == playback.get_player_device_id()
     return playback.toggle_shuffle(db, is_player)
 
+@router.post("/repeat")
+def toggle_repeat(player: str = Query(None), db: Session = Depends(get_db)):
+    is_player = player == playback.get_player_device_id()
+    return playback.toggle_repeat(db, is_player)
+
 @router.post("/shuffle-play")
 def shuffle_play(count: int = 50, player: str = Query(None), db: Session = Depends(get_db)):
     is_player = player == playback.get_player_device_id()

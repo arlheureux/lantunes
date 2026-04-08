@@ -10,6 +10,7 @@ class PlaybackController:
         self.current_index: int = 0
         self._ws_connections: List = []
         self.shuffle_mode: bool = False
+        self.repeat_mode: str = "off"  # off, all, one
         self.last_played_track_id: int = None
         # Device management for "cast play to" feature
         self._devices: dict = {}  # {device_id: {"ws": websocket, "name": str, "is_player": bool, "owner": user_id}}
@@ -220,6 +221,7 @@ class PlaybackController:
                 "queue": [],
                 "queue_index": 0,
                 "shuffle_mode": self.shuffle_mode,
+                "repeat_mode": self.repeat_mode,
                 "player_device_id": self._player_device_id
             }
         
@@ -241,6 +243,7 @@ class PlaybackController:
             "queue": self.queue,
             "queue_index": self.current_index,
             "shuffle_mode": self.shuffle_mode,
+            "repeat_mode": self.repeat_mode,
             "player_device_id": self._player_device_id
         }
         
@@ -423,6 +426,23 @@ class PlaybackController:
             db.commit()
         self.broadcast("playback_state", self.get_state(db))
         return {"shuffle_mode": self.shuffle_mode, "is_player": is_player}
+    
+    def toggle_repeat(self, db: Session, is_player: bool = True):
+        """Toggle repeat mode: off -> all -> one -> off"""
+        if self.repeat_mode == "off":
+            self.repeat_mode = "all"
+        elif self.repeat_mode == "all":
+            self.repeat_mode = "one"
+        else:
+            self.repeat_mode = "off"
+        
+        state = db.query(PlaybackState).filter(PlaybackState.id == 1).first()
+        if state:
+            state.repeat_mode = self.repeat_mode
+            db.commit()
+        
+        self.broadcast("playback_state", self.get_state(db))
+        return {"repeat_mode": self.repeat_mode, "is_player": is_player}
     
     def play_random(self, db: Session, count: int = 50, is_player: bool = True):
         """Fill queue with random tracks from library"""
