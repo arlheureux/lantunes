@@ -1966,7 +1966,6 @@
                                 playbackState.value = state;
                                 const amIPlayer = !selectedPlayerId.value || selectedPlayerId.value === deviceId;
                                 if (amIPlayer && state.track?.stream_url) {
-                                    // If audio player exists and has current track, just play
                                     if (audioPlayer.value && audioPlayer.value.src) {
                                         audioPlayer.value.play().catch(e => playStream(state.track.id));
                                     } else {
@@ -1975,9 +1974,9 @@
                                 }
                             }
                         }
+                    } finally {
+                        isLoading.value = false;
                     }
-                } finally {
-                    isLoading.value = false;
                 }
                 
                 async function playPlaylist() {
