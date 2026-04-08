@@ -1419,6 +1419,13 @@
                 const showMobileQueue = ref(false);
                 const showDeviceModal = ref(false);
                 
+                // Ensure dialogs are closed on mount
+                onMounted(() => {
+                    playlistDialog.value.show = false;
+                    albumEditDialog.value.show = false;
+                    showDeviceModal.value = false;
+                });
+                
                 // Update isMobile on resize
                 window.addEventListener('resize', () => {
                     isMobile.value = window.innerWidth <= 768;
