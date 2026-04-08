@@ -1208,13 +1208,13 @@
                 <i class="fas fa-search"></i>
                 Search
             </div>
-            <div class="mobile-nav-item" :class="{ active: view === 'tracks' }" @click="view = 'tracks'">
-                <i class="fas fa-music"></i>
-                Tracks
-            </div>
             <div class="mobile-nav-item" :class="{ active: view === 'albums' }" @click="view = 'albums'">
                 <i class="fas fa-compact-disc"></i>
                 Albums
+            </div>
+            <div class="mobile-nav-item" :class="{ active: view === 'artists' }" @click="view = 'artists'">
+                <i class="fas fa-user"></i>
+                Artists
             </div>
             <div class="mobile-nav-item" :class="{ active: view === 'settings' }" @click="view = 'settings'">
                 <i class="fas fa-cog"></i>
