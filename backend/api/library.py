@@ -43,6 +43,12 @@ def get_albums(db: Session = Depends(get_db)):
     albums = db.query(Album).options(joinedload(Album.artist)).order_by(Album.title).all()
     return [{"id": a.id, "title": a.title, "artist": a.artist.name if a.artist else "Unknown", "year": a.year, "artwork": a.artwork_path} for a in albums]
 
+@router.get("/albums/recent")
+def get_recent_albums(db: Session = Depends(get_db), limit: int = 8):
+    """Get recently added albums."""
+    albums = db.query(Album).options(joinedload(Album.artist)).order_by(Album.created_at.desc()).limit(limit).all()
+    return [{"id": a.id, "title": a.title, "artist": a.artist.name if a.artist else "Unknown", "year": a.year, "artwork": a.artwork_path, "created_at": a.created_at.isoformat() if a.created_at else None} for a in albums]
+
 @router.get("/albums/{album_id}")
 def get_album(album_id: int, db: Session = Depends(get_db)):
     album = db.query(Album).options(joinedload(Album.artist), joinedload(Album.tracks)).filter(Album.id == album_id).first()

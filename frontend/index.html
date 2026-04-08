@@ -842,6 +842,22 @@
                     
                     <div v-else>
                         <h1>Your Music</h1>
+                        <div v-if="recentAlbums.length">
+                            <h2>Recently Added</h2>
+                            <div class="album-grid" style="margin-bottom:32px;">
+                                <div class="album-card" v-for="a in recentAlbums" :key="a.id" @click="viewAlbum(a.id)" @contextmenu.prevent="showAlbumContextMenu($event, a)">
+                                    <div class="album-cover">
+                                        <img v-if="a.artwork" :src="'/api/library/artwork/' + a.id">
+                                        <div v-else class="album-placeholder">
+                                            <i class="fas fa-compact-disc" style="font-size:48px;color:#555;"></i>
+                                        </div>
+                                        <div class="album-play-btn" @click.stop="playAlbum(a)"><i class="fas fa-play"></i></div>
+                                    </div>
+                                    <div class="name">{{ a.title }}</div>
+                                    <div class="artist">{{ a.artist }}</div>
+                                </div>
+                            </div>
+                        </div>
                         <h2>Recent Albums</h2>
                         <div class="album-grid" style="margin-bottom:32px;">
                             <div class="album-card" v-for="a in albums.slice(0,8)" :key="a.id" @click="viewAlbum(a.id)" @contextmenu.prevent="showAlbumContextMenu($event, a)">
@@ -1387,6 +1403,7 @@
                 let searchTimeout = null;
                 
                 const albums = ref([]);
+                const recentAlbums = ref([]);
                 const artists = ref([]);
                 const playlists = ref([]);
                 const loading = ref({
@@ -1722,13 +1739,15 @@
                 async function loadLibrary() {
                     loading.value.library = true;
                     try {
-                        const [a, ar, p, c] = await Promise.all([
+                        const [a, ra, ar, p, c] = await Promise.all([
                             apiCall('/api/library/albums'),
+                            apiCall('/api/library/albums/recent'),
                             apiCall('/api/library/artists'),
                             apiCall('/api/playlists'),
                             apiCall('/api/config')
                         ]);
                         if (a) albums.value = a;
+                        if (ra) recentAlbums.value = ra;
                         if (ar) artists.value = ar;
                         if (p) playlists.value = p;
                         if (c) config.value = c;
@@ -2132,7 +2151,7 @@
                 });
                 
                 return {
-                    view, searchQuery, searchResults, albums, artists, playlists, config, scanResult,
+                    view, searchQuery, searchResults, albums, recentAlbums, artists, playlists, config, scanResult,
                     currentAlbum, currentArtist, currentPlaylist, playbackState, queue, volume, audioPlayer, progressPercent,
                     tracks, tracksPage, tracksLimit, tracksTotalPages, contextMenu, playlistDialog,
                     search, viewAlbum, viewArtist, playTrack, playAlbum, togglePlay, next, previous, seek, setVolume,
