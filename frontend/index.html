@@ -473,7 +473,7 @@
                         <div v-if="searchResults.tracks.length === 0" class="empty">No tracks found</div>
                         <h3 style="margin-top:20px;">Albums</h3>
                         <div class="album-grid">
-                            <div class="album-card" v-for="a in searchResults.albums" :key="a.id" @click="viewAlbum(a.id)">
+                            <div class="album-card" v-for="a in searchResults.albums" :key="a.id" @click="viewAlbum(a.id)" @contextmenu.prevent="showAlbumContextMenu($event, a)">
                                 <div class="album-cover">
                                     <img v-if="a.artwork" :src="'/api/library/artwork/' + a.id">
                                     <div v-else class="album-placeholder">
@@ -506,7 +506,7 @@
                         <h1>Your Music</h1>
                         <h2>Recent Albums</h2>
                         <div class="album-grid" style="margin-bottom:32px;">
-                            <div class="album-card" v-for="a in albums.slice(0,8)" :key="a.id" @click="viewAlbum(a.id)">
+                            <div class="album-card" v-for="a in albums.slice(0,8)" :key="a.id" @click="viewAlbum(a.id)" @contextmenu.prevent="showAlbumContextMenu($event, a)">
                                 <div class="album-cover">
                                     <img v-if="a.artwork" :src="'/api/library/artwork/' + a.id">
                                     <div v-else class="album-placeholder">
@@ -562,6 +562,11 @@
                     <div class="context-menu-item" @click="openPlaylistDialog(contextMenu.track); closeContextMenu()">Add to Playlist</div>
                 </div>
                 
+                <div v-if="albumContextMenu.show" class="context-menu" :style="{ top: albumContextMenu.y + 'px', left: albumContextMenu.x + 'px' }">
+                    <div class="context-menu-item" @click="playAlbum(albumContextMenu.album); closeAlbumContextMenu()">Play</div>
+                    <div class="context-menu-item" @click="openAlbumPlaylistDialog(albumContextMenu.album); closeAlbumContextMenu()">Add to Playlist</div>
+                </div>
+                
                 <div v-if="playlistDialog.show" class="dialog-overlay" @click.self="playlistDialog.show = false">
                     <div class="dialog">
                         <h3>Add to Playlist</h3>
@@ -583,7 +588,7 @@
                 
                 <div v-if="view === 'albums'">
                     <div class="album-grid">
-                        <div class="album-card" v-for="a in albums" :key="a.id" @click="viewAlbum(a.id)">
+                        <div class="album-card" v-for="a in albums" :key="a.id" @click="viewAlbum(a.id)" @contextmenu.prevent="showAlbumContextMenu($event, a)">
                             <div class="album-cover">
                                 <img v-if="a.artwork" :src="'/api/library/artwork/' + a.id">
                                 <div v-else class="album-placeholder">
@@ -634,7 +639,7 @@
                     <h1>{{ currentArtist.name }}</h1>
                     <p style="color:#aaa;margin-bottom:20px;">{{ currentArtist.albums?.length || 0 }} albums</p>
                     <div class="album-grid">
-                        <div class="album-card" v-for="a in currentArtist.albums" :key="a.id" @click="viewAlbum(a.id)">
+                        <div class="album-card" v-for="a in currentArtist.albums" :key="a.id" @click="viewAlbum(a.id)" @contextmenu.prevent="showAlbumContextMenu($event, a)">
                             <div class="album-cover">
                                 <img v-if="a.artwork" :src="'/api/library/artwork/' + a.id">
                                 <div v-else class="album-placeholder">
@@ -830,7 +835,8 @@
                 const volume = ref(1.0);
                 const audioPlayer = ref(null);
                 const contextMenu = ref({ show: false, x: 0, y: 0, track: null });
-                const playlistDialog = ref({ show: false, track: null });
+                const albumContextMenu = ref({ show: false, x: 0, y: 0, album: null });
+                const playlistDialog = ref({ show: false, track: null, album: null });
                 const tracks = ref([]);
                 const trackCache = ref({});
                 const tracksPage = ref(1);
@@ -1182,6 +1188,14 @@
                     contextMenu.value.show = false;
                 }
                 
+                function showAlbumContextMenu(e, album) {
+                    albumContextMenu.value = { show: true, x: e.clientX, y: e.clientY, album: album };
+                }
+                
+                function closeAlbumContextMenu() {
+                    albumContextMenu.value.show = false;
+                }
+                
                 async function playTrackNext(track) {
                     await apiCall('/api/playback/queue/play-next?track_id=' + track.id, {
                         method: 'POST'
@@ -1195,25 +1209,53 @@
                 }
                 
                 function openPlaylistDialog(track) {
-                    playlistDialog.value = { show: true, track: track };
+                    playlistDialog.value = { show: true, track: track, album: null };
+                    newPlaylistName.value = '';
+                }
+                
+                function openAlbumPlaylistDialog(album) {
+                    playlistDialog.value = { show: true, track: null, album: album };
                     newPlaylistName.value = '';
                 }
                 
                 async function addToPlaylist(playlistId) {
-                    if (!playlistDialog.value.track) return;
-                    await apiCall('/api/playlists/' + playlistId + '/tracks?track_id=' + playlistDialog.value.track.id, {
-                        method: 'POST'
-                    });
+                    if (playlistDialog.value.track) {
+                        // Adding single track
+                        await apiCall('/api/playlists/' + playlistId + '/tracks?track_id=' + playlistDialog.value.track.id, {
+                            method: 'POST'
+                        });
+                    } else if (playlistDialog.value.album) {
+                        // Adding all tracks from album
+                        const albumDetails = await apiCall('/api/library/albums/' + playlistDialog.value.album.id);
+                        if (albumDetails && albumDetails.tracks) {
+                            for (const track of albumDetails.tracks) {
+                                await apiCall('/api/playlists/' + playlistId + '/tracks?track_id=' + track.id, {
+                                    method: 'POST'
+                                });
+                            }
+                        }
+                    }
                     playlistDialog.value.show = false;
                 }
                 
                 async function createAndAddToPlaylist() {
-                    if (!newPlaylistName.value.trim() || !playlistDialog.value.track) return;
+                    if (!newPlaylistName.value.trim()) return;
                     const result = await apiCall('/api/playlists?name=' + encodeURIComponent(newPlaylistName.value), { method: 'POST' });
                     if (result && result.id) {
-                        await apiCall('/api/playlists/' + result.id + '/tracks?track_id=' + playlistDialog.value.track.id, {
-                            method: 'POST'
-                        });
+                        if (playlistDialog.value.track) {
+                            await apiCall('/api/playlists/' + result.id + '/tracks?track_id=' + playlistDialog.value.track.id, {
+                                method: 'POST'
+                            });
+                        } else if (playlistDialog.value.album) {
+                            const albumDetails = await apiCall('/api/library/albums/' + playlistDialog.value.album.id);
+                            if (albumDetails && albumDetails.tracks) {
+                                for (const track of albumDetails.tracks) {
+                                    await apiCall('/api/playlists/' + result.id + '/tracks?track_id=' + track.id, {
+                                        method: 'POST'
+                                    });
+                                }
+                            }
+                        }
                         const p = await apiCall('/api/playlists');
                         if (p) playlists.value = p;
                     }
@@ -1326,7 +1368,8 @@
                     loadTracks, prevPage, nextPage, showContextMenu, closeContextMenu, playTrackNext, addToQueue,
                     toggleShuffle, shufflePlay,
                     openPlaylistDialog, addToPlaylist, createAndAddToPlaylist, newPlaylistName,
-                    letters, scrollToLetter,
+                    showAlbumContextMenu, closeAlbumContextMenu, openAlbumPlaylistDialog,
+                    letters, scrollToLetter, albumContextMenu,
                     devices, selectedPlayerId, deviceName, updateDeviceName, focusSearch, setPlayerDevice,
                     users, showUserForm, newUser, isAdmin, loadUsers, createUser, deleteUser, logout
                 };
