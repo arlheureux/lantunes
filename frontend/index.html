@@ -1343,7 +1343,7 @@
                             </option>
                         </select>
                         <!-- Mobile: button that shows current device -->
-                        <button v-else @click="showDeviceModal = true" title="Select device">
+                        <button v-else @click="showDeviceModal = !showDeviceModal" title="Select device">
                             <i class="fas fa-volume-up"></i>
                             <span style="max-width:100px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">{{ devices.find(d => d.is_player)?.name || 'Select' }}</span>
                             <i class="fas fa-chevron-up" style="font-size:10px;"></i>
@@ -1978,10 +1978,6 @@
                     }
                 } finally {
                     isLoading.value = false;
-                }
-                            }
-                        }
-                    }
                 }
                 
                 async function playPlaylist() {
