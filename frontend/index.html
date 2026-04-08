@@ -519,10 +519,13 @@
                 font-size: 16px;
             }
             
-            /* Album Grid - 2 columns, better spacing */
+            /* Album Grid - 2 columns, smaller covers */
             .album-grid { 
                 grid-template-columns: repeat(2, 1fr); 
-                gap: 16px;
+                gap: 12px;
+            }
+            .album-card {
+                max-width: 75px;
             }
             .album-cover {
                 border-radius: 8px;
@@ -1390,7 +1393,7 @@
                 </div>
             </div>
             
-            <div class="player-controls">
+            <div class="player-controls" v-if="playbackState.track">
                 <div class="control-buttons">
                     <button @click="previous" title="Previous"><i class="fas fa-step-backward"></i></button>
                     <button class="play-btn" @click="togglePlay" :class="{ loading: isLoading }" title="Play/Pause">
