@@ -192,6 +192,16 @@ class PlaybackController:
             db.add(state)
             db.commit()
         
+        # Load queue from DB if not in memory (for persistence across restarts)
+        if not self.queue and state.queue:
+            try:
+                self.queue = [int(x) for x in state.queue.split(',') if x]
+            except:
+                self.queue = []
+        
+        # Sync shuffle mode from DB
+        self.shuffle_mode = state.shuffle_mode if hasattr(state, 'shuffle_mode') else False
+        
         track = None
         if state.current_track_id:
             track = db.query(Track).filter(Track.id == state.current_track_id).first()
@@ -288,6 +298,7 @@ class PlaybackController:
         state = db.query(PlaybackState).filter(PlaybackState.id == 1).first()
         state.current_track_id = self.queue[self.current_index]
         state.position = 0
+        state.queue = ','.join(map(str, self.queue)) if self.queue else None
         state.updated_at = datetime.utcnow()
         db.commit()
         
@@ -340,6 +351,8 @@ class PlaybackController:
             state.current_track_id = self.queue[self.current_index]
             state.is_playing = True
             state.position = 0
+            state.queue = ','.join(map(str, self.queue)) if self.queue else None
+            state.shuffle_mode = self.shuffle_mode
             state.updated_at = datetime.utcnow()
             db.commit()
         
@@ -373,6 +386,13 @@ class PlaybackController:
     def toggle_shuffle(self, db: Session, is_player: bool = True):
         """Toggle shuffle mode on/off"""
         self.shuffle_mode = not self.shuffle_mode
+        # Persist shuffle mode
+        state = db.query(PlaybackState).filter(PlaybackState.id == 1).first()
+        if state:
+            state.shuffle_mode = self.shuffle_mode
+            if self.queue:
+                state.queue = ','.join(map(str, self.queue))
+            db.commit()
         self.broadcast("playback_state", self.get_state(db))
         return {"shuffle_mode": self.shuffle_mode, "is_player": is_player}
     

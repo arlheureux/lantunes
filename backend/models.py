@@ -93,6 +93,8 @@ class PlaybackState(Base):
     position = Column(Integer, default=0)
     is_playing = Column(Boolean, default=False)
     volume = Column(Float, default=1.0)
+    queue = Column(Text, nullable=True)  # Stored as comma-separated track IDs
+    shuffle_mode = Column(Boolean, default=False)
     updated_at = Column(DateTime, default=func.now(), onupdate=func.now())
 
 class User(Base):
