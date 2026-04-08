@@ -79,9 +79,6 @@ class PlaybackController:
     def add_connection(self, ws):
         self._ws_connections.append(ws)
     
-    def add_connection(self, ws):
-        self._ws_connections.append(ws)
-    
     def remove_connection(self, ws):
         if ws in self._ws_connections:
             self._ws_connections.remove(ws)
@@ -119,12 +116,6 @@ class PlaybackController:
                     disconnected.append(result)
         else:
             # Send to all
-            with concurrent.futures.ThreadPoolExecutor(max_workers=4) as executor:
-                results = list(executor.map(send_msg, self._ws_connections))
-                for ws in results:
-                    if ws and ws in self._ws_connections:
-                        self._ws_connections.remove(ws)
-            
             with concurrent.futures.ThreadPoolExecutor(max_workers=4) as executor:
                 results = list(executor.map(send_msg, self._ws_connections))
                 for ws in results:
