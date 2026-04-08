@@ -507,22 +507,6 @@
                 position: relative;
             }
             
-            .pull-indicator {
-                position: absolute;
-                top: -40px;
-                left: 0;
-                right: 0;
-                text-align: center;
-                color: var(--text-muted);
-                font-size: 14px;
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                gap: 8px;
-            }
-            .pull-indicator i { font-size: 16px; }
-            .content.pulling .pull-indicator { top: 10px; }
-            
             h1 { font-size: 24px; font-weight: 700; margin-bottom: 20px; letter-spacing: -0.5px; }
             h2 { font-size: 20px; font-weight: 600; margin-bottom: 16px; }
             h3 { font-size: 12px; letter-spacing: 0.5px; }
@@ -838,11 +822,7 @@
                 </div>
             </div>
             
-            <div class="content" :class="{ 'pulling': isPulling }" @touchstart="onTouchStart" @touchmove="onTouchMove" @touchend="onTouchEnd" :key="view">
-                <div v-if="isPulling" class="pull-indicator">
-                    <i class="fas fa-sync-alt" :class="{ 'fa-spin': loading.library }"></i>
-                    <span>{{ loading.library ? 'Refreshing...' : 'Pull to refresh' }}</span>
-                </div>
+            <div class="content" :key="view">
                 <div v-if="view === 'library'">
                     <div class="search-box">
                         <i class="fas fa-search"></i>
@@ -1445,42 +1425,6 @@
                     isMobile.value = window.innerWidth <= 768;
                 });
                 
-                // Pull-to-refresh state
-                const touchStartY = ref(0);
-                const touchCurrentY = ref(0);
-                const isPulling = ref(false);
-                const pullThreshold = 80;
-                
-                function onTouchStart(e) {
-                    if (!isMobile.value) return;
-                    const content = document.querySelector('.content');
-                    if (content && content.scrollTop > 0) return;  // Only at top
-                    touchStartY.value = e.touches[0].clientY;
-                    isPulling.value = false;
-                }
-                
-                function onTouchMove(e) {
-                    if (!isMobile.value) return;
-                    const content = document.querySelector('.content');
-                    if (content && content.scrollTop > 0) return;
-                    
-                    touchCurrentY.value = e.touches[0].clientY;
-                    const delta = touchCurrentY.value - touchStartY.value;
-                    
-                    if (delta > pullThreshold && delta > 0) {
-                        isPulling.value = true;
-                    }
-                }
-                
-                function onTouchEnd() {
-                    if (isPulling.value) {
-                        isPulling.value = false;
-                        loadLibrary();
-                        loadTracks();
-                    }
-                    touchStartY.value = 0;
-                    touchCurrentY.value = 0;
-                }
                 const searchQuery = ref('');
                 const searchResults = ref({ tracks: [], albums: [], artists: [] });
                 let searchTimeout = null;
