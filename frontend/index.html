@@ -1163,12 +1163,16 @@
                 }
                 
                 async function seek(e) {
-                    const rect = e.target.getBoundingClientRect();
-                    const percent = (e.clientX - rect.left) / rect.width;
+                    const rect = e.currentTarget.getBoundingClientRect();
+                    const percent = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
                     const pos = Math.floor(percent * playbackState.value.track.duration);
                     const targetPlayer = selectedPlayerId.value || deviceId;
                     await apiCall('/api/playback/seek?position=' + pos + '&player=' + encodeURIComponent(targetPlayer), { method: 'POST' });
                     playbackState.value.position = pos;
+                    // Also seek local audio if we're the player
+                    if (audioPlayer.value && !selectedPlayerId.value) {
+                        audioPlayer.value.currentTime = pos;
+                    }
                 }
                 
                 async function setVolume() {
