@@ -10,6 +10,7 @@ PUBLIC_ENDPOINTS = [
     "/api/auth/status",
     "/api/playback/stream/",
     "/api/library/artwork/",
+    "/api/config/migrate",
     "/docs",
     "/openapi.json",
     "/redoc"
