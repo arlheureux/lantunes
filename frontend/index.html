@@ -776,6 +776,9 @@
                 <div class="sidebar-item" :class="{ active: view === 'artists' }" @click="view = 'artists'">
                     <i class="fas fa-user"></i> Artists
                 </div>
+                <div class="sidebar-item" :class="{ active: view === 'genres' }" @click="view = 'genres'">
+                    <i class="fas fa-music"></i> Genres
+                </div>
                 <div class="sidebar-item" :class="{ active: view === 'playlists' }" @click="view = 'playlists'">
                     <i class="fas fa-heart"></i> Playlists
                 </div>
@@ -1140,6 +1143,50 @@
                     </div>
                 </div>
                 
+                <div v-if="view === 'genres'">
+                    <h1>Genres</h1>
+                    <div v-if="genres.length === 0" class="empty-state">
+                        <div class="empty-state-icon">
+                            <svg viewBox="0 0 24 24"><path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z"/></svg>
+                        </div>
+                        <h3>No genres found</h3>
+                        <p>Genres will appear after scanning your library.</p>
+                    </div>
+                    <div v-else class="album-grid">
+                        <div class="album-card" v-for="g in genres" :key="g" @click="viewGenre(g)" style="cursor:pointer;">
+                            <div style="width:100%;aspect-ratio:1;background:linear-gradient(135deg, #667eea 0%, #764ba2 100%);border-radius:4px;margin-bottom:8px;display:flex;align-items:center;justify-content:center;">
+                                <i class="fas fa-music" style="font-size:48px;color:#fff;"></i>
+                            </div>
+                            <div class="name">{{ g }}</div>
+                            <div class="artist">Browse</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div v-if="view === 'genre-detail'">
+                    <div style="margin-bottom:20px;">
+                        <button @click="view = 'genres'" style="background:none;border:none;color:#aaa;cursor:pointer;margin-right:16px;">
+                            <i class="fas fa-arrow-left"></i> Back
+                        </button>
+                        <span style="color:var(--text-muted);">Genre</span>
+                    </div>
+                    <h1>{{ currentGenre }}</h1>
+                    <div v-if="genreAlbums.length === 0" class="empty">No albums in this genre</div>
+                    <div v-else class="album-grid">
+                        <div class="album-card" v-for="a in genreAlbums" :key="a.id" @click="viewAlbum(a.id)">
+                            <div class="album-cover">
+                                <img v-if="a.artwork" :src="'/api/library/artwork/' + a.id">
+                                <div v-else class="album-placeholder">
+                                    <i class="fas fa-compact-disc" style="font-size:48px;color:#555;"></i>
+                                </div>
+                                <div class="album-play-btn" @click.stop="playAlbum(a)"><i class="fas fa-play"></i></div>
+                            </div>
+                            <div class="name">{{ a.title }}</div>
+                            <div class="artist">{{ a.artist }}</div>
+                        </div>
+                    </div>
+                </div>
+                
                 <div v-if="view === 'settings'">
                     <h1>Settings</h1>
                     
@@ -1406,6 +1453,9 @@
                 const recentAlbums = ref([]);
                 const artists = ref([]);
                 const playlists = ref([]);
+                const genres = ref([]);
+                const currentGenre = ref('');
+                const genreAlbums = ref([]);
                 const loading = ref({
                     albums: false,
                     artists: false,
@@ -1739,17 +1789,19 @@
                 async function loadLibrary() {
                     loading.value.library = true;
                     try {
-                        const [a, ra, ar, p, c] = await Promise.all([
+                        const [a, ra, ar, p, g, c] = await Promise.all([
                             apiCall('/api/library/albums'),
                             apiCall('/api/library/albums/recent'),
                             apiCall('/api/library/artists'),
                             apiCall('/api/playlists'),
+                            apiCall('/api/library/genres'),
                             apiCall('/api/config')
                         ]);
                         if (a) albums.value = a;
                         if (ra) recentAlbums.value = ra;
                         if (ar) artists.value = ar;
                         if (p) playlists.value = p;
+                        if (g) genres.value = g;
                         if (c) config.value = c;
                     } finally {
                         loading.value.library = false;
@@ -1789,6 +1841,12 @@
                 async function viewArtist(id) {
                     const a = await apiCall('/api/library/artists/' + id);
                     if (a) { currentArtist.value = a; view.value = 'artist-detail'; }
+                }
+                
+                async function viewGenre(genreName) {
+                    currentGenre.value = genreName;
+                    const albums = await apiCall('/api/library/genres/' + encodeURIComponent(genreName));
+                    if (albums) { genreAlbums.value = albums; view.value = 'genre-detail'; }
                 }
                 
                 async function viewPlaylist(id) {
@@ -2151,10 +2209,10 @@
                 });
                 
                 return {
-                    view, searchQuery, searchResults, albums, recentAlbums, artists, playlists, config, scanResult,
+                    view, searchQuery, searchResults, albums, recentAlbums, artists, playlists, genres, currentGenre, genreAlbums, config, scanResult,
                     currentAlbum, currentArtist, currentPlaylist, playbackState, queue, volume, audioPlayer, progressPercent,
                     tracks, tracksPage, tracksLimit, tracksTotalPages, contextMenu, playlistDialog,
-                    search, viewAlbum, viewArtist, playTrack, playAlbum, togglePlay, next, previous, seek, setVolume,
+                    search, viewAlbum, viewArtist, viewGenre, playTrack, playAlbum, togglePlay, next, previous, seek, setVolume,
                     onTimeUpdate, onEnded, createPlaylist, saveConfig, scanLibrary, formatDuration, getTrackTitle,
                     loadTracks, prevPage, nextPage, showContextMenu, closeContextMenu, playTrackNext, addToQueue,
                     removeFromQueue, saveQueueAsPlaylist,
