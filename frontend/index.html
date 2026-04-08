@@ -145,25 +145,6 @@
         }
         .device-selector button:hover { background: #444; }
         
-        /* Device Selector Bar - Prominent placement */
-        .device-selector-bar { flex-shrink: 0; }
-        .device-btn {
-            background: #333;
-            color: var(--text-primary);
-            border: none;
-            padding: 12px 18px;
-            border-radius: 24px;
-            font-size: 14px;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            transition: all var(--transition-fast);
-            min-height: 44px;
-        }
-        .device-btn:hover { background: #444; }
-        .device-btn i { font-size: 16px; }
-        
         .track-meta { font-size: 11px; color: var(--text-muted); margin-top: 4px; }
         
         /* Buttons */
@@ -479,26 +460,22 @@
                 max-width: 100px;
             }
             
-            /* Device Selector Bar - Prominent on mobile */
-            .device-selector-bar {
+            /* Device Selector - Mobile prominent placement */
+            .device-selector {
                 display: flex;
+                margin-left: 8px;
                 flex-shrink: 0;
             }
-            .device-btn {
+            .device-selector button {
                 background: rgba(255,255,255,0.15);
-                padding: 10px 16px;
+                padding: 10px 14px;
                 font-size: 13px;
                 border-radius: 20px;
                 gap: 8px;
                 min-height: 40px;
             }
-            .device-btn i { font-size: 14px; }
-            .device-name {
-                max-width: 100px;
-                overflow: hidden;
-                text-overflow: ellipsis;
-                white-space: nowrap;
-            }
+            .device-selector button i:first-child { font-size: 14px; }
+            .device-selector button i.fa-chevron-up { font-size: 10px; }
             
             /* Content area - Better mobile scrolling */
             .content { 
@@ -1413,14 +1390,6 @@
                 </div>
             </div>
             
-            <!-- Device Selector - Prominent placement -->
-            <div class="device-selector-bar" v-if="devices.length > 1">
-                <button class="device-btn" @click="showDeviceModal = !showDeviceModal" :title="devices.find(d => d.is_player)?.name || 'Select device'">
-                    <i class="fas fa-volume-up"></i>
-                    <span class="device-name">{{ devices.find(d => d.is_player)?.name || 'Device' }}</span>
-                </button>
-            </div>
-            
             <div class="player-controls">
                 <div class="control-buttons">
                     <button @click="previous" title="Previous"><i class="fas fa-step-backward"></i></button>
@@ -1433,7 +1402,21 @@
                     <button class="mobile-queue-btn" @click="showMobileQueue = true" v-if="isMobile && queue.length">
                         <i class="fas fa-list"></i> {{ queue.length }}
                     </button>
-                </div>
+                    
+                    <!-- Device Selector -->
+                    <div class="device-selector" v-if="devices.length > 1">
+                        <!-- Desktop: dropdown -->
+                        <select v-if="!isMobile" v-model="selectedPlayerId" @change="setPlayerDevice(selectedPlayerId)" title="Select playback device">
+                            <option v-for="d in devices" :key="d.id" :value="d.id">
+                                {{ d.is_player ? '🎵 ' : '📱 ' }}{{ d.name }}
+                            </option>
+                        </select>
+                        <!-- Mobile: button that shows current device -->
+                        <button v-else @click="showDeviceModal = !showDeviceModal" title="Select device">
+                            <i class="fas fa-volume-up"></i>
+                            <span style="max-width:100px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">{{ devices.find(d => d.is_player)?.name || 'Select' }}</span>
+                            <i class="fas fa-chevron-up" style="font-size:10px;"></i>
+                        </button>
                     </div>
                 </div>
                 <div class="progress">
