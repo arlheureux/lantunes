@@ -432,6 +432,9 @@
                 <div class="sidebar-item" :class="{ active: view === 'settings' }" @click="view = 'settings'">
                     <i class="fas fa-cog"></i> Settings
                 </div>
+                <div class="sidebar-item" @click="logout" style="color: #ff6b6b;">
+                    <i class="fas fa-sign-out-alt"></i> Logout
+                </div>
             </div>
             
             <div class="content">
@@ -851,6 +854,12 @@
                     sendWS('update_device_name', { device_id: deviceId, device_name: deviceName.value });
                 }
                 
+                function logout() {
+                    localStorage.removeItem('access_token');
+                    localStorage.removeItem('user');
+                    window.location.href = '/login.html';
+                }
+                
                 function focusSearch() {
                     const input = document.querySelector('.search-box input');
                     if (input) input.focus();
@@ -1207,7 +1216,7 @@
                     loadTracks, prevPage, nextPage, showContextMenu, closeContextMenu, playTrackNext, addToQueue,
                     toggleShuffle, shufflePlay,
                     devices, selectedPlayerId, deviceName, updateDeviceName, focusSearch, setPlayerDevice,
-                    users, showUserForm, newUser, isAdmin, loadUsers, createUser, deleteUser
+                    users, showUserForm, newUser, isAdmin, loadUsers, createUser, deleteUser, logout
                 };
             }
         }).mount('#app');
