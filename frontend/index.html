@@ -565,6 +565,7 @@
                 <div v-if="albumContextMenu.show" class="context-menu" :style="{ top: albumContextMenu.y + 'px', left: albumContextMenu.x + 'px' }">
                     <div class="context-menu-item" @click="playAlbum(albumContextMenu.album); closeAlbumContextMenu()">Play</div>
                     <div class="context-menu-item" @click="openAlbumPlaylistDialog(albumContextMenu.album); closeAlbumContextMenu()">Add to Playlist</div>
+                    <div class="context-menu-item" @click="openAlbumEditDialog(albumContextMenu.album); closeAlbumContextMenu()">Edit Metadata</div>
                 </div>
                 
                 <div v-if="playlistDialog.show" class="dialog-overlay" @click.self="playlistDialog.show = false">
@@ -582,6 +583,38 @@
                         <div class="dialog-buttons">
                             <button class="dialog-btn dialog-btn-secondary" @click="playlistDialog.show = false">Cancel</button>
                             <button class="dialog-btn dialog-btn-primary" @click="createAndAddToPlaylist">Create</button>
+                        </div>
+                    </div>
+                </div>
+                
+                <div v-if="albumEditDialog.show" class="dialog-overlay" @click.self="albumEditDialog.show = false">
+                    <div class="dialog" style="min-width: 400px;">
+                        <h3>Edit Album</h3>
+                        <div style="margin-bottom: 16px;">
+                            <label style="display:block; margin-bottom: 8px; color: var(--text-secondary);">Title</label>
+                            <input v-model="albumEditDialog.title" class="dialog-input" placeholder="Album title">
+                        </div>
+                        <div style="margin-bottom: 16px;">
+                            <label style="display:block; margin-bottom: 8px; color: var(--text-secondary);">Year</label>
+                            <input v-model="albumEditDialog.year" type="number" class="dialog-input" placeholder="Year">
+                        </div>
+                        <div style="margin-bottom: 16px;">
+                            <label style="display:block; margin-bottom: 8px; color: var(--text-secondary);">Genre</label>
+                            <input v-model="albumEditDialog.genre" class="dialog-input" placeholder="Genre">
+                        </div>
+                        <div style="margin-bottom: 16px;">
+                            <label style="display:block; margin-bottom: 8px; color: var(--text-secondary);">Artwork</label>
+                            <div style="display: flex; align-items: center; gap: 12px;">
+                                <img v-if="albumEditDialog.artwork" :src="'/api/library/artwork/' + albumEditDialog.id" style="width: 64px; height: 64px; border-radius: 4px; object-fit: cover;">
+                                <div v-else style="width: 64px; height: 64px; background: #333; border-radius: 4px; display: flex; align-items: center; justify-content: center;">
+                                    <i class="fas fa-image" style="color: #555;"></i>
+                                </div>
+                                <button class="dialog-btn dialog-btn-secondary" @click="removeAlbumArtwork" style="padding: 8px 12px;">Remove</button>
+                            </div>
+                        </div>
+                        <div class="dialog-buttons">
+                            <button class="dialog-btn dialog-btn-secondary" @click="albumEditDialog.show = false">Cancel</button>
+                            <button class="dialog-btn dialog-btn-primary" @click="saveAlbumMetadata">Save</button>
                         </div>
                     </div>
                 </div>
@@ -617,9 +650,14 @@
                 </div>
                 
                 <div v-if="view === 'album-detail'">
-                    <button @click="view = 'albums'" style="margin-bottom:20px;background:none;border:none;color:#aaa;cursor:pointer;">
-                        <i class="fas fa-arrow-left"></i> Back
-                    </button>
+                    <div style="margin-bottom:20px;">
+                        <button @click="view = 'albums'" style="background:none;border:none;color:#aaa;cursor:pointer;margin-right:16px;">
+                            <i class="fas fa-arrow-left"></i> Back
+                        </button>
+                        <button @click="openAlbumEditDialog(currentAlbum)" style="background:none;border:none;color:#aaa;cursor:pointer;">
+                            <i class="fas fa-edit"></i> Edit
+                        </button>
+                    </div>
                     <h1>{{ currentAlbum.title }}</h1>
                     <p style="color:#aaa;margin-bottom:20px;">{{ currentAlbum.artist }} &middot; {{ currentAlbum.year }}</p>
                     <div class="track-list">
@@ -837,6 +875,7 @@
                 const contextMenu = ref({ show: false, x: 0, y: 0, track: null });
                 const albumContextMenu = ref({ show: false, x: 0, y: 0, album: null });
                 const playlistDialog = ref({ show: false, track: null, album: null });
+                const albumEditDialog = ref({ show: false, id: null, title: '', year: null, genre: '', artwork: null });
                 const tracks = ref([]);
                 const trackCache = ref({});
                 const tracksPage = ref(1);
@@ -1265,6 +1304,49 @@
                 
                 const newPlaylistName = ref('');
                 
+                function openAlbumEditDialog(album) {
+                    albumEditDialog.value = {
+                        show: true,
+                        id: album.id,
+                        title: album.title || '',
+                        year: album.year || null,
+                        genre: album.genre || '',
+                        artwork: album.artwork_path || null
+                    };
+                }
+                
+                async function saveAlbumMetadata() {
+                    if (!albumEditDialog.value.id) return;
+                    const url = '/api/library/albums/' + albumEditDialog.value.id + 
+                        '?title=' + encodeURIComponent(albumEditDialog.value.title) +
+                        '&year=' + (albumEditDialog.value.year || '') +
+                        '&genre=' + encodeURIComponent(albumEditDialog.value.genre || '');
+                    const result = await apiCall(url, { method: 'PUT' });
+                    if (result) {
+                        // Update current album if viewing
+                        if (currentAlbum.value && currentAlbum.value.id === result.id) {
+                            currentAlbum.value = { ...currentAlbum.value, ...result };
+                        }
+                        // Refresh albums list
+                        const a = await apiCall('/api/library/albums');
+                        if (a) albums.value = a;
+                    }
+                    albumEditDialog.value.show = false;
+                }
+                
+                async function removeAlbumArtwork() {
+                    if (!albumEditDialog.value.id) return;
+                    await apiCall('/api/library/albums/' + albumEditDialog.value.id + '/artwork', { method: 'DELETE' });
+                    albumEditDialog.value.artwork = null;
+                    // Update current album
+                    if (currentAlbum.value && currentAlbum.value.id === albumEditDialog.value.id) {
+                        currentAlbum.value.artwork = null;
+                    }
+                    // Refresh albums list
+                    const a = await apiCall('/api/library/albums');
+                    if (a) albums.value = a;
+                }
+                
                 async function toggleShuffle() {
                     const targetPlayer = selectedPlayerId.value || deviceId;
                     const wasShuffleOn = playbackState.value.shuffle_mode;
@@ -1386,6 +1468,7 @@
                     toggleShuffle, shufflePlay,
                     openPlaylistDialog, addToPlaylist, createAndAddToPlaylist, newPlaylistName,
                     showAlbumContextMenu, closeAlbumContextMenu, openAlbumPlaylistDialog,
+                    openAlbumEditDialog, saveAlbumMetadata, removeAlbumArtwork, albumEditDialog,
                     letters, scrollToLetter, albumContextMenu,
                     devices, selectedPlayerId, deviceName, updateDeviceName, focusSearch, setPlayerDevice,
                     users, showUserForm, newUser, isAdmin, loadUsers, createUser, deleteUser, logout

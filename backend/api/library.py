@@ -42,11 +42,33 @@ def get_album(album_id: int, db: Session = Depends(get_db)):
         "id": album.id,
         "title": album.title,
         "artist": album.artist.name if album.artist else "Unknown",
+        "artist_id": album.artist_id,
         "year": album.year,
         "genre": album.genre,
         "artwork": album.artwork_path,
         "tracks": [t.as_dict() for t in sorted(album.tracks, key=lambda x: (x.disc_number or 1, x.track_number or 0))]
     }
+
+@router.put("/albums/{album_id}")
+def update_album(album_id: int, title: str = None, year: int = None, genre: str = None, db: Session = Depends(get_db)):
+    album = db.query(Album).filter(Album.id == album_id).first()
+    if not album:
+        raise HTTPException(status_code=404, detail="Album not found")
+    if title is not None: album.title = title
+    if year is not None: album.year = year
+    if genre is not None: album.genre = genre
+    db.commit()
+    return {"id": album.id, "title": album.title, "year": album.year, "genre": album.genre, "artwork": album.artwork_path}
+
+@router.delete("/albums/{album_id}/artwork")
+def remove_album_artwork(album_id: int, db: Session = Depends(get_db)):
+    album = db.query(Album).filter(Album.id == album_id).first()
+    if not album:
+        raise HTTPException(status_code=404, detail="Album not found")
+    if album.artwork_path:
+        album.artwork_path = None
+        db.commit()
+    return {"success": True}
 
 @router.get("/artists")
 def get_artists(db: Session = Depends(get_db)):
