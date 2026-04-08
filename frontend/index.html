@@ -367,16 +367,15 @@
             }
             
             .track-info { 
-                flex: 0 0 auto;
-                width: 35%;
-                min-width: 100px;
-                flex-direction: row;
-                gap: 10px;
+                flex: 1;
+                display: flex;
                 align-items: center;
+                gap: 10px;
+                min-width: 0;
             }
             .track-artwork {
-                width: 48px;
-                height: 48px;
+                width: 44px;
+                height: 44px;
                 flex-shrink: 0;
                 border-radius: 6px;
                 box-shadow: 0 2px 8px rgba(0,0,0,0.3);
@@ -399,6 +398,28 @@
                 overflow: hidden;
                 text-overflow: ellipsis;
             }
+            
+            /* Mobile controls - play button only */
+            .player-bar .mobile-play-btn {
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                width: 44px;
+                height: 44px;
+                background: none;
+                border: none;
+                color: var(--text-primary);
+                font-size: 24px;
+                cursor: pointer;
+                flex-shrink: 0;
+                -webkit-tap-highlight-color: transparent;
+                touch-action: manipulation;
+            }
+            .player-bar .mobile-play-btn:active {
+                transform: scale(0.95);
+            }
+            
+            .player-controls, .volume { display: none; }
             
             .player-controls { 
                 flex: 1;
@@ -1393,54 +1414,11 @@
                 </div>
             </div>
             
-            <div class="player-controls" v-if="playbackState.track">
-                <div class="control-buttons">
-                    <button @click="previous" title="Previous"><i class="fas fa-step-backward"></i></button>
-                    <button class="play-btn" @click="togglePlay" :class="{ loading: isLoading }" title="Play/Pause">
-                        <i v-if="isLoading" class="fas fa-spinner fa-spin"></i>
-                        <i v-else :class="playbackState.is_playing ? 'fas fa-pause' : 'fas fa-play'"></i>
-                    </button>
-                    <button @click="next" title="Next"><i class="fas fa-step-forward"></i></button>
-                    <button @click="toggleShuffle" :style="{ color: playbackState.shuffle_mode ? 'var(--accent)' : 'var(--text-secondary)' }" title="Shuffle"><i class="fas fa-random"></i></button>
-                    <button class="mobile-queue-btn" @click="showMobileQueue = true" v-if="isMobile && queue.length">
-                        <i class="fas fa-list"></i> {{ queue.length }}
-                    </button>
-                    
-                    <!-- Device Selector -->
-                    <div class="device-selector" v-if="devices.length > 1">
-                        <!-- Desktop: dropdown -->
-                        <select v-if="!isMobile" v-model="selectedPlayerId" @change="setPlayerDevice(selectedPlayerId)" title="Select playback device">
-                            <option v-for="d in devices" :key="d.id" :value="d.id">
-                                {{ d.is_player ? '🎵 ' : '📱 ' }}{{ d.name }}
-                            </option>
-                        </select>
-                        <!-- Mobile: button that shows current device -->
-                        <button v-else @click="showDeviceModal = !showDeviceModal" title="Select device">
-                            <i class="fas fa-volume-up"></i>
-                            <span style="max-width:100px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">{{ devices.find(d => d.is_player)?.name || 'Select' }}</span>
-                            <i class="fas fa-chevron-up" style="font-size:10px;"></i>
-                        </button>
-                    </div>
-                </div>
-                <div class="progress">
-                    <span>{{ formatDuration(playbackState.position) }}</span>
-                    <div class="progress-bar" @click="seek($event)">
-                        <div class="fill" :style="{ width: progressPercent + '%' }"></div>
-                    </div>
-                    <span>{{ formatDuration(playbackState.track?.duration || 0) }}</span>
-                </div>
-                <div class="track-meta">
-                    <span v-if="playbackState.track?.file_format">{{ playbackState.track.file_format }}</span>
-                    <span v-if="playbackState.track?.bitrate"> · {{ playbackState.track.bitrate }}kbps</span>
-                    <span v-if="playbackState.track?.sample_rate"> · {{ playbackState.track.sample_rate }}Hz</span>
-                    <span v-if="playbackState.is_playing" class="now-playing-badge"><i class="fas fa-volume-up"></i> Playing</span>
-                </div>
-            </div>
-            
-            <div class="volume">
-                <i class="fas fa-volume-up"></i>
-                <input type="range" min="0" max="1" step="0.01" v-model="volume" @change="setVolume">
-            </div>
+            <!-- Mobile: simple play/pause button -->
+            <button class="mobile-play-btn" @click="togglePlay" :class="{ loading: isLoading }">
+                <i v-if="isLoading" class="fas fa-spinner fa-spin"></i>
+                <i v-else :class="playbackState.is_playing ? 'fas fa-pause' : 'fas fa-play'"></i>
+            </button>
         </div>
         
         <audio ref="audioPlayer" @timeupdate="onTimeUpdate" @ended="onEnded" style="display:none;"></audio>
