@@ -112,6 +112,7 @@
         .control-buttons button:hover { color: var(--text-primary); transform: scale(1.1); }
         .control-buttons .play-btn { width: 36px; height: 36px; border-radius: 50%; background: var(--text-primary); color: #000; display: flex; align-items: center; justify-content: center; font-size: 16px; }
         .control-buttons .play-btn:hover { transform: scale(1.05); }
+        .control-buttons .play-btn.loading { opacity: 0.7; cursor: wait; }
         
         .progress { width: 100%; display: flex; align-items: center; gap: 8px; }
         .progress span { font-size: 11px; color: var(--text-muted); min-width: 35px; }
@@ -1323,8 +1324,9 @@
             <div class="player-controls">
                 <div class="control-buttons">
                     <button @click="previous" title="Previous"><i class="fas fa-step-backward"></i></button>
-                    <button class="play-btn" @click="togglePlay" title="Play/Pause">
-                        <i :class="playbackState.is_playing ? 'fas fa-pause' : 'fas fa-play'"></i>
+                    <button class="play-btn" @click="togglePlay" :class="{ loading: isLoading }" title="Play/Pause">
+                        <i v-if="isLoading" class="fas fa-spinner fa-spin"></i>
+                        <i v-else :class="playbackState.is_playing ? 'fas fa-pause' : 'fas fa-play'"></i>
                     </button>
                     <button @click="next" title="Next"><i class="fas fa-step-forward"></i></button>
                     <button @click="toggleShuffle" :style="{ color: playbackState.shuffle_mode ? 'var(--accent)' : 'var(--text-secondary)' }" title="Shuffle"><i class="fas fa-random"></i></button>
@@ -1452,6 +1454,7 @@
                 const currentArtist = ref(null);
                 const currentPlaylist = ref(null);
                 const playbackState = ref({ track: null, position: 0, is_playing: false, volume: 1.0, queue: [], queue_index: 0 });
+                const isLoading = ref(false);
                 const queue = ref([]);
                 const volume = ref(1.0);
                 const audioPlayer = ref(null);
@@ -1950,23 +1953,32 @@
                 
                 async function togglePlay() {
                     const targetPlayer = selectedPlayerId.value || deviceId;
-                    if (playbackState.value.is_playing) {
-                        await apiCall('/api/playback/pause?player=' + encodeURIComponent(targetPlayer), { method: 'POST' });
-                        const amIPlayer = !selectedPlayerId.value || selectedPlayerId.value === deviceId;
-                        if (amIPlayer) audioPlayer.value?.pause();
-                    } else {
-                        const url = '/api/playback/play?player=' + encodeURIComponent(targetPlayer);
-                        const state = await apiCall(url, { method: 'POST' });
-                        if (state) {
-                            playbackState.value = state;
+                    isLoading.value = true;
+                    try {
+                        if (playbackState.value.is_playing) {
+                            await apiCall('/api/playback/pause?player=' + encodeURIComponent(targetPlayer), { method: 'POST' });
                             const amIPlayer = !selectedPlayerId.value || selectedPlayerId.value === deviceId;
-                            if (amIPlayer && state.track?.stream_url) {
-                                // If audio player exists and has current track, just play
-                                if (audioPlayer.value && audioPlayer.value.src) {
-                                    audioPlayer.value.play().catch(e => playStream(state.track.id));
-                                } else {
-                                    playStream(state.track.id);
+                            if (amIPlayer) audioPlayer.value?.pause();
+                        } else {
+                            const url = '/api/playback/play?player=' + encodeURIComponent(targetPlayer);
+                            const state = await apiCall(url, { method: 'POST' });
+                            if (state) {
+                                playbackState.value = state;
+                                const amIPlayer = !selectedPlayerId.value || selectedPlayerId.value === deviceId;
+                                if (amIPlayer && state.track?.stream_url) {
+                                    // If audio player exists and has current track, just play
+                                    if (audioPlayer.value && audioPlayer.value.src) {
+                                        audioPlayer.value.play().catch(e => playStream(state.track.id));
+                                    } else {
+                                        playStream(state.track.id);
+                                    }
                                 }
+                            }
+                        }
+                    }
+                } finally {
+                    isLoading.value = false;
+                }
                             }
                         }
                     }
@@ -2194,6 +2206,7 @@
                 return {
                     view, searchQuery, searchResults, albums, recentAlbums, artists, playlists, genres, currentGenre, genreAlbums, config, scanResult,
                     currentAlbum, currentArtist, currentPlaylist, playbackState, queue, volume, audioPlayer, progressPercent,
+                    isLoading,
                     tracks, tracksPage, tracksLimit, tracksTotalPages, contextMenu, playlistDialog,
                     search, viewAlbum, viewArtist, viewGenre, playTrack, playAlbum, togglePlay, next, previous, seek, setVolume,
                     onTimeUpdate, onEnded, createPlaylist, saveConfig, scanLibrary, formatDuration, getTrackTitle,
