@@ -1212,6 +1212,22 @@
                     }
                 }
                 
+                function showContextMenu(e, track) {
+                    contextMenu.value = { show: true, x: e.clientX, y: e.clientY, track: track };
+                }
+                
+                function closeContextMenu() {
+                    contextMenu.value.show = false;
+                }
+                
+                function showAlbumContextMenu(e, album) {
+                    albumContextMenu.value = { show: true, x: e.clientX, y: e.clientY, album: album };
+                }
+                
+                function closeAlbumContextMenu() {
+                    albumContextMenu.value.show = false;
+                }
+                
                 function sendWS(event, data) {
                     if (ws && ws.readyState === WebSocket.OPEN) {
                         ws.send(JSON.stringify({ event, data }));
