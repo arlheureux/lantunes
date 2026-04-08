@@ -1404,8 +1404,18 @@
                 }
                 
                 function focusSearch() {
-                    const input = document.querySelector('.search-box input');
-                    if (input) input.focus();
+                    if (isMobile.value) {
+                        setTimeout(() => {
+                            const input = document.querySelector('.search-box input');
+                            if (input) {
+                                input.focus();
+                                input.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                            }
+                        }, 100);
+                    } else {
+                        const input = document.querySelector('.search-box input');
+                        if (input) input.focus();
+                    }
                 }
                 
                 function isThisDevicePlayer() {
