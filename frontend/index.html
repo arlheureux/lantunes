@@ -127,8 +127,21 @@
         
         /* Device Selector */
         .device-selector { margin-left: 16px; }
-        .device-selector select { background: #333; color: var(--text-primary); border: none; padding: 8px 12px; border-radius: 20px; font-size: 13px; cursor: pointer; outline: none; }
+        .device-selector select { background: #333; color: var(--text-primary); border: none; padding: 8px 12px; border-radius: 20px; font-size: 13px; cursor: pointer; outline: none; min-width: 120px; }
         .device-selector select:hover { background: #444; }
+        .device-selector button {
+            background: #333;
+            color: var(--text-primary);
+            border: none;
+            padding: 10px 16px;
+            border-radius: 20px;
+            font-size: 14px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .device-selector button:hover { background: #444; }
         
         .track-meta { font-size: 11px; color: var(--text-muted); margin-top: 4px; }
         
@@ -429,6 +442,11 @@
             .device-selector {
                 display: flex;
                 margin-left: 8px;
+            }
+            .device-selector button {
+                font-size: 12px;
+                padding: 8px 12px;
+                max-width: 120px;
             }
             .device-selector select {
                 font-size: 11px;
@@ -1204,6 +1222,24 @@
             </div>
         </div>
         
+        <!-- Device Selector Modal for Mobile -->
+        <div class="mobile-queue-overlay" v-if="showDeviceModal" @click.self="showDeviceModal = false">
+            <div class="mobile-queue-header">
+                <h3>Select Device</h3>
+                <button @click="showDeviceModal = false"><i class="fas fa-times"></i></button>
+            </div>
+            <div class="mobile-queue-list">
+                <div v-for="d in devices" :key="d.id" 
+                     class="mobile-queue-item" 
+                     :class="{ playing: d.is_player }"
+                     @click="setPlayerDevice(d.id); showDeviceModal = false">
+                    <span style="font-size:20px;">{{ d.is_player ? '🎵' : '📱' }}</span>
+                    <span class="title">{{ d.name }}</span>
+                    <span v-if="d.is_player" style="color:var(--accent);margin-left:auto;"><i class="fas fa-check"></i></span>
+                </div>
+            </div>
+        </div>
+        
         <div class="player-bar">
             <div class="track-info">
                 <div class="track-artwork">
@@ -1229,11 +1265,18 @@
                     
                     <!-- Device Selector -->
                     <div class="device-selector" v-if="devices.length > 1">
-                        <select v-model="selectedPlayerId" @change="setPlayerDevice(selectedPlayerId)" title="Select playback device">
+                        <!-- Desktop: dropdown -->
+                        <select v-if="!isMobile" v-model="selectedPlayerId" @change="setPlayerDevice(selectedPlayerId)" title="Select playback device">
                             <option v-for="d in devices" :key="d.id" :value="d.id">
                                 {{ d.is_player ? '🎵 ' : '📱 ' }}{{ d.name }}
                             </option>
                         </select>
+                        <!-- Mobile: button that shows current device -->
+                        <button v-else @click="showDeviceModal = true" title="Select device">
+                            <i class="fas fa-volume-up"></i>
+                            <span style="max-width:100px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">{{ devices.find(d => d.is_player)?.name || 'Select' }}</span>
+                            <i class="fas fa-chevron-up" style="font-size:10px;"></i>
+                        </button>
                     </div>
                 </div>
                 <div class="progress">
@@ -1273,6 +1316,7 @@
                 const isAdmin = ref(currentUser.value.role === 'admin');
                 const isMobile = ref(window.innerWidth <= 768);
                 const showMobileQueue = ref(false);
+                const showDeviceModal = ref(false);
                 
                 // Update isMobile on resize
                 window.addEventListener('resize', () => {
@@ -2006,7 +2050,7 @@
                     openAlbumEditDialog, saveAlbumMetadata, removeAlbumArtwork, albumEditDialog,
                     letters, scrollToLetter, albumContextMenu,
                     devices, selectedPlayerId, deviceName, updateDeviceName, focusSearch, setPlayerDevice,
-                    users, showUserForm, newUser, isAdmin, isMobile, showMobileQueue, loadUsers, createUser, deleteUser, logout,
+                    users, showUserForm, newUser, isAdmin, isMobile, showMobileQueue, showDeviceModal, loadUsers, createUser, deleteUser, logout,
                     viewPlaylist, playPlaylist, loading, loadQueueTracks
                 };
             }
