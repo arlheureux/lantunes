@@ -242,6 +242,7 @@ class PlaybackController:
         if queue is not None:
             self.queue = queue
             self.current_index = 0
+            state.queue = ','.join(map(str, self.queue))
         
         if track_id is not None:
             if track_id not in self.queue:
@@ -252,6 +253,8 @@ class PlaybackController:
             state.current_track_id = self.queue[self.current_index]
             state.is_playing = True
             state.position = 0
+            if not state.queue:
+                state.queue = ','.join(map(str, self.queue))
             state.updated_at = datetime.utcnow()
             db.commit()
             
