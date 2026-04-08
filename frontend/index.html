@@ -2096,6 +2096,31 @@
                     connectWS();
                     loadUsers();
                     
+                    // Keyboard shortcuts
+                    document.addEventListener('keydown', (e) => {
+                        // Ignore if typing in input
+                        if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+                        
+                        if (e.code === 'Space') {
+                            e.preventDefault();
+                            togglePlay();
+                        } else if (e.code === 'ArrowRight' && e.ctrlKey) {
+                            e.preventDefault();
+                            next();
+                        } else if (e.code === 'ArrowLeft' && e.ctrlKey) {
+                            e.preventDefault();
+                            previous();
+                        } else if (e.code === 'ArrowUp' && e.ctrlKey) {
+                            e.preventDefault();
+                            volume.value = Math.min(1, volume.value + 0.1);
+                            setVolume();
+                        } else if (e.code === 'ArrowDown' && e.ctrlKey) {
+                            e.preventDefault();
+                            volume.value = Math.max(0, volume.value - 0.1);
+                            setVolume();
+                        }
+                    });
+                    
                     // Check if we should be playing (if this device is the player)
                     setTimeout(async () => {
                         const state = await apiCall('/api/playback/state?player=' + encodeURIComponent(deviceId));
