@@ -1267,6 +1267,46 @@
                     return selectedPlayerId.value === deviceId || (!selectedPlayerId.value && devices.value.length <= 1);
                 }
                 
+                function onTimeUpdate() {
+                    if (audioPlayer.value) {
+                        playbackState.value.position = audioPlayer.value.currentTime;
+                    }
+                }
+                
+                function onEnded() {
+                    next();
+                }
+                
+                async function createPlaylist() {
+                    const name = prompt('Enter playlist name:');
+                    if (!name) return;
+                    await apiCall('/api/playlists?name=' + encodeURIComponent(name), { method: 'POST' });
+                    const p = await apiCall('/api/playlists');
+                    if (p) playlists.value = p;
+                }
+                
+                async function saveConfig() {
+                    await apiCall('/api/config', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(config.value)
+                    });
+                    alert('Config saved! Restart server to apply changes.');
+                }
+                
+                async function scanLibrary() {
+                    scanResult.value = 'Scanning...';
+                    const r = await apiCall('/api/library/scan', { method: 'POST' });
+                    scanResult.value = r ? JSON.stringify(r) : 'Scan failed';
+                }
+                
+                function formatDuration(seconds) {
+                    if (!seconds) return '0:00';
+                    const mins = Math.floor(seconds / 60);
+                    const secs = Math.floor(seconds % 60);
+                    return mins + ':' + secs.toString().padStart(2, '0');
+                }
+                
                 const progressPercent = computed(() => {
                     if (!playbackState.value.track?.duration) return 0;
                     return (playbackState.value.position / playbackState.value.track.duration) * 100;
