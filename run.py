@@ -11,7 +11,7 @@ pip_path = os.path.join(venv_path, 'bin', 'pip')
 # All required dependencies
 REQUIRED_DEPS = [
     'fastapi', 'uvicorn', 'sqlalchemy', 'mutagen', 'pyyaml', 
-    'python-multipart', 'websockets', 'requests', 'PyJWT', 'bcrypt'
+    'python-multipart', 'websockets', 'requests', 'PyJWT', 'bcrypt', 'slowapi'
 ]
 
 def check_and_install_deps():
