@@ -635,8 +635,12 @@
                     <p style="color:#aaa;margin-bottom:20px;">{{ currentArtist.albums?.length || 0 }} albums</p>
                     <div class="album-grid">
                         <div class="album-card" v-for="a in currentArtist.albums" :key="a.id" @click="viewAlbum(a.id)">
-                            <div style="width:100%;aspect-ratio:1;background:#333;border-radius:4px;margin-bottom:8px;display:flex;align-items:center;justify-content:center;">
-                                <i class="fas fa-compact-disc" style="font-size:48px;color:#555;"></i>
+                            <div class="album-cover">
+                                <img v-if="a.artwork" :src="'/api/library/artwork/' + a.id">
+                                <div v-else class="album-placeholder">
+                                    <i class="fas fa-compact-disc" style="font-size:48px;color:#555;"></i>
+                                </div>
+                                <div class="album-play-btn" @click.stop="playAlbum(a)"><i class="fas fa-play"></i></div>
                             </div>
                             <div class="name">{{ a.title }}</div>
                             <div class="artist">{{ a.year }}</div>
@@ -1317,7 +1321,7 @@
                     view, searchQuery, searchResults, albums, artists, playlists, config, scanResult,
                     currentAlbum, currentArtist, playbackState, queue, volume, audioPlayer, progressPercent,
                     tracks, tracksPage, tracksLimit, tracksTotalPages, contextMenu, playlistDialog,
-                    search, viewAlbum, viewArtist, playTrack, togglePlay, next, previous, seek, setVolume,
+                    search, viewAlbum, viewArtist, playTrack, playAlbum, togglePlay, next, previous, seek, setVolume,
                     onTimeUpdate, onEnded, createPlaylist, saveConfig, scanLibrary, formatDuration, getTrackTitle,
                     loadTracks, prevPage, nextPage, showContextMenu, closeContextMenu, playTrackNext, addToQueue,
                     toggleShuffle, shufflePlay,
