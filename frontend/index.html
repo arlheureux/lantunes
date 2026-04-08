@@ -333,7 +333,22 @@
                 height: 5px;
                 border-radius: 3px;
             }
-            .volume, .track-meta, .device-selector { display: none; }
+            .volume, .track-meta { display: none; }
+            
+            /* Device selector on mobile */
+            .device-selector {
+                display: flex;
+                margin-left: 8px;
+            }
+            .device-selector select {
+                font-size: 11px;
+                padding: 6px 10px;
+                background: #333;
+                color: #fff;
+                border: none;
+                border-radius: 12px;
+                max-width: 100px;
+            }
             
             /* Content area - Better mobile scrolling */
             .content { 
