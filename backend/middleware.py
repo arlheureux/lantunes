@@ -8,6 +8,7 @@ PUBLIC_ENDPOINTS = [
     "/api/auth/login",
     "/api/auth/setup",
     "/api/auth/status",
+    "/api/playback/stream/",
     "/docs",
     "/openapi.json",
     "/redoc"
@@ -24,8 +25,9 @@ class AuthMiddleware(BaseHTTPMiddleware):
         if path in PUBLIC_PATHS:
             return await call_next(request)
         
-        # Always allow public API endpoints
-        if path in PUBLIC_ENDPOINTS:
+        # Always allow public API endpoints (exact match or prefix for stream)
+        is_public = any(path.startswith(public) for public in PUBLIC_ENDPOINTS)
+        if is_public:
             return await call_next(request)
         
         # For other API endpoints, check auth
