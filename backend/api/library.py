@@ -28,6 +28,16 @@ def get_track(track_id: int, db: Session = Depends(get_db)):
         raise HTTPException(status_code=404, detail="Track not found")
     return track.as_dict()
 
+@router.post("/tracks/batch")
+def get_tracks_batch(ids: list[int], db: Session = Depends(get_db)):
+    """Get multiple tracks by their IDs in a single request."""
+    if not ids:
+        return {}
+    if len(ids) > 500:
+        ids = ids[:500]  # Limit to 500 tracks per request
+    tracks = db.query(Track).filter(Track.id.in_(ids)).all()
+    return {t.id: t.as_dict() for t in tracks}
+
 @router.get("/albums")
 def get_albums(db: Session = Depends(get_db)):
     albums = db.query(Album).options(joinedload(Album.artist)).order_by(Album.title).all()

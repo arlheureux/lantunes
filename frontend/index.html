@@ -1867,13 +1867,25 @@
                     if (trackCache.value[trackId]) {
                         return trackCache.value[trackId].title;
                     }
-                    apiCall('/api/library/tracks/' + trackId).then(t => {
-                        if (t) {
-                            trackCache.value[trackId] = t;
-                            return t.title;
-                        }
-                    });
                     return 'Track ' + trackId;
+                }
+                
+                function loadQueueTracks() {
+                    if (!queue.value || queue.value.length === 0) return;
+                    const ids = queue.value.filter(id => !trackCache.value[id]);
+                    if (ids.length === 0) return;
+                    
+                    fetch('/api/library/tracks/batch', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(ids)
+                    }).then(r => r.json()).then(data => {
+                        if (data) {
+                            Object.entries(data).forEach(([id, track]) => {
+                                trackCache.value[parseInt(id)] = track;
+                            });
+                        }
+                    }).catch(() => {});
                 }
                 
                 function connectWS() {
@@ -1892,6 +1904,7 @@
                             const prevPlaying = playbackState.value.is_playing;
                             playbackState.value = msg.data;
                             queue.value = msg.data.queue || [];
+                            loadQueueTracks();
                             
                             // Auto-play: if this device has stream_url and is playing, start audio
                             console.log('Has stream_url:', !!msg.data.track?.stream_url, 'is_playing:', msg.data.is_playing, 'was playing:', prevPlaying);
@@ -1901,6 +1914,7 @@
                             }
                         } else if (msg.event === 'queue_updated') {
                             queue.value = msg.data.queue || [];
+                            loadQueueTracks();
                         } else if (msg.event === 'devices') {
                             console.log('Devices received:', JSON.stringify(msg.data.devices));
                             devices.value = msg.data.devices || [];
@@ -1952,7 +1966,7 @@
                     letters, scrollToLetter, albumContextMenu,
                     devices, selectedPlayerId, deviceName, updateDeviceName, focusSearch, setPlayerDevice,
                     users, showUserForm, newUser, isAdmin, isMobile, showMobileQueue, loadUsers, createUser, deleteUser, logout,
-                    viewPlaylist, playPlaylist, loading
+                    viewPlaylist, playPlaylist, loading, loadQueueTracks
                 };
             }
         }).mount('#app');
