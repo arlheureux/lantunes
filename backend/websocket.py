@@ -3,15 +3,19 @@ import os
 backend_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, backend_dir)
 
-from fastapi import WebSocket, WebSocketDisconnect, Query
+from fastapi import WebSocket, WebSocketDisconnect
 from playback import playback
 from auth import verify_token
 import json
 
-async def websocket_endpoint(websocket: WebSocket, token: str = Query(None)):
+async def websocket_endpoint(websocket: WebSocket):
+    token = websocket.query_params.get("token")
+    print(f"[WS] Token from query: {token[:20] if token else None}...")
+    
     auth_payload = None
     if token:
         auth_payload = verify_token(token)
+        print(f"[WS] Auth payload: {auth_payload}")
     
     if not auth_payload:
         await websocket.close(code=4001, reason="Authentication required")

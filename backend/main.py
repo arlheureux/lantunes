@@ -37,8 +37,8 @@ app.include_router(playlists.router)
 app.include_router(config.router)
 
 @app.websocket("/ws")
-async def ws(websocket: WebSocket, token: str = None):
-    await websocket_endpoint(websocket, token)
+async def ws(websocket: WebSocket):
+    await websocket_endpoint(websocket)
 
 frontend_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), "frontend")
 index_path = os.path.join(frontend_path, "index.html")
