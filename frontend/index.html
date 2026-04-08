@@ -1836,7 +1836,8 @@
                             apiCall('/api/library/genres'),
                             apiCall('/api/config')
                         ]);
-                        if (a) albums.value = a;
+                        // Handle both old format (array) and new format ({albums: []})
+                        if (a) albums.value = a.albums || a;
                         if (ra) recentAlbums.value = ra;
                         if (ar) artists.value = ar;
                         if (p) playlists.value = p;
