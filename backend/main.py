@@ -3,15 +3,28 @@ import os
 backend_dir = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, backend_dir)
 
-from fastapi import FastAPI, WebSocket
+from fastapi import FastAPI, WebSocket, Request
 from fastapi.staticfiles import StaticFiles
-from fastapi.responses import FileResponse, HTMLResponse
+from fastapi.responses import FileResponse, HTMLResponse, JSONResponse
+from slowapi import Limiter
+from slowapi.util import get_remote_address
+from slowapi.errors import RateLimitExceeded
 from api import library, playback, playlists, config
 from api import auth, users
 from websocket import websocket_endpoint
 from middleware import AuthMiddleware
 
+limiter = Limiter(key_func=get_remote_address)
+
 app = FastAPI(title="LanTunes")
+app.state.limiter = limiter
+
+@app.exception_handler(RateLimitExceeded)
+async def rate_limit_handler(request: Request, exc: RateLimitExceeded):
+    return JSONResponse(
+        status_code=429,
+        content={"detail": "Too many requests. Please try again later."}
+    )
 
 # Add auth middleware
 app.add_middleware(AuthMiddleware)
@@ -24,8 +37,8 @@ app.include_router(playlists.router)
 app.include_router(config.router)
 
 @app.websocket("/ws")
-async def ws(websocket: WebSocket):
-    await websocket_endpoint(websocket)
+async def ws(websocket: WebSocket, token: str = None):
+    await websocket_endpoint(websocket, token)
 
 frontend_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), "frontend")
 index_path = os.path.join(frontend_path, "index.html")

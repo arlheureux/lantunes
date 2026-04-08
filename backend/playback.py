@@ -12,12 +12,12 @@ class PlaybackController:
         self.shuffle_mode: bool = False
         self.last_played_track_id: int = None
         # Device management for "cast play to" feature
-        self._devices: dict = {}  # {device_id: {"ws": websocket, "name": str, "is_player": bool}}
+        self._devices: dict = {}  # {device_id: {"ws": websocket, "name": str, "is_player": bool, "owner": user_id}}
         self._player_device_id: str = None  # Which device plays audio
     
-    def register_device(self, ws, device_id: str, device_name: str):
+    def register_device(self, ws, device_id: str, device_name: str, device_owner: str = None):
         """Register a new device or update existing"""
-        self._devices[device_id] = {"ws": ws, "name": device_name, "is_player": False}
+        self._devices[device_id] = {"ws": ws, "name": device_name, "is_player": False, "owner": device_owner}
         # If first device, make it the player
         if not self._player_device_id:
             self._player_device_id = device_id

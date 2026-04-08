@@ -3,16 +3,30 @@ import os
 backend_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, backend_dir)
 
-from fastapi import WebSocket, WebSocketDisconnect
+from fastapi import WebSocket, WebSocketDisconnect, Query
 from playback import playback
+from auth import verify_token
 import json
 
-async def websocket_endpoint(websocket: WebSocket):
+async def websocket_endpoint(websocket: WebSocket, token: str = Query(None)):
+    auth_payload = None
+    if token:
+        auth_payload = verify_token(token)
+    
+    if not auth_payload:
+        await websocket.close(code=4001, reason="Authentication required")
+        return
+    
     await websocket.accept()
     playback.add_connection(websocket)
     
+    # Store user info from token
+    user_id = auth_payload.get("user_id")
+    username = auth_payload.get("username")
+    
     # Initialize device_id as None until registered
     device_id = None
+    device_owner = None  # user_id that owns this device
     
     try:
         while True:
@@ -28,9 +42,10 @@ async def websocket_endpoint(websocket: WebSocket):
                 # Client registers with device info
                 device_id = payload.get("device_id")
                 device_name = payload.get("device_name", "Unknown Device")
-                print(f"[WS] Register: device_id={device_id}, name={device_name}")
+                device_owner = user_id  # This device belongs to the authenticated user
+                print(f"[WS] Register: device_id={device_id}, name={device_name}, user={username}")
                 if device_id:
-                    playback.register_device(websocket, device_id, device_name)
+                    playback.register_device(websocket, device_id, device_name, device_owner)
                     print(f"[WS] Devices after register: {list(playback._devices.keys())}")
                     playback.broadcast_devices()
             

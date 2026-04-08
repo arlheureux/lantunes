@@ -1,10 +1,23 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, Request
+from fastapi.responses import JSONResponse
 from sqlalchemy.orm import Session
 from pydantic import BaseModel
+from slowapi import Limiter
+from slowapi.util import get_remote_address
+from slowapi.errors import RateLimitExceeded
 from database import get_db, User
 from auth import create_access_token, verify_password, hash_password
 
+limiter = Limiter(key_func=get_remote_address)
+
 router = APIRouter(prefix="/api/auth", tags=["auth"])
+
+@router.exception_handler(RateLimitExceeded)
+async def rate_limit_handler(request: Request, exc: RateLimitExceeded):
+    return JSONResponse(
+        status_code=429,
+        content={"detail": "Too many requests. Please try again later."}
+    )
 
 class LoginRequest(BaseModel):
     username: str
@@ -20,7 +33,8 @@ class TokenResponse(BaseModel):
     user: dict
 
 @router.post("/login", response_model=TokenResponse)
-def login(req: LoginRequest, db: Session = Depends(get_db)):
+@limiter.limit("5/minute")
+def login(request: Request, req: LoginRequest, db: Session = Depends(get_db)):
     """Login with username and password"""
     user = db.query(User).filter(User.username == req.username).first()
     
@@ -48,7 +62,8 @@ def login(req: LoginRequest, db: Session = Depends(get_db)):
     )
 
 @router.post("/setup", response_model=TokenResponse)
-def setup(req: SetupRequest, db: Session = Depends(get_db)):
+@limiter.limit("3/minute")
+def setup(request: Request, req: SetupRequest, db: Session = Depends(get_db)):
     """Create first admin user - only when no admin exists"""
     admin_count = db.query(User).filter(User.role == "admin", User.status == "active").count()
     if admin_count > 0:

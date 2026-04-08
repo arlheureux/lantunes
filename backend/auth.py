@@ -1,10 +1,31 @@
 import jwt
+import os
+import secrets
 from datetime import datetime, timedelta
 from typing import Optional
+from pathlib import Path
 
-SECRET_KEY = "lantunes-secret-key-change-in-production"
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_HOURS = 24
+
+def get_secret_key():
+    """Get JWT secret key from env var or generate secure random one."""
+    env_secret = os.environ.get("JWT_SECRET")
+    if env_secret:
+        return env_secret
+    
+    secret_file = Path(__file__).parent / ".jwt_secret"
+    
+    if secret_file.exists():
+        return secret_file.read_text().strip()
+    
+    new_secret = secrets.token_hex(32)
+    secret_file.write_text(new_secret)
+    os.chmod(secret_file, 0o600)
+    
+    return new_secret
+
+SECRET_KEY = get_secret_key()
 
 def create_access_token(data: dict) -> str:
     """Create JWT access token with 24h expiry"""
@@ -24,10 +45,14 @@ def verify_token(token: str) -> Optional[dict]:
         return None
 
 def hash_password(password: str) -> str:
-    """Simple password hash (for demo - use bcrypt in production)"""
-    import hashlib
-    return hashlib.sha256(password.encode()).hexdigest()
+    """Hash password using bcrypt."""
+    import bcrypt
+    return bcrypt.hashpw(password.encode(), bcrypt.gensalt()).decode()
 
 def verify_password(password: str, password_hash: str) -> bool:
-    """Verify password against hash"""
-    return hash_password(password) == password_hash
+    """Verify password against bcrypt hash."""
+    import bcrypt
+    try:
+        return bcrypt.checkpw(password.encode(), password_hash.encode())
+    except Exception:
+        return False
