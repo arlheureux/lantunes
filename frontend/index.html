@@ -2163,6 +2163,12 @@
                         return;
                     }
                     
+                    // Reset all modal states
+                    playlistDialog.value.show = false;
+                    albumEditDialog.value.show = false;
+                    showDeviceModal.value = false;
+                    showMobileQueue.value = false;
+                    
                     loadLibrary();
                     loadTracks();
                     connectWS();
