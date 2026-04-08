@@ -33,3 +33,27 @@ def update_config(data: ConfigUpdate):
         yaml.dump(config, f)
     
     return {"saved": True}
+
+@router.post("/migrate")
+def run_migration():
+    """Add missing columns to playback_state table"""
+    from backend.models import engine
+    import sqlite3
+    
+    conn = sqlite3.connect(engine.url.database)
+    cursor = conn.cursor()
+    
+    # Check current columns
+    cursor.execute("PRAGMA table_info(playback_state)")
+    columns = [row[1] for row in cursor.fetchall()]
+    
+    if "queue" not in columns:
+        cursor.execute("ALTER TABLE playback_state ADD COLUMN queue TEXT")
+    
+    if "shuffle_mode" not in columns:
+        cursor.execute("ALTER TABLE playback_state ADD COLUMN shuffle_mode INTEGER DEFAULT 0")
+    
+    conn.commit()
+    conn.close()
+    
+    return {"success": True, "columns": columns}
