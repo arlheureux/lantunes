@@ -1041,12 +1041,31 @@
                     <button class="btn" @click="createPlaylist" style="margin-bottom:20px;">New Playlist</button>
                     <div v-if="playlists.length === 0" class="empty">No playlists yet</div>
                     <div v-else class="album-grid">
-                        <div class="album-card" v-for="p in playlists" :key="p.id">
+                        <div class="album-card" v-for="p in playlists" :key="p.id" @click="viewPlaylist(p.id)">
                             <div style="width:100%;aspect-ratio:1;background:#333;border-radius:4px;margin-bottom:8px;display:flex;align-items:center;justify-content:center;">
                                 <i class="fas fa-list" style="font-size:48px;color:#555;"></i>
                             </div>
                             <div class="name">{{ p.name }}</div>
                             <div class="artist">{{ p.track_count }} tracks</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div v-if="view === 'playlist-detail'">
+                    <button @click="view = 'playlists'" style="margin-bottom:20px;background:none;border:none;color:#aaa;cursor:pointer;">
+                        <i class="fas fa-arrow-left"></i> Back
+                    </button>
+                    <h1>{{ currentPlaylist.name }}</h1>
+                    <button class="btn" @click="playPlaylist" v-if="currentPlaylist.tracks?.length" style="margin-bottom:20px;">
+                        <i class="fas fa-play"></i> Play
+                    </button>
+                    <div v-if="!currentPlaylist.tracks?.length" class="empty">No tracks in this playlist</div>
+                    <div v-else class="track-list">
+                        <div class="track-row" v-for="(t, idx) in currentPlaylist.tracks" :key="t.id" @click="playTrack(t)" @contextmenu.prevent="showContextMenu($event, t)">
+                            <span class="num">{{ idx + 1 }}</span>
+                            <span class="title">{{ t.title }}</span>
+                            <span class="duration">{{ formatDuration(t.duration) }}</span>
+                            <button class="menu-btn" @click.stop="showContextMenu($event, t)"><i class="fas fa-ellipsis-h"></i></button>
                         </div>
                     </div>
                 </div>
@@ -1214,6 +1233,7 @@
                 const scanResult = ref('');
                 const currentAlbum = ref(null);
                 const currentArtist = ref(null);
+                const currentPlaylist = ref(null);
                 const playbackState = ref({ track: null, position: 0, is_playing: false, volume: 1.0, queue: [], queue_index: 0 });
                 const queue = ref([]);
                 const volume = ref(1.0);
@@ -1396,6 +1416,11 @@
                     if (a) { currentArtist.value = a; view.value = 'artist-detail'; }
                 }
                 
+                async function viewPlaylist(id) {
+                    const p = await apiCall('/api/playlists/' + id);
+                    if (p) { currentPlaylist.value = p; view.value = 'playlist-detail'; }
+                }
+                
                 async function viewAlbum(id) {
                     const a = await apiCall('/api/library/albums/' + id);
                     if (a) { currentAlbum.value = a; view.value = 'album-detail'; }
@@ -1482,8 +1507,29 @@
                             playbackState.value = state;
                             const amIPlayer = !selectedPlayerId.value || selectedPlayerId.value === deviceId;
                             if (amIPlayer && state.track?.stream_url) {
-                                playStream(state.track.id);
+                                // If audio player exists and has current track, just play
+                                if (audioPlayer.value && audioPlayer.value.src) {
+                                    audioPlayer.value.play().catch(e => playStream(state.track.id));
+                                } else {
+                                    playStream(state.track.id);
+                                }
                             }
+                        }
+                    }
+                }
+                
+                async function playPlaylist() {
+                    if (!currentPlaylist.value || !currentPlaylist.value.tracks?.length) return;
+                    const trackIds = currentPlaylist.value.tracks.map(t => t.id).join(',');
+                    const targetPlayer = selectedPlayerId.value || deviceId;
+                    const url = '/api/playback/play?queue=' + trackIds + '&player=' + encodeURIComponent(targetPlayer);
+                    const state = await apiCall(url, { method: 'POST' });
+                    if (state) {
+                        playbackState.value = state;
+                        queue.value = state.queue;
+                        const amIPlayer = !selectedPlayerId.value || selectedPlayerId.value === deviceId;
+                        if (amIPlayer && state.track?.stream_url) {
+                            playStream(state.track.id);
                         }
                     }
                 }
@@ -1810,7 +1856,7 @@
                 
                 return {
                     view, searchQuery, searchResults, albums, artists, playlists, config, scanResult,
-                    currentAlbum, currentArtist, playbackState, queue, volume, audioPlayer, progressPercent,
+                    currentAlbum, currentArtist, currentPlaylist, playbackState, queue, volume, audioPlayer, progressPercent,
                     tracks, tracksPage, tracksLimit, tracksTotalPages, contextMenu, playlistDialog,
                     search, viewAlbum, viewArtist, playTrack, playAlbum, togglePlay, next, previous, seek, setVolume,
                     onTimeUpdate, onEnded, createPlaylist, saveConfig, scanLibrary, formatDuration, getTrackTitle,
@@ -1821,7 +1867,8 @@
                     openAlbumEditDialog, saveAlbumMetadata, removeAlbumArtwork, albumEditDialog,
                     letters, scrollToLetter, albumContextMenu,
                     devices, selectedPlayerId, deviceName, updateDeviceName, focusSearch, setPlayerDevice,
-                    users, showUserForm, newUser, isAdmin, loadUsers, createUser, deleteUser, logout
+                    users, showUserForm, newUser, isAdmin, loadUsers, createUser, deleteUser, logout,
+                    viewPlaylist, playPlaylist
                 };
             }
         }).mount('#app');
