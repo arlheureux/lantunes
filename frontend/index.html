@@ -1307,6 +1307,93 @@
                     return mins + ':' + secs.toString().padStart(2, '0');
                 }
                 
+                async function playTrackNext(track) {
+                    await apiCall('/api/playback/play-next?track_id=' + track.id, { method: 'POST' });
+                }
+                
+                async function addToQueue(track) {
+                    await apiCall('/api/playback/queue/add?track_id=' + track.id, { method: 'POST' });
+                }
+                
+                function openPlaylistDialog(track) {
+                    playlistDialog.value = { show: true, track: track, album: null };
+                    newPlaylistName.value = '';
+                }
+                
+                function openAlbumPlaylistDialog(album) {
+                    playlistDialog.value = { show: true, track: null, album: album };
+                    newPlaylistName.value = '';
+                }
+                
+                function openAlbumEditDialog(album) {
+                    albumEditDialog.value = {
+                        show: true,
+                        id: album.id,
+                        title: album.title || '',
+                        year: album.year || null,
+                        genre: album.genre || '',
+                        artwork: album.artwork_path || null
+                    };
+                }
+                
+                async function addToPlaylist(playlistId) {
+                    if (playlistDialog.value.track) {
+                        await apiCall('/api/playlists/' + playlistId + '/tracks?track_id=' + playlistDialog.value.track.id, { method: 'POST' });
+                    } else if (playlistDialog.value.album) {
+                        const albumDetails = await apiCall('/api/library/albums/' + playlistDialog.value.album.id);
+                        if (albumDetails && albumDetails.tracks) {
+                            for (const track of albumDetails.tracks) {
+                                await apiCall('/api/playlists/' + playlistId + '/tracks?track_id=' + track.id, { method: 'POST' });
+                            }
+                        }
+                    }
+                    playlistDialog.value.show = false;
+                }
+                
+                async function createAndAddToPlaylist() {
+                    if (!newPlaylistName.value.trim()) return;
+                    const result = await apiCall('/api/playlists?name=' + encodeURIComponent(newPlaylistName.value), { method: 'POST' });
+                    if (result && result.id) {
+                        if (playlistDialog.value.track) {
+                            await apiCall('/api/playlists/' + result.id + '/tracks?track_id=' + playlistDialog.value.track.id, { method: 'POST' });
+                        } else if (playlistDialog.value.album) {
+                            const albumDetails = await apiCall('/api/library/albums/' + playlistDialog.value.album.id);
+                            if (albumDetails && albumDetails.tracks) {
+                                for (const track of albumDetails.tracks) {
+                                    await apiCall('/api/playlists/' + result.id + '/tracks?track_id=' + track.id, { method: 'POST' });
+                                }
+                            }
+                        }
+                        const p = await apiCall('/api/playlists');
+                        if (p) playlists.value = p;
+                    }
+                    playlistDialog.value.show = false;
+                    newPlaylistName.value = '';
+                }
+                
+                const newPlaylistName = ref('');
+                
+                async function playFromQueue(index) {
+                    const targetPlayer = selectedPlayerId.value || deviceId;
+                    const state = await apiCall('/api/playback/play?player=' + encodeURIComponent(targetPlayer), { method: 'POST' });
+                    if (state) {
+                        playbackState.value = state;
+                        queue.value = state.queue;
+                        showMobileQueue.value = false;
+                        const amIPlayer = !selectedPlayerId.value || selectedPlayerId.value === deviceId;
+                        if (amIPlayer && state.track?.stream_url) {
+                            playStream(state.track.id);
+                        }
+                    }
+                }
+                
+                async function deleteUser(userId) {
+                    if (confirm('Delete this user?')) {
+                        await apiCall('/api/users/' + userId, { method: 'DELETE' });
+                        loadUsers();
+                    }
+                }
+                
                 const progressPercent = computed(() => {
                     if (!playbackState.value.track?.duration) return 0;
                     return (playbackState.value.position / playbackState.value.track.duration) * 100;
