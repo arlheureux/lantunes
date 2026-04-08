@@ -887,6 +887,21 @@
                             </div>
                         </div>
                         
+                        <div v-if="isMobile && genres.length" style="margin-top:32px;">
+                            <h2>Genres</h2>
+                            <div style="display:flex;gap:10px;overflow-x:auto;padding-bottom:10px;">
+                                <div v-for="g in genres.slice(0,6)" :key="g" @click="viewGenre(g)" style="flex-shrink:0;width:120px;cursor:pointer;">
+                                    <div style="width:100%;aspect-ratio:1;background:linear-gradient(135deg, #667eea 0%, #764ba2 100%);border-radius:8px;margin-bottom:8px;display:flex;align-items:center;justify-content:center;">
+                                        <i class="fas fa-music" style="font-size:32px;color:#fff;"></i>
+                                    </div>
+                                    <div style="font-size:13px;text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ g }}</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                        </div>
+                        
                         <div v-if="!loading.library && tracks.length === 0" class="empty-state">
                             <div class="empty-state-icon">
                                 <svg viewBox="0 0 24 24"><path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z"/></svg>
