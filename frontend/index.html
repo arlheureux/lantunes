@@ -917,8 +917,8 @@
             </div>
         </div>
         
-        <!-- Mobile Navigation -->
-        <div class="mobile-nav">
+        <!-- Mobile Navigation - only show on small screens -->
+        <div class="mobile-nav" v-if="isMobile">
             <div class="mobile-nav-item" :class="{ active: view === 'library' }" @click="view = 'library'">
                 <i class="fas fa-home"></i>
                 Home
@@ -1005,6 +1005,12 @@
                 const view = ref('library');
                 const currentUser = ref(JSON.parse(localStorage.getItem('user') || '{}'));
                 const isAdmin = ref(currentUser.value.role === 'admin');
+                const isMobile = ref(window.innerWidth <= 768);
+                
+                // Update isMobile on resize
+                window.addEventListener('resize', () => {
+                    isMobile.value = window.innerWidth <= 768;
+                });
                 const searchQuery = ref('');
                 const searchResults = ref({ tracks: [], albums: [], artists: [] });
                 let searchTimeout = null;
@@ -1650,7 +1656,7 @@
                     openAlbumEditDialog, saveAlbumMetadata, removeAlbumArtwork, albumEditDialog,
                     letters, scrollToLetter, albumContextMenu,
                     devices, selectedPlayerId, deviceName, updateDeviceName, focusSearch, setPlayerDevice,
-                    users, showUserForm, newUser, isAdmin, loadUsers, createUser, deleteUser, logout,
+                    users, showUserForm, newUser, isAdmin, isMobile, loadUsers, createUser, deleteUser, logout,
                     viewPlaylist, playPlaylist
                 };
             }
