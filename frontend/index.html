@@ -1027,11 +1027,13 @@
                         <button class="btn" @click="view = 'settings'">Scan Library</button>
                     </div>
                     <template v-else>
-                        <div class="letter-index">
-                            <span v-for="letter in letters" :key="letter" @click="scrollToLetter(letter)">{{ letter }}</span>
+                        <div class="letter-filter" style="margin-bottom:16px;display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
+                            <span style="color:var(--text-muted);font-size:14px;">Filter:</span>
+                            <button @click="selectedLetter = null" :class="{ 'btn-active': !selectedLetter }" style="background:none;border:1px solid #444;border-radius:16px;padding:6px 14px;color:#aaa;cursor:pointer;font-size:13px;" :style="!selectedLetter ? 'border-color:var(--accent);color:var(--accent);' : ''">All</button>
+                            <button v-for="letter in letters" :key="letter" @click="selectedLetter = letter" :class="{ 'btn-active': selectedLetter === letter }" style="background:none;border:1px solid #444;border-radius:16px;padding:6px 14px;color:#aaa;cursor:pointer;font-size:13px;" :style="selectedLetter === letter ? 'border-color:var(--accent);color:var(--accent);' : ''">{{ letter }}</button>
                         </div>
                         <div class="album-grid">
-                        <div class="album-card" v-for="a in artists" :key="a.id" :id="'artist-' + a.id" @click="viewArtist(a.id)">
+                        <div class="album-card" v-for="a in filteredArtists" :key="a.id" :id="'artist-' + a.id" @click="viewArtist(a.id)">
                             <div style="width:100%;aspect-ratio:1;background:#333;border-radius:50%;margin-bottom:8px;display:flex;align-items:center;justify-content:center;">
                                 <i class="fas fa-user" style="font-size:48px;color:#555;"></i>
                             </div>
@@ -1835,6 +1837,16 @@
                 }
                 
                 const letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ#'.split('');
+                const selectedLetter = ref(null);
+                
+                const filteredArtists = computed(() => {
+                    if (!selectedLetter.value) return artists.value;
+                    return artists.value.filter(a => {
+                        const firstChar = a.name.charAt(0).toUpperCase();
+                        if (selectedLetter.value === '#') return !'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.includes(firstChar);
+                        return firstChar === selectedLetter.value;
+                    });
+                });
                 
                 function scrollToLetter(letter) {
                     const firstArtist = artists.value.find(a => {
@@ -2106,7 +2118,7 @@
                     openPlaylistDialog, addToPlaylist, createAndAddToPlaylist, newPlaylistName,
                     showAlbumContextMenu, closeAlbumContextMenu, openAlbumPlaylistDialog,
                     openAlbumEditDialog, saveAlbumMetadata, removeAlbumArtwork, albumEditDialog,
-                    letters, scrollToLetter, albumContextMenu,
+                    letters, scrollToLetter, selectedLetter, filteredArtists, albumContextMenu,
                     devices, selectedPlayerId, deviceName, updateDeviceName, focusSearch, setPlayerDevice,
                     users, showUserForm, newUser, isAdmin, isMobile, showMobileQueue, showDeviceModal, loadUsers, createUser, deleteUser, logout,
                     onTouchStart, onTouchMove, onTouchEnd, isPulling,
