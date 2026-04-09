@@ -298,7 +298,7 @@ class PlaybackController:
                 "queue_index": 0,
                 "shuffle_mode": self.shuffle_mode,
                 "repeat_mode": self.repeat_mode,
-                "player_device_id": self._player_device_id
+                "player_device_id": self.get_player_device_id()
             }
         
         # Get artist and album names
