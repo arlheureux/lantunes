@@ -2043,37 +2043,29 @@
                 }
                 
                 async function togglePlay() {
-                    const amIPlayer = isThisDevicePlayer();
                     const targetPlayer = selectedPlayerId.value || deviceId;
-                    console.log('TogglePlay clicked, amIPlayer:', amIPlayer, 'isPlaying:', playbackState.value.is_playing);
+                    console.log('TogglePlay clicked, targetPlayer:', targetPlayer, 'isPlaying:', playbackState.value.is_playing);
                     isLoading.value = true;
                     try {
                         if (playbackState.value.is_playing) {
-                            if (!amIPlayer) {
-                                console.log('Sending pause via WebSocket');
-                                sendWS('control', { action: 'pause' });
-                            } else {
-                                await apiCall('/api/playback/pause?player=' + encodeURIComponent(targetPlayer), { method: 'POST' });
+                            await apiCall('/api/playback/pause?player=' + encodeURIComponent(targetPlayer), { method: 'POST' });
+                            if (isThisDevicePlayer()) {
                                 audioPlayer.value?.pause();
                             }
                         } else {
-                            if (!amIPlayer) {
-                                sendWS('control', { action: 'play' });
-                            } else {
-                                const url = '/api/playback/play?player=' + encodeURIComponent(targetPlayer);
-                                const state = await apiCall(url, { method: 'POST' });
-                                if (state) {
-                                    playbackState.value = state;
-                                    if (state.track?.stream_url) {
-                                        if (audioPlayer.value && audioPlayer.value.src) {
-                                            const wasPlaying = state.position > 0;
-                                            await audioPlayer.value.play();
-                                            if (wasPlaying && state.position > 0) {
-                                                audioPlayer.value.currentTime = state.position;
-                                            }
-                                        } else {
-                                            playStream(state.track.id);
+                            const url = '/api/playback/play?player=' + encodeURIComponent(targetPlayer);
+                            const state = await apiCall(url, { method: 'POST' });
+                            if (state) {
+                                playbackState.value = state;
+                                if (isThisDevicePlayer() && state.track?.stream_url) {
+                                    if (audioPlayer.value && audioPlayer.value.src) {
+                                        const wasPlaying = state.position > 0;
+                                        await audioPlayer.value.play();
+                                        if (wasPlaying && state.position > 0) {
+                                            audioPlayer.value.currentTime = state.position;
                                         }
+                                    } else {
+                                        playStream(state.track.id);
                                     }
                                 }
                             }
@@ -2100,47 +2092,25 @@
                 }
                 
                 async function next() {
-                    const amIPlayer = isThisDevicePlayer();
-                    console.log('Next clicked, amIPlayer:', amIPlayer, 'deviceId:', deviceId);
-                    if (!amIPlayer) {
-                        console.log('Sending next via WebSocket');
-                        sendWS('control', { action: 'next' });
-                    } else {
-                        const targetPlayer = selectedPlayerId.value || deviceId;
-                        const state = await apiCall('/api/playback/next?player=' + encodeURIComponent(targetPlayer), { method: 'POST' });
-                        if (state) {
-                            playbackState.value = state;
-                            if (state.track?.stream_url) playStream(state.track.id);
+                    const targetPlayer = selectedPlayerId.value || deviceId;
+                    console.log('Next clicked, targetPlayer:', targetPlayer);
+                    const state = await apiCall('/api/playback/next?player=' + encodeURIComponent(targetPlayer), { method: 'POST' });
+                    if (state) {
+                        playbackState.value = state;
+                        if (isThisDevicePlayer() && state.track?.stream_url) {
+                            playStream(state.track.id);
                         }
                     }
                 }
                 
                 async function previous() {
-                    const amIPlayer = isThisDevicePlayer();
-                    console.log('Previous clicked, amIPlayer:', amIPlayer, 'deviceId:', deviceId);
-                    if (!amIPlayer) {
-                        console.log('Sending previous via WebSocket');
-                        sendWS('control', { action: 'previous' });
-                    } else {
-                        const targetPlayer = selectedPlayerId.value || deviceId;
-                        const state = await apiCall('/api/playback/next?player=' + encodeURIComponent(targetPlayer), { method: 'POST' });
-                        if (state) {
-                            playbackState.value = state;
-                            if (state.track?.stream_url) playStream(state.track.id);
-                        }
-                    }
-                }
-                
-                async function previous() {
-                    const amIPlayer = isThisDevicePlayer();
-                    if (!amIPlayer) {
-                        sendWS('control', { action: 'previous' });
-                    } else {
-                        const targetPlayer = selectedPlayerId.value || deviceId;
-                        const state = await apiCall('/api/playback/previous?player=' + encodeURIComponent(targetPlayer), { method: 'POST' });
-                        if (state) {
-                            playbackState.value = state;
-                            if (state.track?.stream_url) playStream(state.track.id);
+                    const targetPlayer = selectedPlayerId.value || deviceId;
+                    console.log('Previous clicked, targetPlayer:', targetPlayer);
+                    const state = await apiCall('/api/playback/previous?player=' + encodeURIComponent(targetPlayer), { method: 'POST' });
+                    if (state) {
+                        playbackState.value = state;
+                        if (isThisDevicePlayer() && state.track?.stream_url) {
+                            playStream(state.track.id);
                         }
                     }
                 }
