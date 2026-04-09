@@ -61,13 +61,31 @@ async def websocket_endpoint(websocket: WebSocket):
                     if device_id:
                         # Check if session already exists (reconnection)
                         existing_session = playback._sessions.get(session_id)
-                        if existing_session and not existing_session.get("ws"):
+                        print(f"[WS] Existing session check: {existing_session}")
+                        if existing_session and not existing_session.get("ws") and not existing_session.get("connected"):
                             # Reconnect existing session
                             playback.reconnect_session(websocket, session_id)
                             print(f"[WS] Reconnected session: {session_id}")
+                            # Send current playback state to reconnecting session
+                            from database import SessionLocal as DB
+                            db2 = DB()
+                            state = playback.get_state(db2)
+                            db2.close()
+                            import json
+                            msg = json.dumps({"event": "playback_state", "data": state})
+                            import asyncio
+                            try:
+                                loop = asyncio.new_event_loop()
+                                asyncio.set_event_loop(loop)
+                                loop.run_until_complete(websocket.send_text(msg))
+                                loop.close()
+                                print(f"[WS] Sent playback state on reconnect to session: {session_id}")
+                            except Exception as e:
+                                print(f"[WS] Error sending state on reconnect: {e}")
                         else:
                             # New registration
                             playback.register_device(websocket, session_id, device_id, device_name, device_owner)
+                            print(f"[WS] New session registered: {session_id}")
                         print(f"[WS] Sessions after register: {list(playback._sessions.keys())}")
                         playback.broadcast_sessions()
                 

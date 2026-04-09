@@ -404,7 +404,8 @@ class PlaybackController:
         state = db.query(PlaybackState).filter(PlaybackState.id == 1).first()
         if state:
             state.is_playing = False
-            if position is not None:
+            # Only update position if valid (> 0) - ignore 0 from remote
+            if position is not None and position > 0:
                 state.position = position
             state.updated_at = datetime.utcnow()
             db.commit()
