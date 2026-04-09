@@ -1694,7 +1694,7 @@
                         // Send position to server every 2 seconds while playing
                         if (playbackState.value.is_playing && Math.abs(pos - lastPositionSent) >= 2) {
                             lastPositionSent = pos;
-                            fetch('/api/playback/position?position=' + Math.floor(pos), { method: 'POST' }).catch(() => {});
+                            apiCall('/api/playback/position?position=' + Math.floor(pos), { method: 'POST' }).catch(() => {});
                         }
                     }
                 }
