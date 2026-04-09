@@ -362,16 +362,18 @@ class PlaybackController:
         
         if track_id is not None:
             if track_id == current_track_id and current_track_id:
-                # Same track - just resume, don't reset position
                 resume_play = True
             elif track_id not in self.queue:
                 self.queue.append(track_id)
                 self.current_index = self.queue.index(track_id)
                 new_track = True
             else:
-                # Track in queue but different position
                 self.current_index = self.queue.index(track_id)
                 new_track = True
+        
+        # Resume case: no new track, just resume current
+        if track_id is None and queue is None and current_track_id:
+            resume_play = True
         
         if self.queue:
             state.current_track_id = self.queue[self.current_index]
@@ -379,8 +381,8 @@ class PlaybackController:
             if new_track and not resume_play:
                 state.position = 0
             elif position is not None:
-                # Position provided from frontend (resume with specific position)
                 state.position = position
+            # else: keep existing position (from pause)
             if not state.queue:
                 state.queue = ','.join(map(str, self.queue))
             state.updated_at = datetime.utcnow()
