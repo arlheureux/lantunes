@@ -162,12 +162,14 @@ class PlaybackController:
                 executor.submit(send_msg, ws)
     
     def get_player_device_id(self) -> str:
-        """Get the current player device ID"""
-        return self._player_device_id
+        """Get the current player device ID (from player session)"""
+        if self._player_session_id and self._player_session_id in self._sessions:
+            return self._sessions[self._player_session_id].get("device_id")
+        return None
     
     def is_device_player(self, device_id: str) -> bool:
         """Check if device is the player"""
-        return device_id == self._player_device_id
+        return device_id == self.get_player_device_id()
     
     def add_connection(self, ws):
         self._ws_connections.append(ws)
