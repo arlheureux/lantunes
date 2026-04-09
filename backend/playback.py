@@ -345,9 +345,9 @@ class PlaybackController:
         self.broadcast("playback_state", self.get_state(db))
         return self.get_state(db, is_player)
     
-    def previous(self, db: Session):
+    def previous(self, db: Session, is_player: bool = True):
         if not self.queue:
-            return self.get_state(db)
+            return self.get_state(db, is_player)
         
         if self.current_index > 0:
             self.current_index -= 1
@@ -360,8 +360,9 @@ class PlaybackController:
         state.updated_at = datetime.utcnow()
         db.commit()
         
+        self.last_played_track_id = self.queue[self.current_index]
         self.broadcast("playback_state", self.get_state(db))
-        return self.get_state(db)
+        return self.get_state(db, is_player)
     
     def seek(self, db: Session, position: int, is_player: bool = True):
         state = db.query(PlaybackState).filter(PlaybackState.id == 1).first()

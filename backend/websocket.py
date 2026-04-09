@@ -87,8 +87,7 @@ async def websocket_endpoint(websocket: WebSocket):
                         is_player = device_id == player
                         playback.next(db, is_player)
                     elif action == "previous":
-                        is_player = device_id == player
-                        playback.previous(db, is_player)
+                        playback.previous(db)
                     elif action == "seek" and position is not None:
                         is_player = device_id == player
                         playback.seek(db, position, is_player)
