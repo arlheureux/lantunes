@@ -41,23 +41,6 @@ class PlaybackController:
             if session["device_id"] == device_id:
                 session["name"] = device_name
     
-    def remove_connection(self, ws):
-        """Remove session on disconnect"""
-        session_to_remove = None
-        for session_id, session_info in self._sessions.items():
-            if session_info["ws"] == ws:
-                session_to_remove = session_id
-                break
-        
-        if session_to_remove:
-            del self._sessions[session_to_remove]
-            # If removed session was player, assign new player
-            if self._player_session_id == session_to_remove:
-                self._player_session_id = None
-                if self._sessions:
-                    self._player_session_id = next(iter(self._sessions.keys()))
-                    self._sessions[self._player_session_id]["is_player"] = True
-    
     def set_player_session(self, session_id: str):
         """Set which session's device should play audio"""
         from database import SessionLocal
@@ -114,7 +97,7 @@ class PlaybackController:
             self._ws_connections.append(ws)
     
     def remove_connection(self, ws):
-        """Remove WebSocket connection"""
+        """Remove WebSocket connection and associated session"""
         if ws in self._ws_connections:
             self._ws_connections.remove(ws)
         # Also clean up session

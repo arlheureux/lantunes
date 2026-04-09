@@ -25,9 +25,8 @@ async def websocket_endpoint(websocket: WebSocket):
     await websocket.accept()
     playback.add_connection(websocket)
     
-    # Generate unique session ID for this connection
-    session_id = str(uuid.uuid4())
-    print(f"[WS] New session: {session_id}")
+    # Get session_id from frontend's register message, or generate if not provided
+    session_id = None
     
     # Store user info from token
     user_id = auth_payload.get("user_id")
@@ -48,10 +47,16 @@ async def websocket_endpoint(websocket: WebSocket):
             db = SessionLocal()
             try:
                 if event == "register":
-                    # Client registers with device info
+                    # Client registers with device info - use the session_id they provide
+                    session_id = payload.get("session_id")  # Get from frontend, not generated
                     device_id = payload.get("device_id")
                     device_name = payload.get("device_name", "Unknown Device")
                     device_owner = user_id  # This device belongs to the authenticated user
+                    
+                    # If no session_id provided, generate one
+                    if not session_id:
+                        session_id = str(uuid.uuid4())
+                    
                     print(f"[WS] Register: session_id={session_id}, device_id={device_id}, name={device_name}, user={username}")
                     if device_id:
                         playback.register_device(websocket, session_id, device_id, device_name, device_owner)
