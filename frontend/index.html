@@ -1811,16 +1811,9 @@
                 
                 async function playFromQueue(index) {
                     const targetPlayer = getPlayerSession()?.id || deviceId;
-                    const state = await apiCall('/api/playback/play?session=' + encodeURIComponent(targetPlayer), { method: 'POST' });
-                    if (state) {
-                        playbackState.value = state;
-                        queue.value = state.queue;
-                        showMobileQueue.value = false;
-                        const amIPlayer = isThisDevicePlayer();
-                        if (amIPlayer && state.track?.stream_url) {
-                            playStream(state.track.id);
-                        }
-                    }
+                    // Just route the command - state will be updated via WebSocket
+                    await apiCall('/api/playback/play?session=' + encodeURIComponent(targetPlayer), { method: 'POST' });
+                    showMobileQueue.value = false;
                 }
                 
                 async function deleteUser(userId) {
@@ -1956,21 +1949,10 @@
                     // Determine which session controls playback - always use player session
                     const targetSession = getPlayerSession()?.id || currentSessionId.value;
                     
-                    // Send play request with the target session ID
+                    // Send play request - just route the command (Jellyfin style)
+                    // State will be updated via WebSocket broadcast
                     const url = '/api/playback/play?track_id=' + track.id + '&queue=' + track.id + '&session=' + encodeURIComponent(targetSession);
-                    const state = await apiCall(url, {
-                        method: 'POST'
-                    });
-                    console.log('Play response:', state);
-                    if (state) {
-                        playbackState.value = state;
-                        queue.value = state.queue;
-                        // Only play locally if we ARE the target player (or if stream_url is present in response)
-                        const amIPlayer = isThisDevicePlayer();
-                        if (amIPlayer && state.track?.stream_url) {
-                            playStream(track.id);
-                        }
-                    }
+                    await apiCall(url, { method: 'POST' });
                 }
                 
                 function playStream(trackId) {
@@ -1992,16 +1974,11 @@
                     const trackIds = albumDetails.tracks.map(t => t.id).join(',');
                     const targetPlayer = getPlayerSession()?.id || deviceId;
                     const url = '/api/playback/play?queue=' + trackIds + '&session=' + encodeURIComponent(targetPlayer);
-                    const state = await apiCall(url, { method: 'POST' });
                     
-                    if (state) {
-                        playbackState.value = state;
-                        queue.value = state.queue;
-                        const amIPlayer = isThisDevicePlayer();
-                        if (amIPlayer && state.track?.stream_url) {
-                            playStream(state.track.id);
-                        }
-                    }
+                    // With Jellyfin-style, we just route the command and wait for state via WebSocket
+                    await apiCall(url, { method: 'POST' });
+                    
+                    // State will be updated via WebSocket broadcast - no need to set manually
                 }
                 
                 const letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ#'.split('');
@@ -2062,28 +2039,16 @@
                     isLoading.value = true;
                     try {
                         if (playbackState.value.is_playing) {
+                            // Route pause command to player session (Jellyfin style)
                             await apiCall('/api/playback/pause?session=' + encodeURIComponent(targetPlayer), { method: 'POST' });
-                            playbackState.value.is_playing = false;
+                            // Also pause locally if we're the player
                             if (isThisDevicePlayer()) {
                                 audioPlayer.value?.pause();
                             }
                         } else {
-                            const currentPosition = playbackState.value.position || 0;
-                            const url = '/api/playback/play?session=' + encodeURIComponent(targetPlayer);
-                            const state = await apiCall(url, { method: 'POST' });
-                            if (state) {
-                                playbackState.value = state;
-                                if (isThisDevicePlayer() && state.track?.stream_url) {
-                                    if (audioPlayer.value && audioPlayer.value.src) {
-                                        await audioPlayer.value.play();
-                                        if (currentPosition > 0) {
-                                            audioPlayer.value.currentTime = currentPosition;
-                                        }
-                                    } else {
-                                        playStream(state.track.id);
-                                    }
-                                }
-                            }
+                            // Route play command to player session (Jellyfin style)
+                            // Client that receives command will handle actual playback
+                            await apiCall('/api/playback/play?session=' + encodeURIComponent(targetPlayer), { method: 'POST' });
                         }
                     } finally {
                         isLoading.value = false;
@@ -2095,39 +2060,22 @@
                     const trackIds = currentPlaylist.value.tracks.map(t => t.id).join(',');
                     const targetPlayer = getPlayerSession()?.id || deviceId;
                     const url = '/api/playback/play?queue=' + trackIds + '&session=' + encodeURIComponent(targetPlayer);
-                    const state = await apiCall(url, { method: 'POST' });
-                    if (state) {
-                        playbackState.value = state;
-                        queue.value = state.queue;
-                        const amIPlayer = isThisDevicePlayer();
-                        if (amIPlayer && state.track?.stream_url) {
-                            playStream(state.track.id);
-                        }
-                    }
+                    // Just route - state updated via WebSocket
+                    await apiCall(url, { method: 'POST' });
                 }
                 
                 async function next() {
                     const targetPlayer = getPlayerSession()?.id || deviceId;
                     console.log('Next clicked, targetPlayer:', targetPlayer);
-                    const state = await apiCall('/api/playback/next?session=' + encodeURIComponent(targetPlayer), { method: 'POST' });
-                    if (state) {
-                        playbackState.value = state;
-                        if (isThisDevicePlayer() && state.track?.stream_url) {
-                            playStream(state.track.id);
-                        }
-                    }
+                    // Just route - state updated via WebSocket
+                    await apiCall('/api/playback/next?session=' + encodeURIComponent(targetPlayer), { method: 'POST' });
                 }
                 
                 async function previous() {
                     const targetPlayer = getPlayerSession()?.id || deviceId;
                     console.log('Previous clicked, targetPlayer:', targetPlayer);
-                    const state = await apiCall('/api/playback/previous?session=' + encodeURIComponent(targetPlayer), { method: 'POST' });
-                    if (state) {
-                        playbackState.value = state;
-                        if (isThisDevicePlayer() && state.track?.stream_url) {
-                            playStream(state.track.id);
-                        }
-                    }
+                    // Just route - state updated via WebSocket
+                    await apiCall('/api/playback/previous?session=' + encodeURIComponent(targetPlayer), { method: 'POST' });
                 }
                 
                 async function seek(e) {
@@ -2145,16 +2093,9 @@
                 
                 async function playFromQueue(index) {
                     const targetPlayer = getPlayerSession()?.id || deviceId;
-                    const state = await apiCall('/api/playback/play?session=' + encodeURIComponent(targetPlayer), { method: 'POST' });
-                    if (state) {
-                        playbackState.value = state;
-                        queue.value = state.queue;
-                        showMobileQueue.value = false;
-                        const amIPlayer = isThisDevicePlayer();
-                        if (amIPlayer && state.track?.stream_url) {
-                            playStream(state.track.id);
-                        }
-                    }
+                    // Just route - state updated via WebSocket
+                    await apiCall('/api/playback/play?session=' + encodeURIComponent(targetPlayer), { method: 'POST' });
+                    showMobileQueue.value = false;
                 }
                 
                 async function toggleShuffle() {
@@ -2169,13 +2110,8 @@
                 
                 async function shufflePlay() {
                     const targetPlayer = getPlayerSession()?.id || deviceId;
-                    const state = await apiCall('/api/playback/shuffle-play?count=50&session=' + encodeURIComponent(targetPlayer), { method: 'POST' });
-                    if (state) {
-                        playbackState.value = state;
-                        queue.value = state.queue;
-                        const amIPlayer = isThisDevicePlayer();
-                        if (amIPlayer && state.track?.stream_url) playStream(state.track.id);
-                    }
+                    // Just route - state updated via WebSocket
+                    await apiCall('/api/playback/shuffle-play?count=50&session=' + encodeURIComponent(targetPlayer), { method: 'POST' });
                 }
                 
                 document.addEventListener('click', closeContextMenu);
