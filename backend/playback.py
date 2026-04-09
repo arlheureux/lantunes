@@ -512,7 +512,7 @@ class PlaybackController:
             return {"removed": True}
         return {"removed": False}
     
-    def toggle_shuffle(self, db: Session, is_player: bool = True):
+    def toggle_shuffle(self, db: Session, session_id: str = None):
         """Toggle shuffle mode on/off"""
         self.shuffle_mode = not self.shuffle_mode
         # Persist shuffle mode
