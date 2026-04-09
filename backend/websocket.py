@@ -59,7 +59,15 @@ async def websocket_endpoint(websocket: WebSocket):
                     
                     print(f"[WS] Register: session_id={session_id}, device_id={device_id}, name={device_name}, user={username}")
                     if device_id:
-                        playback.register_device(websocket, session_id, device_id, device_name, device_owner)
+                        # Check if session already exists (reconnection)
+                        existing_session = playback._sessions.get(session_id)
+                        if existing_session and not existing_session.get("ws"):
+                            # Reconnect existing session
+                            playback.reconnect_session(websocket, session_id)
+                            print(f"[WS] Reconnected session: {session_id}")
+                        else:
+                            # New registration
+                            playback.register_device(websocket, session_id, device_id, device_name, device_owner)
                         print(f"[WS] Sessions after register: {list(playback._sessions.keys())}")
                         playback.broadcast_sessions()
                 

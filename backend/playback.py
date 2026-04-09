@@ -28,7 +28,8 @@ class PlaybackController:
             "device_id": device_id,
             "name": device_name,
             "is_player": False,
-            "owner": device_owner
+            "owner": device_owner,
+            "connected": True
         }
         # If first session, make it the player
         if not self._player_session_id:
@@ -158,23 +159,45 @@ class PlaybackController:
         self._ws_connections.append(ws)
     
     def remove_connection(self, ws):
-        """Remove WebSocket connection and associated session"""
+        """Remove WebSocket connection but keep session for reconnection"""
         if ws in self._ws_connections:
             self._ws_connections.remove(ws)
-        # Also clean up session
-        session_to_remove = None
+        
+        # Mark session as disconnected but keep it for reconnection
         for session_id, session_info in self._sessions.items():
-            if session_info["ws"] == ws:
-                session_to_remove = session_id
+            if session_info.get("ws") == ws:
+                session_info["ws"] = None
+                session_info["connected"] = False
+                print(f"[Playback] Session {session_id} disconnected but kept for reconnection")
                 break
-        if session_to_remove:
-            del self._sessions[session_to_remove]
-            if self._player_session_id == session_to_remove:
-                self._player_session_id = None
-                if self._sessions:
-                    self._player_session_id = next(iter(self._sessions.keys()))
-                    if self._player_session_id:
-                        self._sessions[self._player_session_id]["is_player"] = True
+        
+        # If player session disconnected, reassign player to another connected session
+        if self._player_session_id:
+            player_session = self._sessions.get(self._player_session_id)
+            if not player_session or not player_session.get("connected"):
+                # Player disconnected - find another connected session
+                for sid, sess in self._sessions.items():
+                    if sess.get("connected"):
+                        self._player_session_id = sid
+                        sess["is_player"] = True
+                        print(f"[Playback] Reassigned player to session: {sid}")
+                        break
+                else:
+                    # No connected sessions - player becomes None
+                    self._player_session_id = None
+    
+    def reconnect_session(self, ws, session_id: str):
+        """Reconnect a session that was previously disconnected"""
+        if session_id in self._sessions:
+            self._sessions[session_id]["ws"] = ws
+            self._sessions[session_id]["connected"] = True
+            print(f"[Playback] Session {session_id} reconnected")
+            # If no player session, make this one the player
+            if not self._player_session_id:
+                self._player_session_id = session_id
+                self._sessions[session_id]["is_player"] = True
+            return True
+        return False
     
     def broadcast(self, event: str, data: dict):
         """Broadcast message to all sessions"""
@@ -327,7 +350,10 @@ class PlaybackController:
             state = PlaybackState(id=1)
             db.add(state)
         
+        current_track_id = state.current_track_id
         new_track = False
+        resume_play = False
+        
         if queue is not None:
             self.queue = queue
             self.current_index = 0
@@ -335,15 +361,22 @@ class PlaybackController:
             new_track = True
         
         if track_id is not None:
-            if track_id not in self.queue:
+            if track_id == current_track_id and current_track_id:
+                # Same track - just resume, don't reset position
+                resume_play = True
+            elif track_id not in self.queue:
                 self.queue.append(track_id)
-            self.current_index = self.queue.index(track_id)
-            new_track = True
+                self.current_index = self.queue.index(track_id)
+                new_track = True
+            else:
+                # Track in queue but different position
+                self.current_index = self.queue.index(track_id)
+                new_track = True
         
         if self.queue:
             state.current_track_id = self.queue[self.current_index]
             state.is_playing = True
-            if new_track:
+            if new_track and not resume_play:
                 state.position = 0
             if not state.queue:
                 state.queue = ','.join(map(str, self.queue))
