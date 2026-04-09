@@ -2049,6 +2049,7 @@
                     try {
                         if (playbackState.value.is_playing) {
                             await apiCall('/api/playback/pause?player=' + encodeURIComponent(targetPlayer), { method: 'POST' });
+                            playbackState.value.is_playing = false;
                             if (isThisDevicePlayer()) {
                                 audioPlayer.value?.pause();
                             }
