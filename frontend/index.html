@@ -2045,8 +2045,10 @@
                     isLoading.value = true;
                     try {
                         if (playbackState.value.is_playing) {
-                            // Route pause command to player session (Jellyfin style)
-                            await apiCall('/api/playback/pause?session=' + encodeURIComponent(targetPlayer), { method: 'POST' });
+                            // Get current position before pausing
+                            const currentPos = audioPlayer.value ? Math.floor(audioPlayer.value.currentTime) : 0;
+                            // Route pause command to player session with current position
+                            await apiCall('/api/playback/pause?position=' + currentPos + '&session=' + encodeURIComponent(targetPlayer), { method: 'POST' });
                             // Also pause locally if we're the player
                             if (isThisDevicePlayer()) {
                                 audioPlayer.value?.pause();
@@ -2174,14 +2176,24 @@
                             queue.value = msg.data.queue || [];
                             loadQueueTracks();
                             
-                            // Auto-play: only if this device is player AND (track changed or just started playing)
+                            // Auto-play: only if this device is player AND (track changed or just started playing OR resuming same track)
                             const trackChanged = oldTrackId !== msg.data.track?.id;
                             const justStartedPlaying = !prevPlaying && msg.data.is_playing;
+                            const resumingSameTrack = !trackChanged && prevPlaying === false && msg.data.is_playing === true;
                             const amIPlayer = isThisDevicePlayer();
-                            console.log('Track changed:', trackChanged, 'Just started playing:', justStartedPlaying, 'Am I player:', amIPlayer, 'Has stream_url:', !!msg.data.track?.stream_url);
-                            if (amIPlayer && msg.data.track?.stream_url && (trackChanged || justStartedPlaying)) {
-                                console.log('Auto-playing track:', msg.data.track.id);
+                            console.log('Track changed:', trackChanged, 'Just started playing:', justStartedPlaying, 'Resuming same track:', resumingSameTrack, 'Am I player:', amIPlayer, 'Has stream_url:', !!msg.data.track?.stream_url);
+                            if (amIPlayer && msg.data.track?.stream_url && (trackChanged || justStartedPlaying || resumingSameTrack)) {
+                                console.log('Auto-playing track:', msg.data.track.id, 'position:', msg.data.position);
                                 playStream(msg.data.track.id);
+                                // Seek to saved position (for resume)
+                                if (msg.data.position > 0) {
+                                    setTimeout(() => {
+                                        if (audioPlayer.value) {
+                                            audioPlayer.value.currentTime = msg.data.position;
+                                            console.log('Seeked to position:', msg.data.position);
+                                        }
+                                    }, 100);
+                                }
                             }
                         } else if (msg.event === 'queue_updated') {
                             queue.value = msg.data.queue || [];

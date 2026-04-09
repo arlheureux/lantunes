@@ -55,12 +55,12 @@ def play(track_id: int = None, queue: str = None, session: str = Query(None), db
     return result
 
 @router.post("/pause")
-def pause(session: str = Query(None), db: Session = Depends(get_db)):
+def pause(position: int = Query(None), session: str = Query(None), db: Session = Depends(get_db)):
     """Execute pause command on server, broadcast to all sessions"""
     player_session = playback.get_player_session()
     if not player_session:
         return {"error": "No active player session"}
-    result = playback.pause(db, session_id=player_session)
+    result = playback.pause(db, position=position, session_id=player_session)
     playback.broadcast_playback_state()
     return result
 

@@ -387,10 +387,12 @@ class PlaybackController:
         
         return self.get_state(db)
     
-    def pause(self, db: Session, session_id: str = None):
+    def pause(self, db: Session, position: int = None, session_id: str = None):
         state = db.query(PlaybackState).filter(PlaybackState.id == 1).first()
         if state:
             state.is_playing = False
+            if position is not None:
+                state.position = position
             state.updated_at = datetime.utcnow()
             db.commit()
             self.broadcast_playback_state()
