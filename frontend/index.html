@@ -1316,8 +1316,8 @@
             </div>
         </div>
         
-        <!-- Mobile Queue Modal -->
-        <div class="mobile-queue-overlay" v-if="showMobileQueue" @click.self="showMobileQueue = false">
+        <!-- Mobile Queue Modal (on top of player modal) -->
+        <div class="mobile-queue-overlay" v-if="showMobileQueue" style="z-index: 3000;" @click.self="showMobileQueue = false">
             <div class="mobile-queue-header">
                 <h3>Queue ({{ queue.length }})</h3>
                 <button @click="showMobileQueue = false"><i class="fas fa-times"></i></button>
@@ -1339,8 +1339,8 @@
             </div>
         </div>
         
-        <!-- Device Selector Modal for Mobile -->
-        <div class="mobile-queue-overlay" v-if="showDeviceModal" @click.self="showDeviceModal = false">
+        <!-- Device Selector Modal for Mobile (on top of player modal) -->
+        <div class="mobile-queue-overlay" v-if="showDeviceModal" style="z-index: 3000;" @click.self="showDeviceModal = false">
             <div class="mobile-queue-header">
                 <h3>Select Device</h3>
                 <button @click="showDeviceModal = false"><i class="fas fa-times"></i></button>
@@ -1402,10 +1402,10 @@
                     </button>
                 </div>
                 <div style="display:flex;justify-content:center;gap:16px;margin-top:16px;">
-                    <button @click="showDeviceModal = true; showPlayerModal = false" style="background:none;border:none;color:var(--text-secondary);font-size:20px;" title="Device">
+                    <button @click="showDeviceModal = true" style="background:none;border:none;color:var(--text-secondary);font-size:20px;" title="Device">
                         <i class="fas fa-volume-up"></i>
                     </button>
-                    <button @click="showMobileQueue = true; showPlayerModal = false" style="background:none;border:none;color:var(--text-secondary);font-size:20px;" title="Queue">
+                    <button @click="showMobileQueue = true" style="background:none;border:none;color:var(--text-secondary);font-size:20px;" title="Queue">
                         <i class="fas fa-list"></i>
                     </button>
                 </div>
