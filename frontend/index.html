@@ -2208,12 +2208,13 @@
                         console.log('WebSocket message:', msg.event, msg.data);
                         if (msg.event === 'playback_state') {
                             const prevPlaying = playbackState.value.is_playing;
+                            const oldTrackId = playbackState.value.track?.id;
                             playbackState.value = msg.data;
                             queue.value = msg.data.queue || [];
                             loadQueueTracks();
                             
                             // Auto-play: only if this device is player AND (track changed or just started playing)
-                            const trackChanged = playbackState.value.track?.id !== msg.data.track?.id;
+                            const trackChanged = oldTrackId !== msg.data.track?.id;
                             const justStartedPlaying = !prevPlaying && msg.data.is_playing;
                             const amIPlayer = isThisDevicePlayer();
                             console.log('Track changed:', trackChanged, 'Just started playing:', justStartedPlaying, 'Am I player:', amIPlayer, 'Has stream_url:', !!msg.data.track?.stream_url);
