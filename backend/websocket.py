@@ -80,24 +80,22 @@ async def websocket_endpoint(websocket: WebSocket):
                         playback.broadcast_sessions()
                 
                 elif event == "control":
-                    # Remote control - control the player session
+                    # Remote control - route command to player session (Jellyfin style)
                     action = payload.get("action")
                     position = payload.get("position")
                     player_session = playback.get_player_session()
                     
-                    # Any session can send control commands - server routes to player
-                    if action == "play":
-                        playback.play(db, session_id=session_id)
-                    elif action == "pause":
-                        playback.pause(db, session_id=session_id)
-                    elif action == "stop":
-                        playback.stop(db, session_id=session_id)
-                    elif action == "next":
-                        playback.next(db, session_id=session_id)
-                    elif action == "previous":
-                        playback.previous(db, session_id=session_id)
+                    if not player_session:
+                        print(f"[WS] No player session available")
+                        continue
+                    
+                    # Route command to player session via WebSocket
+                    if action in ["play", "pause", "stop", "next", "previous"]:
+                        result = playback.route_command(player_session, action)
+                        print(f"[WS] Routed {action} to {player_session}: {result}")
                     elif action == "seek" and position is not None:
-                        playback.seek(db, position, session_id=session_id)
+                        result = playback.route_command(player_session, "seek", {"position": position})
+                        print(f"[WS] Routed seek to {player_session}: {result}")
                 
                 elif event == "set_volume":
                     volume = payload.get("volume", 1.0)
