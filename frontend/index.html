@@ -884,12 +884,12 @@
                     </div>
                     
                     <div v-else>
-                        <!-- Mobile Device Selector Button -->
-                        <div v-if="isMobile && devices.length > 1" style="margin-bottom:16px;">
-                            <button @click="showDeviceModal = true" style="display:flex;align-items:center;gap:10px;background:rgba(255,255,255,0.1);border:none;padding:10px 16px;border-radius:24px;color:var(--text-primary);font-size:14px;width:100%;cursor:pointer;">
+                        <!-- Device Selector Button -->
+                        <div v-if="devices.length > 1" style="margin-bottom:16px;">
+                            <button @click="showDeviceModal = true" :style="isMobile ? 'display:flex;align-items:center;gap:10px;background:rgba(255,255,255,0.1);border:none;padding:10px 16px;border-radius:24px;color:var(--text-primary);font-size:14px;width:100%;cursor:pointer;' : 'background:#333;color:var(--text-primary);border:none;padding:8px 16px;border-radius:20px;font-size:14px;cursor:pointer;display:flex;align-items:center;gap:8px;'">
                                 <i class="fas fa-volume-up"></i>
-                                <span style="flex:1;text-align:left;">{{ devices.find(d => d.is_player)?.name || 'Select Device' }}</span>
-                                <i class="fas fa-chevron-right" style="font-size:12px;color:var(--text-muted);"></i>
+                                <span :style="isMobile ? 'flex:1;text-align:left;' : ''">{{ devices.find(d => d.is_player)?.name || 'Select Device' }}</span>
+                                <i v-if="isMobile" class="fas fa-chevron-right" style="font-size:12px;color:var(--text-muted);"></i>
                             </button>
                         </div>
                         <h1>Your Music</h1>
@@ -1621,6 +1621,9 @@
                 
                 function setPlayerDevice(targetDeviceId) {
                     sendWS('set_player', { device_id: targetDeviceId });
+                    if (isMobile.value && playbackState.value.track) {
+                        showPlayerModal.value = true;
+                    }
                 }
                 
                 function updateDeviceName() {
