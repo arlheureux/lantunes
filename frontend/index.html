@@ -1440,8 +1440,8 @@
                     <button @click="next" title="Next"><i class="fas fa-step-forward"></i></button>
                     <button @click="toggleShuffle" :style="{ color: playbackState.shuffle_mode ? 'var(--accent)' : 'var(--text-secondary)' }" title="Shuffle"><i class="fas fa-random"></i></button>
                     <button @click="toggleRepeat" :style="{ color: playbackState.repeat_mode && playbackState.repeat_mode !== 'off' ? 'var(--accent)' : 'var(--text-secondary)' }" title="Repeat">
-                        <i :class="playbackState.repeat_mode === '1' ? 'fas fa-redo' : 'fas fa-redo'"></i>
-                        <span v-if="playbackState.repeat_mode === '1'" style="font-size:10px;margin-left:-2px;">1</span>
+                        <i class="fas fa-redo"></i>
+                        <span v-if="playbackState.repeat_mode === 'one'" style="font-size:10px;position:absolute;margin-left:-8px;margin-top:8px;">1</span>
                     </button>
                 </div>
                 <div class="progress">
@@ -2161,10 +2161,7 @@
                 
                 async function toggleRepeat() {
                     const targetPlayer = selectedPlayerId.value || deviceId;
-                    const result = await apiCall('/api/playback/repeat?player=' + encodeURIComponent(targetPlayer), { method: 'POST' });
-                    if (result) {
-                        playbackState.value.repeat_mode = result.repeat_mode;
-                    }
+                    await apiCall('/api/playback/repeat?player=' + encodeURIComponent(targetPlayer), { method: 'POST' });
                 }
                 
                 async function shufflePlay() {
