@@ -1365,7 +1365,7 @@
             </div>
             <div class="mobile-queue-list" style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:40px 20px;">
                 <div style="width:280px;height:280px;border-radius:12px;overflow:hidden;margin-bottom:32px;box-shadow:0 8px 32px rgba(0,0,0,0.5);">
-                    <img v-if="playbackState.track?.artwork" :src="'/api/library/artwork/' + playbackState.track.album_id" style="width:100%;height:100%;object-fit:cover;">
+                    <img v-if="playbackState.track?.album_id" :src="'/api/library/artwork/' + playbackState.track.album_id" style="width:100%;height:100%;object-fit:cover;" @error="$event.target.style.display='none'">
                     <div v-else style="width:100%;height:100%;background:#333;display:flex;align-items:center;justify-content:center;">
                         <i class="fas fa-music" style="font-size:80px;color:#555;"></i>
                     </div>
@@ -1373,6 +1373,11 @@
                 <div style="text-align:center;margin-bottom:24px;">
                     <div style="font-size:20px;font-weight:600;margin-bottom:8px;">{{ playbackState.track?.title || 'No track' }}</div>
                     <div style="color:var(--text-secondary);">{{ playbackState.track?.artist || '' }}</div>
+                    <div style="color:var(--text-muted);font-size:12px;margin-top:4px;">
+                        <span v-if="playbackState.track?.file_format">{{ playbackState.track.file_format }}</span>
+                        <span v-if="playbackState.track?.bitrate"> · {{ playbackState.track.bitrate }}kbps</span>
+                        <span v-if="playbackState.track?.sample_rate"> · {{ playbackState.track.sample_rate }}Hz</span>
+                    </div>
                 </div>
                 <div style="width:100%;max-width:300px;margin-bottom:24px;">
                     <div class="progress-bar" style="height:6px;" @click="seek($event)">
@@ -1397,8 +1402,9 @@
                     <button @click="next" style="background:none;border:none;color:var(--text-primary);font-size:28px;">
                         <i class="fas fa-step-forward"></i>
                     </button>
-                    <button @click="toggleRepeat" :style="{ color: playbackState.repeat_mode ? 'var(--accent)' : 'var(--text-muted)' }" style="background:none;border:none;font-size:20px;">
+                    <button @click="toggleRepeat" :style="{ color: playbackState.repeat_mode && playbackState.repeat_mode !== 'off' ? 'var(--accent)' : 'var(--text-muted)' }" style="background:none;border:none;font-size:20px;">
                         <i class="fas fa-redo"></i>
+                        <span v-if="playbackState.repeat_mode === 'one'" style="font-size:10px;position:absolute;margin-left:-8px;margin-top:8px;">1</span>
                     </button>
                 </div>
                 <div style="display:flex;justify-content:center;gap:16px;margin-top:16px;">
@@ -1416,7 +1422,7 @@
         <div class="player-bar-desktop" v-if="!isMobile && playbackState.track">
             <div class="track-info">
                 <div class="track-artwork" @click="showPlayerModal = true" style="cursor:pointer;">
-                    <img v-if="playbackState.track?.artwork" :src="'/api/library/artwork/' + playbackState.track.album_id" @error="$event.target.style.display='none'">
+                    <img v-if="playbackState.track?.album_id" :src="'/api/library/artwork/' + playbackState.track.album_id" @error="$event.target.style.display='none'">
                 </div>
                 <div>
                     <div class="title">{{ playbackState.track?.title }}</div>
@@ -1433,6 +1439,10 @@
                     </button>
                     <button @click="next" title="Next"><i class="fas fa-step-forward"></i></button>
                     <button @click="toggleShuffle" :style="{ color: playbackState.shuffle_mode ? 'var(--accent)' : 'var(--text-secondary)' }" title="Shuffle"><i class="fas fa-random"></i></button>
+                    <button @click="toggleRepeat" :style="{ color: playbackState.repeat_mode && playbackState.repeat_mode !== 'off' ? 'var(--accent)' : 'var(--text-secondary)' }" title="Repeat">
+                        <i :class="playbackState.repeat_mode === '1' ? 'fas fa-redo' : 'fas fa-redo'"></i>
+                        <span v-if="playbackState.repeat_mode === '1'" style="font-size:10px;margin-left:-2px;">1</span>
+                    </button>
                 </div>
                 <div class="progress">
                     <span>{{ formatDuration(playbackState.position) }}</span>
@@ -1466,7 +1476,7 @@
         <div class="player-bar-mobile" v-if="isMobile && playbackState.track">
             <div class="track-info">
                 <div class="track-artwork" @click="showPlayerModal = true" style="cursor:pointer;">
-                    <img v-if="playbackState.track?.artwork" :src="'/api/library/artwork/' + playbackState.track.album_id" @error="$event.target.style.display='none'">
+                    <img v-if="playbackState.track?.album_id" :src="'/api/library/artwork/' + playbackState.track.album_id" @error="$event.target.style.display='none'">
                 </div>
                 <div>
                     <div class="title">{{ playbackState.track?.title }}</div>
