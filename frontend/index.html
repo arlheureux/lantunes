@@ -1810,8 +1810,14 @@
                 const newPlaylistName = ref('');
                 
                 async function playFromQueue(index) {
+                    // First set the queue position, then play
+                    // Build queue from current queue
+                    const queueIds = playbackState.value.queue || [];
+                    if (queueIds.length === 0) return;
+                    
+                    // Set queue with start index and play
                     const targetPlayer = getPlayerSession()?.id || deviceId;
-                    // Just route the command - state will be updated via WebSocket
+                    await apiCall('/api/playback/queue?track_ids=' + queueIds.join(',') + '&start_index=' + index + '&session=' + encodeURIComponent(targetPlayer), { method: 'POST' });
                     await apiCall('/api/playback/play?session=' + encodeURIComponent(targetPlayer), { method: 'POST' });
                     showMobileQueue.value = false;
                 }
@@ -2092,8 +2098,12 @@
                 }
                 
                 async function playFromQueue(index) {
+                    // First set the queue position, then play
+                    const queueIds = playbackState.value.queue || [];
+                    if (queueIds.length === 0) return;
+                    
                     const targetPlayer = getPlayerSession()?.id || deviceId;
-                    // Just route - state updated via WebSocket
+                    await apiCall('/api/playback/queue?track_ids=' + queueIds.join(',') + '&start_index=' + index + '&session=' + encodeURIComponent(targetPlayer), { method: 'POST' });
                     await apiCall('/api/playback/play?session=' + encodeURIComponent(targetPlayer), { method: 'POST' });
                     showMobileQueue.value = false;
                 }
@@ -2187,38 +2197,62 @@
                             // Received command from server - execute locally (Jellyfin style)
                             const action = msg.data.action;
                             console.log('Received command:', action, msg.data);
+                            const amIPlayer = isThisDevicePlayer();
                             
                             if (action === 'pause') {
-                                audioPlayer.value?.pause();
+                                if (amIPlayer) {
+                                    audioPlayer.value?.pause();
+                                }
                                 playbackState.value.is_playing = false;
                             } else if (action === 'play') {
-                                // Need to load track and play
                                 const trackId = msg.data.track_id;
                                 const queue = msg.data.queue;
-                                if (trackId) {
-                                    playStream(trackId);
-                                } else if (queue && queue.length > 0) {
-                                    playStream(queue[0]);
-                                } else if (playbackState.value.track?.id) {
-                                    playStream(playbackState.value.track.id);
+                                const queueIndex = msg.data.queue_index;
+                                
+                                if (amIPlayer) {
+                                    if (queue && queue.length > 0) {
+                                        playbackState.value.queue = queue;
+                                        playbackState.value.queue_index = queueIndex !== undefined ? queueIndex : 0;
+                                        const playId = trackId || queue[playbackState.value.queue_index];
+                                        if (playId) playStream(playId);
+                                    } else if (trackId) {
+                                        playStream(trackId);
+                                    } else if (playbackState.value.track?.id) {
+                                        playStream(playbackState.value.track.id);
+                                    }
                                 }
+                                playbackState.value.is_playing = true;
                             } else if (action === 'stop') {
-                                audioPlayer.value?.pause();
-                                audioPlayer.value.currentTime = 0;
+                                if (amIPlayer) {
+                                    audioPlayer.value?.pause();
+                                    audioPlayer.value.currentTime = 0;
+                                }
                                 playbackState.value.is_playing = false;
                             } else if (action === 'next') {
-                                next();
+                                if (amIPlayer && playbackState.value.queue) {
+                                    const nextIndex = (playbackState.value.queue_index + 1) % playbackState.value.queue.length;
+                                    playbackState.value.queue_index = nextIndex;
+                                    const nextId = playbackState.value.queue[nextIndex];
+                                    if (nextId) playStream(nextId);
+                                }
                             } else if (action === 'previous') {
-                                previous();
+                                if (amIPlayer && playbackState.value.queue) {
+                                    const prevIndex = playbackState.value.queue_index > 0 
+                                        ? playbackState.value.queue_index - 1 
+                                        : playbackState.value.queue.length - 1;
+                                    playbackState.value.queue_index = prevIndex;
+                                    const prevId = playbackState.value.queue[prevIndex];
+                                    if (prevId) playStream(prevId);
+                                }
                             } else if (action === 'seek') {
                                 const pos = msg.data.position;
-                                if (audioPlayer.value) {
+                                if (amIPlayer && audioPlayer.value) {
                                     audioPlayer.value.currentTime = pos;
                                 }
                                 playbackState.value.position = pos;
                             } else if (action === 'set_volume') {
                                 const vol = msg.data.volume;
-                                if (audioPlayer.value) {
+                                if (amIPlayer && audioPlayer.value) {
                                     audioPlayer.value.volume = vol;
                                 }
                                 volume.value = vol;

@@ -106,8 +106,7 @@ def set_volume(volume: float = Query(..., ge=0.0, le=1.0), session: str = Query(
     return playback.route_command(player_session, "set_volume", {"volume": volume})
 
 @router.post("/queue")
-def set_queue(track_ids: List[int], start_index: int = 0, player: str = Query(None), db: Session = Depends(get_db)):
-    is_player = player == playback.get_player_device_id()
+def set_queue(track_ids: List[int], start_index: int = 0, session: str = Query(None), db: Session = Depends(get_db)):
     return playback.set_queue(db, track_ids, start_index, session_id=session)
 
 @router.post("/queue/play-next")
