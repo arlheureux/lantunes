@@ -73,8 +73,6 @@ def stop(session: str = Query(None), db: Session = Depends(get_db)):
     result = playback.stop(db, session_id=player_session)
     playback.broadcast_playback_state()
     return result
-        return {"error": "No active player session"}
-    return playback.route_command(player_session, "stop")
 
 @router.post("/next")
 def next_track(session: str = Query(None), db: Session = Depends(get_db)):
