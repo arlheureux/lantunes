@@ -1,5 +1,6 @@
 import sys
 import os
+import uuid
 backend_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, backend_dir)
 
@@ -24,6 +25,10 @@ async def websocket_endpoint(websocket: WebSocket):
     await websocket.accept()
     playback.add_connection(websocket)
     
+    # Generate unique session ID for this connection
+    session_id = str(uuid.uuid4())
+    print(f"[WS] New session: {session_id}")
+    
     # Store user info from token
     user_id = auth_payload.get("user_id")
     username = auth_payload.get("username")
@@ -47,63 +52,56 @@ async def websocket_endpoint(websocket: WebSocket):
                     device_id = payload.get("device_id")
                     device_name = payload.get("device_name", "Unknown Device")
                     device_owner = user_id  # This device belongs to the authenticated user
-                    print(f"[WS] Register: device_id={device_id}, name={device_name}, user={username}")
+                    print(f"[WS] Register: session_id={session_id}, device_id={device_id}, name={device_name}, user={username}")
                     if device_id:
-                        playback.register_device(websocket, device_id, device_name, device_owner)
-                        print(f"[WS] Devices after register: {list(playback._devices.keys())}")
-                        playback.broadcast_devices()
+                        playback.register_device(websocket, session_id, device_id, device_name, device_owner)
+                        print(f"[WS] Sessions after register: {list(playback._sessions.keys())}")
+                        playback.broadcast_sessions()
                 
                 elif event == "set_player":
-                    # Set which device should play audio
-                    target_device_id = payload.get("device_id")
-                    print(f"[WS] set_player called with target: {target_device_id}")
-                    if target_device_id and playback.set_player_device(target_device_id):
-                        print(f"[WS] Player set to: {target_device_id}, all devices: {list(playback._devices.keys())}")
-                        playback.broadcast_devices()
+                    # Set which device should play audio (by session_id)
+                    target_session_id = payload.get("session_id")
+                    print(f"[WS] set_player called with session: {target_session_id}")
+                    if target_session_id and playback.set_player_session(target_session_id):
+                        print(f"[WS] Player set to session: {target_session_id}")
+                        playback.broadcast_sessions()
                 
                 elif event == "update_device_name":
                     # Update device name
-                    device_id = payload.get("device_id")
+                    target_device_id = payload.get("device_id")
                     device_name = payload.get("device_name")
-                    if device_id and device_name:
-                        playback.update_device_name(device_id, device_name)
-                        playback.broadcast_devices()
+                    if target_device_id and device_name:
+                        playback.update_device_name(target_device_id, device_name)
+                        playback.broadcast_sessions()
                 
                 elif event == "control":
+                    # Remote control - control the player session
                     action = payload.get("action")
                     position = payload.get("position")
-                    player = playback.get_player_device_id()
+                    player_session = playback.get_player_session()
                     
+                    # Any session can send control commands - server routes to player
                     if action == "play":
-                        is_player = device_id == player
-                        playback.play(db, player_device_id=device_id, is_player=is_player)
+                        playback.play(db, session_id=session_id)
                     elif action == "pause":
-                        is_player = device_id == player
-                        playback.pause(db, is_player)
+                        playback.pause(db, session_id=session_id)
                     elif action == "stop":
-                        is_player = device_id == player
-                        playback.stop(db, is_player)
+                        playback.stop(db, session_id=session_id)
                     elif action == "next":
-                        is_player = device_id == player
-                        playback.next(db, is_player)
+                        playback.next(db, session_id=session_id)
                     elif action == "previous":
-                        playback.previous(db)
+                        playback.previous(db, session_id=session_id)
                     elif action == "seek" and position is not None:
-                        is_player = device_id == player
-                        playback.seek(db, position, is_player)
+                        playback.seek(db, position, session_id=session_id)
                 
                 elif event == "set_volume":
                     volume = payload.get("volume", 1.0)
-                    player = playback.get_player_device_id()
-                    is_player = device_id == player
-                    playback.set_volume(db, volume, is_player)
+                    playback.set_volume(db, volume, session_id=session_id)
                 
                 elif event == "set_queue":
                     track_ids = payload.get("track_ids", [])
                     start_index = payload.get("start_index", 0)
-                    player = playback.get_player_device_id()
-                    is_player = device_id == player
-                    playback.set_queue(db, track_ids, start_index, is_player)
+                    playback.set_queue(db, track_ids, start_index, session_id=session_id)
             finally:
                 db.close()
             

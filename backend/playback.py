@@ -3,6 +3,7 @@ from database import get_db, PlaybackState, Track, Artist, Album
 from datetime import datetime
 from typing import List, Optional
 import json
+import uuid
 
 class PlaybackController:
     def __init__(self):
@@ -12,72 +13,153 @@ class PlaybackController:
         self.shuffle_mode: bool = False
         self.repeat_mode: str = "off"  # off, all, one
         self.last_played_track_id: int = None
-        # Device management for "cast play to" feature
-        self._devices: dict = {}  # {device_id: {"ws": websocket, "name": str, "is_player": bool, "owner": user_id}}
-        self._player_device_id: str = None  # Which device plays audio
+        
+        # Session-based device management (Jellyfin-style)
+        # Sessions map: session_id -> {ws, device_id, device_name, is_player, owner}
+        self._sessions: dict = {}
+        self._player_session_id: str = None  # Which session's device plays audio
     
-    def register_device(self, ws, device_id: str, device_name: str, device_owner: str = None):
-        """Register a new device or update existing"""
-        self._devices[device_id] = {"ws": ws, "name": device_name, "is_player": False, "owner": device_owner}
-        # If first device, make it the player
-        if not self._player_device_id:
-            self._player_device_id = device_id
-            self._devices[device_id]["is_player"] = True
+    def register_device(self, ws, session_id: str, device_id: str, device_name: str, device_owner: str = None):
+        """Register a new session with device info"""
+        # Store both session_id and device_id mapping
+        self._sessions[session_id] = {
+            "ws": ws,
+            "session_id": session_id,
+            "device_id": device_id,
+            "name": device_name,
+            "is_player": False,
+            "owner": device_owner
+        }
+        # If first session, make it the player
+        if not self._player_session_id:
+            self._player_session_id = session_id
+            self._sessions[session_id]["is_player"] = True
     
     def update_device_name(self, device_id: str, device_name: str):
         """Update device name"""
-        if device_id in self._devices:
-            self._devices[device_id]["name"] = device_name
+        for session in self._sessions.values():
+            if session["device_id"] == device_id:
+                session["name"] = device_name
     
-    def remove_device(self, ws):
-        """Remove device on disconnect"""
-        device_id_to_remove = None
-        for dev_id, dev_info in self._devices.items():
-            if dev_info["ws"] == ws:
-                device_id_to_remove = dev_id
+    def remove_connection(self, ws):
+        """Remove session on disconnect"""
+        session_to_remove = None
+        for session_id, session_info in self._sessions.items():
+            if session_info["ws"] == ws:
+                session_to_remove = session_id
                 break
         
-        if device_id_to_remove:
-            del self._devices[device_id_to_remove]
-            # If removed device was player, assign new player
-            if self._player_device_id == device_id_to_remove:
-                self._player_device_id = None
-                # Assign first available device as player
-                if self._devices:
-                    self._player_device_id = next(iter(self._devices.keys()))
-                    if self._player_device_id:
-                        self._devices[self._player_device_id]["is_player"] = True
+        if session_to_remove:
+            del self._sessions[session_to_remove]
+            # If removed session was player, assign new player
+            if self._player_session_id == session_to_remove:
+                self._player_session_id = None
+                if self._sessions:
+                    self._player_session_id = next(iter(self._sessions.keys()))
+                    self._sessions[self._player_session_id]["is_player"] = True
     
-    def set_player_device(self, device_id: str):
-        """Set which device should play audio"""
+    def set_player_session(self, session_id: str):
+        """Set which session's device should play audio"""
         from database import SessionLocal
         db = SessionLocal()
         
         # Pause current player before switching
-        if self._player_device_id and self._player_device_id in self._devices:
-            self._devices[self._player_device_id]["is_player"] = False
-            # Stop playback on old player
+        if self._player_session_id and self._player_session_id in self._sessions:
+            self._sessions[self._player_session_id]["is_player"] = False
             state = db.query(PlaybackState).filter(PlaybackState.id == 1).first()
             if state:
                 state.is_playing = False
                 db.commit()
         
-        # Enable new player
-        if device_id in self._devices:
-            self._player_device_id = device_id
-            self._devices[device_id]["is_player"] = True
+        # Enable new player session
+        if session_id in self._sessions:
+            self._player_session_id = session_id
+            self._sessions[session_id]["is_player"] = True
             db.close()
             self.broadcast_playback_state()
             return True
         db.close()
         return False
     
-    def get_devices(self) -> List[dict]:
-        """Get list of connected devices"""
+    def get_player_session(self) -> str:
+        """Get the current player session ID"""
+        return self._player_session_id
+    
+    def get_sessions(self) -> List[dict]:
+        """Get list of all connected sessions with their device info"""
         return [
-            {"id": dev_id, "name": dev_info["name"], "is_player": dev_info["is_player"]}
-            for dev_id, dev_info in self._devices.items()
+            {
+                "id": session_id,
+                "session_id": session_id,
+                "device_id": session["device_id"],
+                "name": session["name"],
+                "is_player": session["is_player"]
+            }
+            for session_id, session in self._sessions.items()
         ]
+    
+    def get_player_device_id(self) -> str:
+        """Get the device ID of the player session (for backward compatibility)"""
+        if self._player_session_id and self._player_session_id in self._sessions:
+            return self._sessions[self._player_session_id]["device_id"]
+        return None
+    
+    def is_device_player(self, device_id: str) -> bool:
+        """Check if device is the player (for backward compatibility)"""
+        return self.get_player_device_id() == device_id
+    
+    def add_connection(self, ws):
+        """Add WebSocket connection"""
+        if ws not in self._ws_connections:
+            self._ws_connections.append(ws)
+    
+    def remove_connection(self, ws):
+        """Remove WebSocket connection"""
+        if ws in self._ws_connections:
+            self._ws_connections.remove(ws)
+        # Also clean up session
+        session_to_remove = None
+        for session_id, session_info in self._sessions.items():
+            if session_info["ws"] == ws:
+                session_to_remove = session_id
+                break
+        if session_to_remove:
+            del self._sessions[session_to_remove]
+            if self._player_session_id == session_to_remove:
+                self._player_session_id = None
+                if self._sessions:
+                    self._player_session_id = next(iter(self._sessions.keys()))
+                    if self._player_session_id:
+                        self._sessions[self._player_session_id]["is_player"] = True
+    
+    def broadcast_sessions(self):
+        """Broadcast session list to all connected clients"""
+        import asyncio
+        import concurrent.futures
+        
+        sessions_data = {"sessions": self.get_sessions()}
+        msg = json.dumps({"event": "sessions", "data": sessions_data})
+        
+        def send_msg(ws):
+            try:
+                loop = asyncio.new_event_loop()
+                asyncio.set_event_loop(loop)
+                loop.run_until_complete(ws.send_text(msg))
+                loop.close()
+            except Exception as e:
+                print(f"Error sending sessions: {e}")
+                return ws
+            return None
+        
+        with concurrent.futures.ThreadPoolExecutor(max_workers=4) as executor:
+            for session in self._sessions.values():
+                if session.get("ws"):
+                    executor.submit(send_msg, session["ws"])
+        
+        # Also send to any other connections
+        for ws in self._ws_connections:
+            if ws and ws not in [s.get("ws") for s in self._sessions.values()]:
+                executor.submit(send_msg, ws)
     
     def get_player_device_id(self) -> str:
         """Get the current player device ID"""
@@ -134,23 +216,22 @@ class PlaybackController:
                         self._ws_connections.remove(ws)
     
     def broadcast_playback_state(self):
-        """Broadcast playback state to all devices, with stream_url only for player"""
+        """Broadcast playback state to all sessions - ALL sessions get stream_url"""
         from database import SessionLocal
         import asyncio
         import concurrent.futures
         
         db = SessionLocal()
         
-        # Pre-compute state for each device
-        device_states = {}
-        for dev_id, dev_info in self._devices.items():
-            is_this_player = dev_info.get("is_player", False)
-            device_states[dev_id] = self.get_state(db, is_this_player)
+        # Get current playback state
+        state = self.get_state(db)
         
         db.close()
         
-        # Send to each device using a thread pool
-        def send_msg(ws, msg):
+        # Broadcast same state to ALL sessions - they all get stream_url
+        msg = json.dumps({"event": "playback_state", "data": state})
+        
+        def send_msg(ws):
             try:
                 loop = asyncio.new_event_loop()
                 asyncio.set_event_loop(loop)
@@ -160,20 +241,13 @@ class PlaybackController:
                 print(f"Error sending: {e}")
         
         with concurrent.futures.ThreadPoolExecutor(max_workers=4) as executor:
-            for dev_id, state in device_states.items():
-                ws = self._devices.get(dev_id, {}).get("ws")
-                if ws:
-                    msg = json.dumps({"event": "playback_state", "data": state})
-                    executor.submit(send_msg, ws, msg)
+            for session in self._sessions.values():
+                if session.get("ws"):
+                    executor.submit(send_msg, session["ws"])
     
     def broadcast_devices(self):
-        """Broadcast list of connected devices to all clients"""
-        import asyncio
-        import concurrent.futures
-        
-        devices = self.get_devices()
-        print(f"[Broadcast] Broadcasting devices: {devices}")
-        msg = json.dumps({"event": "devices", "data": {"devices": devices}})
+        """Broadcast list of connected devices to all clients (legacy support)"""
+        # This is now handled by broadcast_sessions
         
         def send_msg(ws):
             try:
@@ -260,16 +334,17 @@ class PlaybackController:
             "queue_index": self.current_index,
             "shuffle_mode": self.shuffle_mode,
             "repeat_mode": self.repeat_mode,
-            "player_device_id": self._player_device_id
+            "player_session_id": self._player_session_id,
+            "player_device_id": self.get_player_device_id()
         }
         
-        # Only include stream URL for the player device
-        if is_player and track:
+        # ALL sessions get stream_url - they decide locally whether to play
+        if track:
             result["track"]["stream_url"] = f"/api/playback/stream/{track.id}"
         
         return result
     
-    def play(self, db: Session, track_id: int = None, queue: List[int] = None, player_device_id: str = None, is_player: bool = True):
+    def play(self, db: Session, track_id: int = None, queue: List[int] = None, session_id: str = None):
         state = db.query(PlaybackState).filter(PlaybackState.id == 1).first()
         if not state:
             state = PlaybackState(id=1)
@@ -300,18 +375,18 @@ class PlaybackController:
             
             self.broadcast_playback_state()
         
-        return self.get_state(db, is_player)
+        return self.get_state(db)
     
-    def pause(self, db: Session, is_player: bool = True):
+    def pause(self, db: Session, session_id: str = None):
         state = db.query(PlaybackState).filter(PlaybackState.id == 1).first()
         if state:
             state.is_playing = False
             state.updated_at = datetime.utcnow()
             db.commit()
-            self.broadcast("playback_state", self.get_state(db))
-        return self.get_state(db, is_player)
+            self.broadcast_playback_state()
+        return self.get_state(db)
     
-    def stop(self, db: Session, is_player: bool = True):
+    def stop(self, db: Session, session_id: str = None):
         state = db.query(PlaybackState).filter(PlaybackState.id == 1).first()
         if state:
             state.is_playing = False
@@ -319,12 +394,12 @@ class PlaybackController:
             state.position = 0
             state.updated_at = datetime.utcnow()
             db.commit()
-            self.broadcast("playback_state", self.get_state(db))
-        return self.get_state(db, is_player)
+            self.broadcast_playback_state()
+        return self.get_state(db)
     
-    def next(self, db: Session, is_player: bool = True):
+    def next(self, db: Session, session_id: str = None):
         if not self.queue:
-            return self.get_state(db, is_player)
+            return self.get_state(db)
         
         if self.shuffle_mode and len(self.queue) > 1:
             # Pick random track, avoiding the last played one
@@ -346,12 +421,12 @@ class PlaybackController:
         db.commit()
         
         self.last_played_track_id = self.queue[self.current_index]
-        self.broadcast("playback_state", self.get_state(db))
-        return self.get_state(db, is_player)
+        self.broadcast_playback_state()
+        return self.get_state(db)
     
-    def previous(self, db: Session, is_player: bool = True):
+    def previous(self, db: Session, session_id: str = None):
         if not self.queue:
-            return self.get_state(db, is_player)
+            return self.get_state(db)
         
         if self.current_index > 0:
             self.current_index -= 1
@@ -365,19 +440,19 @@ class PlaybackController:
         db.commit()
         
         self.last_played_track_id = self.queue[self.current_index]
-        self.broadcast("playback_state", self.get_state(db))
-        return self.get_state(db, is_player)
+        self.broadcast_playback_state()
+        return self.get_state(db)
     
-    def seek(self, db: Session, position: int, is_player: bool = True):
+    def seek(self, db: Session, position: int, session_id: str = None):
         state = db.query(PlaybackState).filter(PlaybackState.id == 1).first()
         if state:
             state.position = position
             state.updated_at = datetime.utcnow()
             db.commit()
-            self.broadcast("playback_state", self.get_state(db))
-        return self.get_state(db, is_player)
+            self.broadcast_playback_state()
+        return self.get_state(db)
     
-    def set_volume(self, db: Session, volume: float, is_player: bool = True):
+    def set_volume(self, db: Session, volume: float, session_id: str = None):
         state = db.query(PlaybackState).filter(PlaybackState.id == 1).first()
         if state:
             state.volume = max(0.0, min(1.0, volume))
@@ -445,10 +520,10 @@ class PlaybackController:
             if self.queue:
                 state.queue = ','.join(map(str, self.queue))
             db.commit()
-        self.broadcast("playback_state", self.get_state(db))
-        return {"shuffle_mode": self.shuffle_mode, "is_player": is_player}
+        self.broadcast_playback_state()
+        return {"shuffle_mode": self.shuffle_mode}
     
-    def toggle_repeat(self, db: Session, is_player: bool = True):
+    def toggle_repeat(self, db: Session, session_id: str = None):
         """Toggle repeat mode: off -> all -> one -> off"""
         if self.repeat_mode == "off":
             self.repeat_mode = "all"
@@ -462,10 +537,10 @@ class PlaybackController:
             state.repeat_mode = self.repeat_mode
             db.commit()
         
-        self.broadcast("playback_state", self.get_state(db))
-        return {"repeat_mode": self.repeat_mode, "is_player": is_player}
+        self.broadcast_playback_state()
+        return {"repeat_mode": self.repeat_mode}
     
-    def play_random(self, db: Session, count: int = 50, is_player: bool = True):
+    def play_random(self, db: Session, count: int = 50, session_id: str = None):
         """Fill queue with random tracks from library"""
         import random
         
