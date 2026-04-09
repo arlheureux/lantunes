@@ -106,6 +106,13 @@ def seek(position: int = Query(...), session: str = Query(None), db: Session = D
     playback.broadcast_playback_state()
     return result
 
+@router.post("/position")
+def update_position(position: int = Query(...), db: Session = Depends(get_db)):
+    """Update current position while playing - broadcast to all sessions"""
+    playback.update_position(db, position)
+    playback.broadcast_playback_state()
+    return {"status": "ok"}
+
 @router.post("/volume")
 def set_volume(volume: float = Query(..., ge=0.0, le=1.0), session: str = Query(None), db: Session = Depends(get_db)):
     """Execute volume on server, broadcast to all sessions"""

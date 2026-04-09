@@ -392,6 +392,14 @@ class PlaybackController:
         
         return self.get_state(db)
     
+    def update_position(self, db: Session, position: int):
+        """Update current position in DB while playing"""
+        state = db.query(PlaybackState).filter(PlaybackState.id == 1).first()
+        if state and state.is_playing:
+            state.position = position
+            state.updated_at = datetime.utcnow()
+            db.commit()
+    
     def pause(self, db: Session, position: int = None, session_id: str = None):
         state = db.query(PlaybackState).filter(PlaybackState.id == 1).first()
         if state:
