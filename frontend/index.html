@@ -1811,7 +1811,7 @@
                 
                 async function playFromQueue(index) {
                     const targetPlayer = getPlayerSession()?.id || deviceId;
-                    const state = await apiCall('/api/playback/play?player=' + encodeURIComponent(targetPlayer), { method: 'POST' });
+                    const state = await apiCall('/api/playback/play?session=' + encodeURIComponent(targetPlayer), { method: 'POST' });
                     if (state) {
                         playbackState.value = state;
                         queue.value = state.queue;
@@ -2062,14 +2062,14 @@
                     isLoading.value = true;
                     try {
                         if (playbackState.value.is_playing) {
-                            await apiCall('/api/playback/pause?player=' + encodeURIComponent(targetPlayer), { method: 'POST' });
+                            await apiCall('/api/playback/pause?session=' + encodeURIComponent(targetPlayer), { method: 'POST' });
                             playbackState.value.is_playing = false;
                             if (isThisDevicePlayer()) {
                                 audioPlayer.value?.pause();
                             }
                         } else {
                             const currentPosition = playbackState.value.position || 0;
-                            const url = '/api/playback/play?player=' + encodeURIComponent(targetPlayer);
+                            const url = '/api/playback/play?session=' + encodeURIComponent(targetPlayer);
                             const state = await apiCall(url, { method: 'POST' });
                             if (state) {
                                 playbackState.value = state;
@@ -2109,7 +2109,7 @@
                 async function next() {
                     const targetPlayer = getPlayerSession()?.id || deviceId;
                     console.log('Next clicked, targetPlayer:', targetPlayer);
-                    const state = await apiCall('/api/playback/next?player=' + encodeURIComponent(targetPlayer), { method: 'POST' });
+                    const state = await apiCall('/api/playback/next?session=' + encodeURIComponent(targetPlayer), { method: 'POST' });
                     if (state) {
                         playbackState.value = state;
                         if (isThisDevicePlayer() && state.track?.stream_url) {
@@ -2121,7 +2121,7 @@
                 async function previous() {
                     const targetPlayer = getPlayerSession()?.id || deviceId;
                     console.log('Previous clicked, targetPlayer:', targetPlayer);
-                    const state = await apiCall('/api/playback/previous?player=' + encodeURIComponent(targetPlayer), { method: 'POST' });
+                    const state = await apiCall('/api/playback/previous?session=' + encodeURIComponent(targetPlayer), { method: 'POST' });
                     if (state) {
                         playbackState.value = state;
                         if (isThisDevicePlayer() && state.track?.stream_url) {
@@ -2145,7 +2145,7 @@
                 
                 async function playFromQueue(index) {
                     const targetPlayer = getPlayerSession()?.id || deviceId;
-                    const state = await apiCall('/api/playback/play?player=' + encodeURIComponent(targetPlayer), { method: 'POST' });
+                    const state = await apiCall('/api/playback/play?session=' + encodeURIComponent(targetPlayer), { method: 'POST' });
                     if (state) {
                         playbackState.value = state;
                         queue.value = state.queue;
@@ -2159,12 +2159,12 @@
                 
                 async function toggleShuffle() {
                     const targetPlayer = getPlayerSession()?.id || deviceId;
-                    await apiCall('/api/playback/shuffle?player=' + encodeURIComponent(targetPlayer), { method: 'POST' });
+                    await apiCall('/api/playback/shuffle?session=' + encodeURIComponent(targetPlayer), { method: 'POST' });
                 }
                 
                 async function toggleRepeat() {
                     const targetPlayer = getPlayerSession()?.id || deviceId;
-                    await apiCall('/api/playback/repeat?player=' + encodeURIComponent(targetPlayer), { method: 'POST' });
+                    await apiCall('/api/playback/repeat?session=' + encodeURIComponent(targetPlayer), { method: 'POST' });
                 }
                 
                 async function shufflePlay() {
