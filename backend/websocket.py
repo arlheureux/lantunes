@@ -107,6 +107,12 @@ async def websocket_endpoint(websocket: WebSocket):
                     track_ids = payload.get("track_ids", [])
                     start_index = payload.get("start_index", 0)
                     playback.set_queue(db, track_ids, start_index, session_id=session_id)
+                
+                elif event == "command_executed":
+                    # Client reports that command was executed - broadcast updated state
+                    action = payload.get("action")
+                    print(f"[WS] Command executed: {action}")
+                    playback.broadcast_playback_state()
             finally:
                 db.close()
             

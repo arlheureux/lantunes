@@ -44,33 +44,66 @@ def get_state(session: str = Query(None), db: Session = Depends(get_db)):
 
 @router.post("/play")
 def play(track_id: int = None, queue: str = None, session: str = Query(None), db: Session = Depends(get_db)):
+    """Route play command to target session (Jellyfin style)"""
+    # Get the player session ID - commands go to the player
+    player_session = playback.get_player_session()
+    if not player_session:
+        return {"error": "No active player session"}
+    
+    # Route command to player session via WebSocket
     queue_list = [int(x) for x in queue.split(',')] if queue else None
-    # Any session can trigger play - server routes to player
-    return playback.play(db, track_id, queue_list, session_id=session)
+    return playback.route_command(player_session, "play", {
+        "track_id": track_id,
+        "queue": queue_list
+    })
 
 @router.post("/pause")
 def pause(session: str = Query(None), db: Session = Depends(get_db)):
-    return playback.pause(db, session_id=session)
+    """Route pause command to player session (Jellyfin style)"""
+    player_session = playback.get_player_session()
+    if not player_session:
+        return {"error": "No active player session"}
+    return playback.route_command(player_session, "pause")
 
 @router.post("/stop")
 def stop(session: str = Query(None), db: Session = Depends(get_db)):
-    return playback.stop(db, session_id=session)
+    """Route stop command to player session (Jellyfin style)"""
+    player_session = playback.get_player_session()
+    if not player_session:
+        return {"error": "No active player session"}
+    return playback.route_command(player_session, "stop")
 
 @router.post("/next")
 def next_track(session: str = Query(None), db: Session = Depends(get_db)):
-    return playback.next(db, session_id=session)
+    """Route next command to player session (Jellyfin style)"""
+    player_session = playback.get_player_session()
+    if not player_session:
+        return {"error": "No active player session"}
+    return playback.route_command(player_session, "next")
 
 @router.post("/previous")
 def previous_track(session: str = Query(None), db: Session = Depends(get_db)):
-    return playback.previous(db, session_id=session)
+    """Route previous command to player session (Jellyfin style)"""
+    player_session = playback.get_player_session()
+    if not player_session:
+        return {"error": "No active player session"}
+    return playback.route_command(player_session, "previous")
 
 @router.post("/seek")
 def seek(position: int = Query(...), session: str = Query(None), db: Session = Depends(get_db)):
-    return playback.seek(db, position, session_id=session)
+    """Route seek command to player session (Jellyfin style)"""
+    player_session = playback.get_player_session()
+    if not player_session:
+        return {"error": "No active player session"}
+    return playback.route_command(player_session, "seek", {"position": position})
 
 @router.post("/volume")
 def set_volume(volume: float = Query(..., ge=0.0, le=1.0), session: str = Query(None), db: Session = Depends(get_db)):
-    return playback.set_volume(db, volume, session_id=session)
+    """Route volume command to player session (Jellyfin style)"""
+    player_session = playback.get_player_session()
+    if not player_session:
+        return {"error": "No active player session"}
+    return playback.route_command(player_session, "set_volume", {"volume": volume})
 
 @router.post("/queue")
 def set_queue(track_ids: List[int], start_index: int = 0, player: str = Query(None), db: Session = Depends(get_db)):

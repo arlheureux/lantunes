@@ -163,7 +163,8 @@ class PlaybackController:
         # Also remove device on disconnect
         self.remove_device(ws)
     
-    def broadcast(self, event: str, data: dict, for_player_only: bool = False):
+    def broadcast(self, event: str, data: dict):
+        """Broadcast message to all sessions"""
         msg = json.dumps({"event": event, "data": data})
         disconnected = []
         
@@ -181,24 +182,19 @@ class PlaybackController:
                 return ws
             return None
         
-        if for_player_only:
-            # Only send to player device
-            ws = None
-            for dev_id, dev_info in self._devices.items():
-                if dev_info.get("is_player") and dev_info.get("ws"):
-                    ws = dev_info["ws"]
-                    break
-            if ws:
-                result = send_msg(ws)
-                if result:
-                    disconnected.append(result)
-        else:
-            # Send to all
-            with concurrent.futures.ThreadPoolExecutor(max_workers=4) as executor:
-                results = list(executor.map(send_msg, self._ws_connections))
-                for ws in results:
-                    if ws and ws in self._ws_connections:
-                        self._ws_connections.remove(ws)
+        # Send to all sessions via their WebSocket
+        with concurrent.futures.ThreadPoolExecutor(max_workers=4) as executor:
+            for session in self._sessions.values():
+                ws = session.get("ws")
+                if ws:
+                    result = executor.submit(send_msg, ws)
+                    if result.result():
+                        disconnected.append(ws)
+        
+        # Clean up disconnected
+        for ws in disconnected:
+            if ws in self._ws_connections:
+                self._ws_connections.remove(ws)
     
     def broadcast_playback_state(self):
         """Broadcast playback state to all sessions - ALL sessions get stream_url"""
@@ -549,8 +545,51 @@ class PlaybackController:
             db.commit()
         
         self.last_played_track_id = self.queue[self.current_index]
-        self.broadcast("playback_state", self.get_state(db))
+        self.broadcast_playback_state()
         self.broadcast("queue_updated", {"queue": self.queue})
-        return self.get_state(db, is_player)
+        return self.get_state(db)
+    
+    def route_command(self, target_session_id: str, action: str, data: dict = None):
+        """Route command to target session via WebSocket - Jellyfin style"""
+        import asyncio
+        import concurrent.futures
+        
+        if target_session_id not in self._sessions:
+            return {"error": f"Session {target_session_id} not found", "sessions": list(self._sessions.keys())}
+        
+        session = self._sessions[target_session_id]
+        ws = session.get("ws")
+        
+        if not ws:
+            return {"error": f"Session {target_session_id} has no WebSocket connection"}
+        
+        # Build command message
+        msg_data = {"action": action}
+        if data:
+            msg_data.update(data)
+        
+        msg = json.dumps({"event": "command", "data": msg_data})
+        
+        def send_ws(ws, msg):
+            try:
+                loop = asyncio.new_event_loop()
+                asyncio.set_event_loop(loop)
+                loop.run_until_complete(ws.send_text(msg))
+                loop.close()
+                return True
+            except Exception as e:
+                print(f"Error sending command to session: {e}")
+                return False
+        
+        with concurrent.futures.ThreadPoolExecutor(max_workers=1) as executor:
+            success = executor.submit(send_ws, ws, msg)
+        
+        if success.result():
+            return {"status": "routed", "session": target_session_id, "action": action}
+        return {"error": "Failed to send command"}
+    
+    def broadcast_command_result(self, action: str):
+        """Broadcast that a command was executed - all clients update their state"""
+        self.broadcast_playback_state()
 
 playback = PlaybackController()
