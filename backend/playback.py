@@ -380,7 +380,7 @@ class PlaybackController:
             state.is_playing = True
             if new_track and not resume_play:
                 state.position = 0
-            elif position is not None:
+            elif position is not None and position > 0:
                 state.position = position
             # else: keep existing position (from pause)
             if not state.queue:
