@@ -2138,7 +2138,7 @@
                     await apiCall('/api/playback/seek?position=' + pos + '&session=' + encodeURIComponent(targetPlayer), { method: 'POST' });
                     playbackState.value.position = pos;
                     // Also seek local audio if we're the player
-                    if (audioPlayer.value && !selectedPlayerId.value) {
+                    if (audioPlayer.value && isThisDevicePlayer()) {
                         audioPlayer.value.currentTime = pos;
                     }
                 }
