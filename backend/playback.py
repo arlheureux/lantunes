@@ -50,15 +50,26 @@ class PlaybackController:
     
     def set_player_device(self, device_id: str):
         """Set which device should play audio"""
-        # Disable current player
+        from database import SessionLocal
+        db = SessionLocal()
+        
+        # Pause current player before switching
         if self._player_device_id and self._player_device_id in self._devices:
             self._devices[self._player_device_id]["is_player"] = False
+            # Stop playback on old player
+            state = db.query(PlaybackState).filter(PlaybackState.id == 1).first()
+            if state:
+                state.is_playing = False
+                db.commit()
         
         # Enable new player
         if device_id in self._devices:
             self._player_device_id = device_id
             self._devices[device_id]["is_player"] = True
+            db.close()
+            self.broadcast_playback_state()
             return True
+        db.close()
         return False
     
     def get_devices(self) -> List[dict]:
