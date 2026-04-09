@@ -2220,6 +2220,8 @@
                                     } else if (playbackState.value.track?.id) {
                                         playStream(playbackState.value.track.id);
                                     }
+                                    // Report back so server broadcasts new state
+                                    setTimeout(() => sendWS('command_executed', { action: 'play' }), 100);
                                 }
                                 playbackState.value.is_playing = true;
                             } else if (action === 'stop') {
@@ -2234,6 +2236,8 @@
                                     playbackState.value.queue_index = nextIndex;
                                     const nextId = playbackState.value.queue[nextIndex];
                                     if (nextId) playStream(nextId);
+                                    // Report back so server broadcasts new state
+                                    setTimeout(() => sendWS('command_executed', { action: 'next' }), 100);
                                 }
                             } else if (action === 'previous') {
                                 if (amIPlayer && playbackState.value.queue) {
@@ -2243,6 +2247,8 @@
                                     playbackState.value.queue_index = prevIndex;
                                     const prevId = playbackState.value.queue[prevIndex];
                                     if (prevId) playStream(prevId);
+                                    // Report back so server broadcasts new state
+                                    setTimeout(() => sendWS('command_executed', { action: 'previous' }), 100);
                                 }
                             } else if (action === 'seek') {
                                 const pos = msg.data.position;
