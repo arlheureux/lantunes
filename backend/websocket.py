@@ -1,6 +1,7 @@
 import sys
 import os
 import uuid
+import asyncio
 backend_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, backend_dir)
 
@@ -71,13 +72,11 @@ async def websocket_endpoint(websocket: WebSocket):
                             db2 = DB()
                             state = playback.get_state(db2)
                             db2.close()
-                            import json
-                            msg = json.dumps({"event": "playback_state", "data": state})
-                            import asyncio
+                            state_msg = json.dumps({"event": "playback_state", "data": state})
                             try:
                                 loop = asyncio.new_event_loop()
                                 asyncio.set_event_loop(loop)
-                                loop.run_until_complete(websocket.send_text(msg))
+                                loop.run_until_complete(websocket.send_text(state_msg))
                                 loop.close()
                                 print(f"[WS] Sent playback state on reconnect to session: {session_id}")
                             except Exception as e:
