@@ -158,10 +158,23 @@ class PlaybackController:
         self._ws_connections.append(ws)
     
     def remove_connection(self, ws):
+        """Remove WebSocket connection and associated session"""
         if ws in self._ws_connections:
             self._ws_connections.remove(ws)
-        # Also remove device on disconnect
-        self.remove_device(ws)
+        # Also clean up session
+        session_to_remove = None
+        for session_id, session_info in self._sessions.items():
+            if session_info["ws"] == ws:
+                session_to_remove = session_id
+                break
+        if session_to_remove:
+            del self._sessions[session_to_remove]
+            if self._player_session_id == session_to_remove:
+                self._player_session_id = None
+                if self._sessions:
+                    self._player_session_id = next(iter(self._sessions.keys()))
+                    if self._player_session_id:
+                        self._sessions[self._player_session_id]["is_player"] = True
     
     def broadcast(self, event: str, data: dict):
         """Broadcast message to all sessions"""
