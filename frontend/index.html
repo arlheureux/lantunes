@@ -884,11 +884,11 @@
                     </div>
                     
                     <div v-else>
-                        <!-- Device Selector Button -->
-                        <div v-if="devices.length > 1" style="margin-bottom:16px;">
+                        <!-- Session Selector Button -->
+                        <div v-if="sessions.length > 1" style="margin-bottom:16px;">
                             <button @click="showDeviceModal = true" :style="isMobile ? 'display:flex;align-items:center;gap:10px;background:rgba(255,255,255,0.1);border:none;padding:10px 16px;border-radius:24px;color:var(--text-primary);font-size:14px;width:100%;cursor:pointer;' : 'background:#333;color:var(--text-primary);border:none;padding:8px 16px;border-radius:20px;font-size:14px;cursor:pointer;display:flex;align-items:center;gap:8px;'">
                                 <i class="fas fa-volume-up"></i>
-                                <span :style="isMobile ? 'flex:1;text-align:left;' : ''">{{ devices.find(d => d.is_player)?.name || 'Select Device' }}</span>
+                                <span :style="isMobile ? 'flex:1;text-align:left;' : ''">{{ sessions.find(s => s.is_player)?.name || 'Select Device' }}</span>
                                 <i v-if="isMobile" class="fas fa-chevron-right" style="font-size:12px;color:var(--text-muted);"></i>
                             </button>
                         </div>
@@ -1346,13 +1346,13 @@
                 <button @click="showDeviceModal = false"><i class="fas fa-times"></i></button>
             </div>
             <div class="mobile-queue-list">
-                <div v-for="d in devices" :key="d.id" 
+                <div v-for="s in sessions" :key="s.id" 
                      class="mobile-queue-item" 
-                     :class="{ playing: d.is_player }"
-                     @click="setPlayerDevice(d.id); showDeviceModal = false">
-                    <span style="font-size:20px;">{{ d.is_player ? '🎵' : '📱' }}</span>
-                    <span class="title">{{ d.name }}</span>
-                    <span v-if="d.is_player" style="color:var(--accent);margin-left:auto;"><i class="fas fa-check"></i></span>
+                     :class="{ playing: s.is_player }"
+                     @click="setPlayerSession(s.id); showDeviceModal = false">
+                    <span style="font-size:20px;">{{ s.is_player ? '🎵' : '📱' }}</span>
+                    <span class="title">{{ s.name }}</span>
+                    <span v-if="s.is_player" style="color:var(--accent);margin-left:auto;"><i class="fas fa-check"></i></span>
                 </div>
             </div>
         </div>
@@ -1458,10 +1458,10 @@
                 </div>
             </div>
             
-            <div class="device-selector" v-if="devices.length > 1">
-                <select v-model="selectedPlayerId" @change="setPlayerDevice(selectedPlayerId)" title="Select playback device">
-                    <option v-for="d in devices" :key="d.id" :value="d.id">
-                        {{ d.is_player ? '🎵 ' : '📱 ' }}{{ d.name }}
+            <div class="device-selector" v-if="sessions.length > 1">
+                <select v-model="selectedSessionId" @change="setPlayerSession(selectedSessionId)" title="Select playback session">
+                    <option v-for="s in sessions" :key="s.id" :value="s.id">
+                        {{ s.is_player ? '🎵 ' : '📱 ' }}{{ s.name }}
                     </option>
                 </select>
             </div>
@@ -1552,6 +1552,13 @@
                 const tracksLimit = ref(100);
                 const tracksTotal = ref(0);
                 
+                // Session management - unique per browser tab
+                let sessionId = localStorage.getItem('lantunes_session_id');
+                if (!sessionId) {
+                    sessionId = 'session_' + Math.random().toString(36).substr(2, 9);
+                    localStorage.setItem('lantunes_session_id', sessionId);
+                }
+                
                 // Device management for "cast play to" feature
                 let deviceId = localStorage.getItem('lantunes_device_id');
                 if (!deviceId) {
@@ -1560,8 +1567,9 @@
                 }
                 
                 const deviceName = ref(localStorage.getItem('lantunes_device_name') || 'My Device');
-                const devices = ref([]);
-                const selectedPlayerId = ref(null);
+                const sessions = ref([]);
+                const currentSessionId = ref(null);  // This device's session ID
+                const selectedSessionId = ref(null);  // Session user wants to control (defaults to player)
                 
                 // User management
                 const users = ref([]);
@@ -1615,8 +1623,8 @@
                 }
                 
                 async function setVolume() {
-                    const targetPlayer = selectedPlayerId.value || deviceId;
-                    await apiCall('/api/playback/volume?volume=' + volume.value + '&player=' + encodeURIComponent(targetPlayer), { method: 'POST' });
+                    const targetPlayer = getPlayerSession()?.id || deviceId;
+                    await apiCall('/api/playback/volume?volume=' + volume.value + '&session=' + encodeURIComponent(targetPlayer), { method: 'POST' });
                 }
                 
                 function sendWS(event, data) {
@@ -1626,11 +1634,13 @@
                 }
                 
                 function registerDevice() {
-                    sendWS('register', { device_id: deviceId, device_name: deviceName.value });
+                    currentSessionId.value = sessionId;
+                    sendWS('register', { session_id: sessionId, device_id: deviceId, device_name: deviceName.value });
                 }
                 
-                function setPlayerDevice(targetDeviceId) {
-                    sendWS('set_player', { device_id: targetDeviceId });
+                function setPlayerSession(targetSessionId) {
+                    sendWS('set_player', { session_id: targetSessionId });
+                    selectedSessionId.value = targetSessionId;
                     if (isMobile.value && playbackState.value.track) {
                         showPlayerModal.value = true;
                     }
@@ -1663,10 +1673,15 @@
                 }
                 
                 function isThisDevicePlayer() {
-                    const playerDevice = devices.value.find(d => d.is_player);
-                    const isPlayer = playerDevice ? (playerDevice.id === deviceId) : (devices.value.length <= 1);
-                    console.log('isThisDevicePlayer check:', { playerDevice, deviceId, devices: devices.value.length, result: isPlayer });
+                    // Check if THIS device (by deviceId) is the player
+                    const playerSession = sessions.value.find(s => s.is_player);
+                    const isPlayer = playerSession ? (playerSession.device_id === deviceId) : (sessions.value.length <= 1);
+                    console.log('isThisDevicePlayer check:', { playerSession, deviceId, sessions: sessions.value.length, result: isPlayer });
                     return isPlayer;
+                }
+                
+                function getPlayerSession() {
+                    return sessions.value.find(s => s.is_player);
                 }
                 
                 function onTimeUpdate() {
@@ -1795,13 +1810,13 @@
                 const newPlaylistName = ref('');
                 
                 async function playFromQueue(index) {
-                    const targetPlayer = selectedPlayerId.value || deviceId;
+                    const targetPlayer = getPlayerSession()?.id || deviceId;
                     const state = await apiCall('/api/playback/play?player=' + encodeURIComponent(targetPlayer), { method: 'POST' });
                     if (state) {
                         playbackState.value = state;
                         queue.value = state.queue;
                         showMobileQueue.value = false;
-                        const amIPlayer = !selectedPlayerId.value || selectedPlayerId.value === deviceId;
+                        const amIPlayer = isThisDevicePlayer();
                         if (amIPlayer && state.track?.stream_url) {
                             playStream(state.track.id);
                         }
@@ -1938,12 +1953,11 @@
                 
                 async function playTrack(track) {
                     console.log('Playing track:', track);
-                    // Determine which device should play
-                    // If selectedPlayerId is set, that device plays. Otherwise, the requesting device plays.
-                    const targetPlayer = selectedPlayerId.value || deviceId;
+                    // Determine which session controls playback - always use player session
+                    const targetSession = getPlayerSession()?.id || currentSessionId.value;
                     
-                    // Send play request with the target player device ID (as query params)
-                    const url = '/api/playback/play?track_id=' + track.id + '&queue=' + track.id + '&player=' + encodeURIComponent(targetPlayer);
+                    // Send play request with the target session ID
+                    const url = '/api/playback/play?track_id=' + track.id + '&queue=' + track.id + '&session=' + encodeURIComponent(targetSession);
                     const state = await apiCall(url, {
                         method: 'POST'
                     });
@@ -1952,7 +1966,7 @@
                         playbackState.value = state;
                         queue.value = state.queue;
                         // Only play locally if we ARE the target player (or if stream_url is present in response)
-                        const amIPlayer = !selectedPlayerId.value || selectedPlayerId.value === deviceId;
+                        const amIPlayer = isThisDevicePlayer();
                         if (amIPlayer && state.track?.stream_url) {
                             playStream(track.id);
                         }
@@ -1976,14 +1990,14 @@
                     if (!albumDetails || !albumDetails.tracks) return;
                     
                     const trackIds = albumDetails.tracks.map(t => t.id).join(',');
-                    const targetPlayer = selectedPlayerId.value || deviceId;
-                    const url = '/api/playback/play?queue=' + trackIds + '&player=' + encodeURIComponent(targetPlayer);
+                    const targetPlayer = getPlayerSession()?.id || deviceId;
+                    const url = '/api/playback/play?queue=' + trackIds + '&session=' + encodeURIComponent(targetPlayer);
                     const state = await apiCall(url, { method: 'POST' });
                     
                     if (state) {
                         playbackState.value = state;
                         queue.value = state.queue;
-                        const amIPlayer = !selectedPlayerId.value || selectedPlayerId.value === deviceId;
+                        const amIPlayer = isThisDevicePlayer();
                         if (amIPlayer && state.track?.stream_url) {
                             playStream(state.track.id);
                         }
@@ -2043,7 +2057,7 @@
                 }
                 
                 async function togglePlay() {
-                    const targetPlayer = selectedPlayerId.value || deviceId;
+                    const targetPlayer = getPlayerSession()?.id || deviceId;
                     console.log('TogglePlay clicked, targetPlayer:', targetPlayer, 'isPlaying:', playbackState.value.is_playing);
                     isLoading.value = true;
                     try {
@@ -2079,13 +2093,13 @@
                 async function playPlaylist() {
                     if (!currentPlaylist.value || !currentPlaylist.value.tracks?.length) return;
                     const trackIds = currentPlaylist.value.tracks.map(t => t.id).join(',');
-                    const targetPlayer = selectedPlayerId.value || deviceId;
-                    const url = '/api/playback/play?queue=' + trackIds + '&player=' + encodeURIComponent(targetPlayer);
+                    const targetPlayer = getPlayerSession()?.id || deviceId;
+                    const url = '/api/playback/play?queue=' + trackIds + '&session=' + encodeURIComponent(targetPlayer);
                     const state = await apiCall(url, { method: 'POST' });
                     if (state) {
                         playbackState.value = state;
                         queue.value = state.queue;
-                        const amIPlayer = !selectedPlayerId.value || selectedPlayerId.value === deviceId;
+                        const amIPlayer = isThisDevicePlayer();
                         if (amIPlayer && state.track?.stream_url) {
                             playStream(state.track.id);
                         }
@@ -2093,7 +2107,7 @@
                 }
                 
                 async function next() {
-                    const targetPlayer = selectedPlayerId.value || deviceId;
+                    const targetPlayer = getPlayerSession()?.id || deviceId;
                     console.log('Next clicked, targetPlayer:', targetPlayer);
                     const state = await apiCall('/api/playback/next?player=' + encodeURIComponent(targetPlayer), { method: 'POST' });
                     if (state) {
@@ -2105,7 +2119,7 @@
                 }
                 
                 async function previous() {
-                    const targetPlayer = selectedPlayerId.value || deviceId;
+                    const targetPlayer = getPlayerSession()?.id || deviceId;
                     console.log('Previous clicked, targetPlayer:', targetPlayer);
                     const state = await apiCall('/api/playback/previous?player=' + encodeURIComponent(targetPlayer), { method: 'POST' });
                     if (state) {
@@ -2120,8 +2134,8 @@
                     const rect = e.currentTarget.getBoundingClientRect();
                     const percent = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
                     const pos = Math.floor(percent * playbackState.value.track.duration);
-                    const targetPlayer = selectedPlayerId.value || deviceId;
-                    await apiCall('/api/playback/seek?position=' + pos + '&player=' + encodeURIComponent(targetPlayer), { method: 'POST' });
+                    const targetPlayer = getPlayerSession()?.id || deviceId;
+                    await apiCall('/api/playback/seek?position=' + pos + '&session=' + encodeURIComponent(targetPlayer), { method: 'POST' });
                     playbackState.value.position = pos;
                     // Also seek local audio if we're the player
                     if (audioPlayer.value && !selectedPlayerId.value) {
@@ -2130,13 +2144,13 @@
                 }
                 
                 async function playFromQueue(index) {
-                    const targetPlayer = selectedPlayerId.value || deviceId;
+                    const targetPlayer = getPlayerSession()?.id || deviceId;
                     const state = await apiCall('/api/playback/play?player=' + encodeURIComponent(targetPlayer), { method: 'POST' });
                     if (state) {
                         playbackState.value = state;
                         queue.value = state.queue;
                         showMobileQueue.value = false;
-                        const amIPlayer = !selectedPlayerId.value || selectedPlayerId.value === deviceId;
+                        const amIPlayer = isThisDevicePlayer();
                         if (amIPlayer && state.track?.stream_url) {
                             playStream(state.track.id);
                         }
@@ -2144,22 +2158,22 @@
                 }
                 
                 async function toggleShuffle() {
-                    const targetPlayer = selectedPlayerId.value || deviceId;
+                    const targetPlayer = getPlayerSession()?.id || deviceId;
                     await apiCall('/api/playback/shuffle?player=' + encodeURIComponent(targetPlayer), { method: 'POST' });
                 }
                 
                 async function toggleRepeat() {
-                    const targetPlayer = selectedPlayerId.value || deviceId;
+                    const targetPlayer = getPlayerSession()?.id || deviceId;
                     await apiCall('/api/playback/repeat?player=' + encodeURIComponent(targetPlayer), { method: 'POST' });
                 }
                 
                 async function shufflePlay() {
-                    const targetPlayer = selectedPlayerId.value || deviceId;
-                    const state = await apiCall('/api/playback/shuffle-play?count=50&player=' + encodeURIComponent(targetPlayer), { method: 'POST' });
+                    const targetPlayer = getPlayerSession()?.id || deviceId;
+                    const state = await apiCall('/api/playback/shuffle-play?count=50&session=' + encodeURIComponent(targetPlayer), { method: 'POST' });
                     if (state) {
                         playbackState.value = state;
                         queue.value = state.queue;
-                        const amIPlayer = !selectedPlayerId.value || selectedPlayerId.value === deviceId;
+                        const amIPlayer = isThisDevicePlayer();
                         if (amIPlayer && state.track?.stream_url) playStream(state.track.id);
                     }
                 }
@@ -2226,14 +2240,16 @@
                         } else if (msg.event === 'queue_updated') {
                             queue.value = msg.data.queue || [];
                             loadQueueTracks();
+                        } else if (msg.event === 'sessions') {
+                            console.log('Sessions received:', JSON.stringify(msg.data.sessions));
+                            sessions.value = msg.data.sessions || [];
+                            console.log('sessions array updated, length:', sessions.value.length, 'sessions:', JSON.stringify(sessions.value));
+                            const player = sessions.value.find(s => s.is_player);
+                            selectedSessionId.value = player ? player.id : null;
+                            console.log('selectedSessionId:', selectedSessionId.value);
                         } else if (msg.event === 'devices') {
-                            console.log('Devices received:', JSON.stringify(msg.data.devices));
-                            devices.value = msg.data.devices || [];
-                            console.log('devices array updated, length:', devices.value.length, 'devices:', JSON.stringify(devices.value));
-                            console.log('Device selector should show:', devices.value.length > 1);
-                            const player = devices.value.find(d => d.is_player);
-                            selectedPlayerId.value = player ? player.id : null;
-                            console.log('selectedPlayerId:', selectedPlayerId.value);
+                            // Legacy support - convert devices to sessions format
+                            console.log('Devices (legacy) received:', JSON.stringify(msg.data.devices));
                         }
                     };
                     ws.onerror = (e) => console.error('WebSocket error:', e);
@@ -2299,7 +2315,7 @@
                     showAlbumContextMenu, closeAlbumContextMenu, openAlbumPlaylistDialog,
                     openAlbumEditDialog, saveAlbumMetadata, removeAlbumArtwork, albumEditDialog,
                     letters, scrollToLetter, selectedLetter, filteredArtists, albumContextMenu,
-                    devices, selectedPlayerId, deviceName, updateDeviceName, focusSearch, setPlayerDevice,
+                    sessions, selectedSessionId, currentSessionId, deviceName, updateDeviceName, focusSearch, setPlayerSession,
                     users, showUserForm, newUser, isAdmin, isMobile, showMobileQueue, showDeviceModal, showPlayerModal, loadUsers, createUser, deleteUser, logout,
                     viewPlaylist, playPlaylist, loading, loadQueueTracks
                 };
