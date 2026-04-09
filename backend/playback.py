@@ -216,12 +216,24 @@ class PlaybackController:
                 "player_device_id": self._player_device_id
             }
         
+        # Get artist and album names
+        artist_name = track.artist_id
+        album_title = track.album_id
+        if track.artist_id:
+            artist = db.query(Artist).filter(Artist.id == track.artist_id).first()
+            if artist:
+                artist_name = artist.name
+        if track.album_id:
+            album = db.query(Album).filter(Album.id == track.album_id).first()
+            if album:
+                album_title = album.title
+        
         result = {
             "track": {
                 "id": track.id,
                 "title": track.title,
-                "artist": track.artist_id,
-                "album": track.album_id,
+                "artist": artist_name,
+                "album": album_title,
                 "duration": track.duration,
                 "path": track.path,
                 "file_format": track.file_format,
