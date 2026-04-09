@@ -344,7 +344,7 @@ class PlaybackController:
         
         return result
     
-    def play(self, db: Session, track_id: int = None, queue: List[int] = None, session_id: str = None):
+    def play(self, db: Session, position: int = None, track_id: int = None, queue: List[int] = None, session_id: str = None):
         state = db.query(PlaybackState).filter(PlaybackState.id == 1).first()
         if not state:
             state = PlaybackState(id=1)
@@ -378,6 +378,9 @@ class PlaybackController:
             state.is_playing = True
             if new_track and not resume_play:
                 state.position = 0
+            elif position is not None:
+                # Position provided from frontend (resume with specific position)
+                state.position = position
             if not state.queue:
                 state.queue = ','.join(map(str, self.queue))
             state.updated_at = datetime.utcnow()

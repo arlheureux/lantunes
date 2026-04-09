@@ -2054,9 +2054,10 @@
                                 audioPlayer.value?.pause();
                             }
                         } else {
-                            // Route play command to player session (Jellyfin style)
-                            // Client that receives command will handle actual playback
-                            await apiCall('/api/playback/play?session=' + encodeURIComponent(targetPlayer), { method: 'POST' });
+                            // Get current position before playing (for resume)
+                            const currentPos = audioPlayer.value ? Math.floor(audioPlayer.value.currentTime) : 0;
+                            // Route play command to player session with current position
+                            await apiCall('/api/playback/play?position=' + currentPos + '&session=' + encodeURIComponent(targetPlayer), { method: 'POST' });
                         }
                     } finally {
                         isLoading.value = false;

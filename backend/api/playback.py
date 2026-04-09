@@ -43,14 +43,14 @@ def get_state(session: str = Query(None), db: Session = Depends(get_db)):
     return playback.get_state(db)
 
 @router.post("/play")
-def play(track_id: int = None, queue: str = None, session: str = Query(None), db: Session = Depends(get_db)):
+def play(position: int = Query(None), track_id: int = None, queue: str = None, session: str = Query(None), db: Session = Depends(get_db)):
     """Execute play command on server, broadcast to all sessions"""
     player_session = playback.get_player_session()
     if not player_session:
         return {"error": "No active player session"}
     
     queue_list = [int(x) for x in queue.split(',')] if queue else None
-    result = playback.play(db, track_id=track_id, queue=queue_list, session_id=player_session)
+    result = playback.play(db, position=position, track_id=track_id, queue=queue_list, session_id=player_session)
     playback.broadcast_playback_state()
     return result
 
