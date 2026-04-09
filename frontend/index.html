@@ -1967,6 +1967,11 @@
                         const streamUrl = API + '/api/playback/stream/' + trackId;
                         console.log('Stream URL:', streamUrl);
                         audioPlayer.value.src = streamUrl;
+                        // Seek to position before playing (for resume)
+                        if (playbackState.value.position > 0) {
+                            audioPlayer.value.currentTime = playbackState.value.position;
+                            console.log('Seeked to position on play:', playbackState.value.position);
+                        }
                         audioPlayer.value.play().catch(e => console.error('Play error:', e));
                     } else {
                         console.error('Audio player not found');
