@@ -2136,27 +2136,7 @@
                 
                 async function toggleShuffle() {
                     const targetPlayer = selectedPlayerId.value || deviceId;
-                    const wasShuffleOn = playbackState.value.shuffle_mode;
-                    const result = await apiCall('/api/playback/shuffle?player=' + encodeURIComponent(targetPlayer), { method: 'POST' });
-                    if (result) {
-                        playbackState.value.shuffle_mode = result.shuffle_mode;
-                        // If shuffle was just turned ON, reorder the queue
-                        if (!wasShuffleOn && result.shuffle_mode && queue.value && queue.value.length > 1) {
-                            const currentTrackId = playbackState.value.track?.id;
-                            const shuffled = [...queue.value].sort(() => Math.random() - 0.5);
-                            // Move current track to front if playing
-                            if (currentTrackId) {
-                                const idx = shuffled.indexOf(currentTrackId);
-                                if (idx > 0) {
-                                    shuffled.splice(idx, 1);
-                                    shuffled.unshift(currentTrackId);
-                                }
-                            }
-                            const startIdx = currentTrackId ? 0 : 0;
-                            await apiCall('/api/playback/queue?track_ids=' + shuffled.join(',') + '&start_index=' + startIdx + '&player=' + encodeURIComponent(targetPlayer), { method: 'POST' });
-                            queue.value = shuffled;
-                        }
-                    }
+                    await apiCall('/api/playback/shuffle?player=' + encodeURIComponent(targetPlayer), { method: 'POST' });
                 }
                 
                 async function toggleRepeat() {
@@ -2224,9 +2204,11 @@
                             queue.value = msg.data.queue || [];
                             loadQueueTracks();
                             
-                            // Auto-play: if this device has stream_url and is playing, start audio
-                            console.log('Has stream_url:', !!msg.data.track?.stream_url, 'is_playing:', msg.data.is_playing, 'was playing:', prevPlaying);
-                            if (msg.data.track?.stream_url && msg.data.is_playing) {
+                            // Auto-play: only if track changed or state changed from paused to playing
+                            const trackChanged = playbackState.value.track?.id !== msg.data.track?.id;
+                            const justStartedPlaying = !prevPlaying && msg.data.is_playing;
+                            console.log('Track changed:', trackChanged, 'Just started playing:', justStartedPlaying, 'Has stream_url:', !!msg.data.track?.stream_url);
+                            if (msg.data.track?.stream_url && (trackChanged || justStartedPlaying)) {
                                 console.log('Auto-playing track:', msg.data.track.id);
                                 playStream(msg.data.track.id);
                             }
