@@ -1663,7 +1663,10 @@
                 }
                 
                 function isThisDevicePlayer() {
-                    return selectedPlayerId.value === deviceId || (!selectedPlayerId.value && devices.value.length <= 1);
+                    const playerDevice = devices.value.find(d => d.is_player);
+                    const isPlayer = playerDevice ? (playerDevice.id === deviceId) : (devices.value.length <= 1);
+                    console.log('isThisDevicePlayer check:', { playerDevice, deviceId, devices: devices.value.length, result: isPlayer });
+                    return isPlayer;
                 }
                 
                 function onTimeUpdate() {
@@ -2042,10 +2045,12 @@
                 async function togglePlay() {
                     const amIPlayer = isThisDevicePlayer();
                     const targetPlayer = selectedPlayerId.value || deviceId;
+                    console.log('TogglePlay clicked, amIPlayer:', amIPlayer, 'isPlaying:', playbackState.value.is_playing);
                     isLoading.value = true;
                     try {
                         if (playbackState.value.is_playing) {
                             if (!amIPlayer) {
+                                console.log('Sending pause via WebSocket');
                                 sendWS('control', { action: 'pause' });
                             } else {
                                 await apiCall('/api/playback/pause?player=' + encodeURIComponent(targetPlayer), { method: 'POST' });
@@ -2096,8 +2101,26 @@
                 
                 async function next() {
                     const amIPlayer = isThisDevicePlayer();
+                    console.log('Next clicked, amIPlayer:', amIPlayer, 'deviceId:', deviceId);
                     if (!amIPlayer) {
+                        console.log('Sending next via WebSocket');
                         sendWS('control', { action: 'next' });
+                    } else {
+                        const targetPlayer = selectedPlayerId.value || deviceId;
+                        const state = await apiCall('/api/playback/next?player=' + encodeURIComponent(targetPlayer), { method: 'POST' });
+                        if (state) {
+                            playbackState.value = state;
+                            if (state.track?.stream_url) playStream(state.track.id);
+                        }
+                    }
+                }
+                
+                async function previous() {
+                    const amIPlayer = isThisDevicePlayer();
+                    console.log('Previous clicked, amIPlayer:', amIPlayer, 'deviceId:', deviceId);
+                    if (!amIPlayer) {
+                        console.log('Sending previous via WebSocket');
+                        sendWS('control', { action: 'previous' });
                     } else {
                         const targetPlayer = selectedPlayerId.value || deviceId;
                         const state = await apiCall('/api/playback/next?player=' + encodeURIComponent(targetPlayer), { method: 'POST' });
