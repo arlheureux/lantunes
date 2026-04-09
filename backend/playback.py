@@ -226,24 +226,7 @@ class PlaybackController:
                 if session.get("ws"):
                     executor.submit(send_msg, session["ws"])
     
-    def broadcast_devices(self):
-        """Broadcast list of connected devices to all clients (legacy support)"""
-        # This is now handled by broadcast_sessions
-        
-        def send_msg(ws):
-            try:
-                loop = asyncio.new_event_loop()
-                asyncio.set_event_loop(loop)
-                loop.run_until_complete(ws.send_text(msg))
-                loop.close()
-            except Exception as e:
-                print(f"Error sending: {e}")
-        
-        with concurrent.futures.ThreadPoolExecutor(max_workers=4) as executor:
-            for ws in self._ws_connections:
-                executor.submit(send_msg, ws)
-    
-    def get_state(self, db: Session, is_player: bool = True) -> dict:
+    def get_state(self, db: Session) -> dict:
         state = db.query(PlaybackState).filter(PlaybackState.id == 1).first()
         if not state:
             state = PlaybackState(id=1)
@@ -439,10 +422,10 @@ class PlaybackController:
             state.volume = max(0.0, min(1.0, volume))
             state.updated_at = datetime.utcnow()
             db.commit()
-            self.broadcast("playback_state", self.get_state(db))
-        return self.get_state(db, is_player)
+            self.broadcast_playback_state()
+        return self.get_state(db)
     
-    def set_queue(self, db: Session, track_ids: List[int], start_index: int = 0, is_player: bool = True):
+    def set_queue(self, db: Session, track_ids: List[int], start_index: int = 0, session_id: str = None):
         self.queue = track_ids
         self.current_index = start_index if start_index < len(track_ids) else 0
         
@@ -456,9 +439,9 @@ class PlaybackController:
             state.updated_at = datetime.utcnow()
             db.commit()
         
-        self.broadcast("playback_state", self.get_state(db))
+        self.broadcast_playback_state()
         self.broadcast("queue_updated", {"queue": self.queue})
-        return self.get_state(db, is_player)
+        return self.get_state(db)
     
     def play_next(self, db: Session, track_id: int):
         """Add a track to play next (after current track)"""
