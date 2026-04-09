@@ -2053,16 +2053,16 @@
                                 audioPlayer.value?.pause();
                             }
                         } else {
+                            const currentPosition = playbackState.value.position || 0;
                             const url = '/api/playback/play?player=' + encodeURIComponent(targetPlayer);
                             const state = await apiCall(url, { method: 'POST' });
                             if (state) {
                                 playbackState.value = state;
                                 if (isThisDevicePlayer() && state.track?.stream_url) {
                                     if (audioPlayer.value && audioPlayer.value.src) {
-                                        const wasPlaying = state.position > 0;
                                         await audioPlayer.value.play();
-                                        if (wasPlaying && state.position > 0) {
-                                            audioPlayer.value.currentTime = state.position;
+                                        if (currentPosition > 0) {
+                                            audioPlayer.value.currentTime = currentPosition;
                                         }
                                     } else {
                                         playStream(state.track.id);
@@ -2282,15 +2282,6 @@
                             setVolume();
                         }
                     });
-                    
-                    // Check if we should be playing (if this device is the player)
-                    setTimeout(async () => {
-                        const state = await apiCall('/api/playback/state?player=' + encodeURIComponent(deviceId));
-                        if (state && state.is_playing && state.track?.stream_url) {
-                            playbackState.value = state;
-                            playStream(state.track.id);
-                        }
-                    }, 1500);
                 });
                 
                 return {
