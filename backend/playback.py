@@ -1,5 +1,5 @@
 from sqlalchemy.orm import Session
-from database import get_db, PlaybackState, Track
+from database import get_db, PlaybackState, Track, Artist, Album
 from datetime import datetime
 from typing import List, Optional
 import json
