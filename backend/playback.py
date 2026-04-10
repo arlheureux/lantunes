@@ -81,6 +81,10 @@ class PlaybackController:
             return True
         return False
     
+    def get_player_session(self) -> str:
+        """Get the current player session ID"""
+        return self._player_session_id
+    
     def broadcast(self, event: str, data: dict):
         """Broadcast message to all sessions"""
         msg = json.dumps({"event": event, "data": data})
