@@ -2134,7 +2134,25 @@
                 
                 async function downloadPlaylist() {
                     if (!currentPlaylist.value || !currentPlaylist.value.id) return;
-                    window.location.href = API + '/api/playlists/' + currentPlaylist.value.id + '/download';
+                    const token = localStorage.getItem('access_token');
+                    try {
+                        const response = await fetch(API + '/api/playlists/' + currentPlaylist.value.id + '/download', {
+                            headers: { 'Authorization': 'Bearer ' + token }
+                        });
+                        if (response.ok) {
+                            const blob = await response.blob();
+                            const url = window.URL.createObjectURL(blob);
+                            const a = document.createElement('a');
+                            a.href = url;
+                            a.download = currentPlaylist.value.name + '.zip';
+                            document.body.appendChild(a);
+                            a.click();
+                            document.body.removeChild(a);
+                            window.URL.revokeObjectURL(url);
+                        }
+                    } catch (e) {
+                        console.error('Download error:', e);
+                    }
                 }
                 
                 async function next() {
