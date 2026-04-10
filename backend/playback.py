@@ -13,90 +13,12 @@ class PlaybackController:
         self.queue: List[int] = []
         self.current_index: int = 0
         self._ws_connections: List = []
-        self.shuffle_mode: bool = False
-        self.repeat_mode: str = "off"  # off, all, one
-        self.last_played_track_id: int = None
-        
-        # Session-based device management (Jellyfin-style)
-        # Sessions map: session_id -> {ws, device_id, device_name, is_player, owner}
         self._sessions: dict = {}
-        self._player_session_id: str = None  # Which session's device plays audio
-    
-    def register_device(self, ws, session_id: str, device_id: str, device_name: str, device_owner: str = None):
-        """Register a new session with device info"""
-        # Store both session_id and device_id mapping
-        self._sessions[session_id] = {
-            "ws": ws,
-            "session_id": session_id,
-            "device_id": device_id,
-            "name": device_name,
-            "is_player": False,
-            "owner": device_owner,
-            "connected": True
-        }
-        # If first session, make it the player
-        if not self._player_session_id:
-            self._player_session_id = session_id
-            self._sessions[session_id]["is_player"] = True
-    
-    def update_device_name(self, device_id: str, device_name: str):
-        """Update device name"""
-        for session in self._sessions.values():
-            if session["device_id"] == device_id:
-                session["name"] = device_name
-    
-    def set_player_session(self, session_id: str):
-        """Set which session's device should play audio"""
-        from database import SessionLocal
-        db = SessionLocal()
-        
-        # Pause current player before switching
-        if self._player_session_id and self._player_session_id in self._sessions:
-            self._sessions[self._player_session_id]["is_player"] = False
-            state = db.query(PlaybackState).filter(PlaybackState.id == 1).first()
-            if state:
-                state.is_playing = False
-                db.commit()
-        
-        # Enable new player session
-        if session_id in self._sessions:
-            self._player_session_id = session_id
-            self._sessions[session_id]["is_player"] = True
-            db.close()
-            self.broadcast_playback_state()
-            return True
-        db.close()
-        return False
-    
-    def get_player_session(self) -> str:
-        """Get the current player session ID"""
-        return self._player_session_id
-    
-    def get_sessions(self) -> List[dict]:
-        """Get list of all connected sessions with their device info"""
-        return [
-            {
-                "id": session_id,
-                "session_id": session_id,
-                "device_id": session["device_id"],
-                "name": session["name"],
-                "is_player": session["is_player"]
-            }
-            for session_id, session in self._sessions.items()
-        ]
-    
-    def get_player_device_id(self) -> str:
-        """Get the device ID of the player session"""
-        if self._player_session_id and self._player_session_id in self._sessions:
-            return self._sessions[self._player_session_id].get("device_id")
-        return None
-    
-    def is_device_player(self, device_id: str) -> bool:
-        """Check if device is the player"""
-        return device_id == self.get_player_device_id()
+        self._player_session_id: str = None
+        self._shuffle_mode: bool = False
     
     def add_connection(self, ws):
-        """Add WebSocket connection"""
+        """Add WebSocket connection only if not already present"""
         if ws not in self._ws_connections:
             self._ws_connections.append(ws)
     
@@ -214,13 +136,20 @@ class PlaybackController:
                 asyncio.set_event_loop(loop)
                 loop.run_until_complete(ws.send_text(msg))
                 loop.close()
-            except Exception as e:
-                print(f"Error sending: {e}")
+            except Exception:
+                pass
+        
+        # Also send to any WebSocket connections not in sessions
+        all_ws = set()
+        for session in self._sessions.values():
+            if session.get("ws"):
+                all_ws.add(session["ws"])
+        all_ws.update(self._ws_connections)
         
         with concurrent.futures.ThreadPoolExecutor(max_workers=4) as executor:
-            for session in self._sessions.values():
-                if session.get("ws"):
-                    executor.submit(send_msg, session["ws"])
+            for ws in all_ws:
+                if ws:
+                    executor.submit(send_msg, ws)
     
     def get_state(self, db: Session) -> dict:
         state = db.query(PlaybackState).filter(PlaybackState.id == 1).first()

@@ -2364,6 +2364,11 @@
                                 }
                                 volume.value = vol;
                             }
+                            
+                            // Notify server that command was executed so it can broadcast updated state
+                            if (ws && ws.readyState === WebSocket.OPEN) {
+                                ws.send(JSON.stringify({ event: 'command_executed', data: { action } }));
+                            }
                         } else if (msg.event === 'devices') {
                             // Legacy support - convert devices to sessions format
                             console.log('Devices (legacy) received:', JSON.stringify(msg.data.devices));
