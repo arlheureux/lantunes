@@ -2136,19 +2136,38 @@
                     if (!currentPlaylist.value || !currentPlaylist.value.id) return;
                     const token = localStorage.getItem('access_token');
                     try {
-                        const response = await fetch(API + '/api/playlists/' + currentPlaylist.value.id + '/download', {
+                        // Get list of track URLs
+                        const response = await fetch(API + '/api/playlists/' + currentPlaylist.value.id + '/download/tracks', {
                             headers: { 'Authorization': 'Bearer ' + token }
                         });
-                        if (response.ok) {
-                            const blob = await response.blob();
-                            const url = window.URL.createObjectURL(blob);
-                            const a = document.createElement('a');
-                            a.href = url;
-                            a.download = currentPlaylist.value.name + '.zip';
-                            document.body.appendChild(a);
-                            a.click();
-                            document.body.removeChild(a);
-                            window.URL.revokeObjectURL(url);
+                        if (!response.ok) {
+                            console.error('Failed to get track list');
+                            return;
+                        }
+                        const data = await response.json();
+                        const tracks = data.tracks;
+                        
+                        // Download each track sequentially
+                        for (let i = 0; i < tracks.length; i++) {
+                            const track = tracks[i];
+                            try {
+                                const res = await fetch(API + track.url, {
+                                    headers: { 'Authorization': 'Bearer ' + token }
+                                });
+                                if (res.ok) {
+                                    const blob = await res.blob();
+                                    const url = window.URL.createObjectURL(blob);
+                                    const a = document.createElement('a');
+                                    a.href = url;
+                                    a.download = track.filename;
+                                    document.body.appendChild(a);
+                                    a.click();
+                                    document.body.removeChild(a);
+                                    window.URL.revokeObjectURL(url);
+                                }
+                            } catch (e) {
+                                console.error('Error downloading track:', track.filename, e);
+                            }
                         }
                     } catch (e) {
                         console.error('Download error:', e);
