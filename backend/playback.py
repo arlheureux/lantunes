@@ -1,9 +1,12 @@
+import logging
 from sqlalchemy.orm import Session
 from database import get_db, PlaybackState, Track, Artist, Album
 from datetime import datetime
 from typing import List, Optional
 import json
 import uuid
+
+logger = logging.getLogger("lantunes.playback")
 
 class PlaybackController:
     def __init__(self):
@@ -115,7 +118,7 @@ class PlaybackController:
                     if sess.get("connected"):
                         self._player_session_id = sid
                         sess["is_player"] = True
-                        print(f"[Playback] Reassigned player to session: {sid}")
+                        logger.info(f"Reassigned player to session: {sid}")
                         break
                 else:
                     # No connected sessions - player becomes None
@@ -148,7 +151,7 @@ class PlaybackController:
         if session_id in self._sessions:
             self._sessions[session_id]["ws"] = ws
             self._sessions[session_id]["connected"] = True
-            print(f"[Playback] Session {session_id} reconnected")
+            logger.info(f"Session {session_id} reconnected")
             # If no player session, make this one the player
             if not self._player_session_id:
                 self._player_session_id = session_id
