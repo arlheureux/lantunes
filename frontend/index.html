@@ -1172,10 +1172,13 @@
                         <i class="fas fa-arrow-left"></i> Back
                     </button>
                     <h1>{{ currentPlaylist.name }}</h1>
-                    <div style="display:flex;gap:10px;margin-bottom:20px;">
-                        <button class="btn" @click="playPlaylist" v-if="currentPlaylist.tracks?.length">
-                            <i class="fas fa-play"></i> Play
-                        </button>
+                    <div style="display:flex;gap:10px;margin-bottom:20px;align-items:center;flex-wrap:wrap;">
+                        <div v-if="currentPlaylist.tracks?.length" style="display:flex;align-items:center;gap:8px;">
+                            <input type="number" v-model.number="shuffleCount" min="1" :max="currentPlaylist.tracks.length" style="width:50px;padding:6px 8px;border-radius:4px;border:1px solid #333;background:#222;color:var(--text-primary);">
+                            <button class="btn" @click="shufflePlaylist(shuffleCount)">
+                                <i class="fas fa-random"></i> Shuffle
+                            </button>
+                        </div>
                         <button class="btn" @click="downloadPlaylist" v-if="currentPlaylist.tracks?.length" style="background:#333;">
                             <i class="fas fa-download"></i> Download
                         </button>
@@ -1841,16 +1844,17 @@
                     }
                     playlistDialog.value.show = false;
                 }
-                            }
-                        }
-                        const p = await apiCall('/api/playlists');
-                        if (p) playlists.value = p;
-                    }
-                    playlistDialog.value.show = false;
-                    newPlaylistName.value = '';
-                }
                 
                 const newPlaylistName = ref('');
+                const shuffleCount = ref(10);
+                
+                async function shufflePlaylist(count) {
+                    if (!currentPlaylist.value || !currentPlaylist.value.tracks?.length) return;
+                    const trackIds = currentPlaylist.value.tracks.map(t => t.id).join(',');
+                    const targetPlayer = getPlayerSession()?.id || deviceId;
+                    const url = '/api/playback/shuffle-play?count=' + count + '&session=' + encodeURIComponent(targetPlayer);
+                    await apiCall(url, { method: 'POST' });
+                }
                 
                 async function playFromQueue(index) {
                     // First set the queue position, then play
@@ -2424,7 +2428,7 @@
                     letters, scrollToLetter, selectedLetter, filteredArtists, albumContextMenu,
                     sessions, selectedSessionId, currentSessionId, deviceName, updateDeviceName, focusSearch, setPlayerSession,
                     users, showUserForm, newUser, isAdmin, isMobile, showMobileQueue, showDeviceModal, showPlayerModal, loadUsers, createUser, deleteUser, logout,
-                    viewPlaylist, playPlaylist, deletePlaylist, downloadPlaylist, loading, loadQueueTracks
+                    viewPlaylist, playPlaylist, deletePlaylist, downloadPlaylist, shufflePlaylist, shuffleCount, loading, loadQueueTracks
                 };
             }
         }).mount('#app');
