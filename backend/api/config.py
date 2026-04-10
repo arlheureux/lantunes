@@ -59,8 +59,8 @@ def run_migration():
     if "shuffle_mode" not in columns:
         cursor.execute("ALTER TABLE playback_state ADD COLUMN shuffle_mode INTEGER DEFAULT 0")
     
-    if "repeat_mode" not in columns:
-        cursor.execute("ALTER TABLE playback_state ADD COLUMN repeat_mode TEXT DEFAULT 'off'")
+    if "repeat" not in columns:
+        cursor.execute("ALTER TABLE playback_state ADD COLUMN repeat TEXT DEFAULT 'off'")
     
     conn.commit()
     conn.close()
