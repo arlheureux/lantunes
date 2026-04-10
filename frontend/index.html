@@ -2135,30 +2135,8 @@
                 }
                 
                 async function downloadPlaylist() {
-                    if (!currentPlaylist.value || !currentPlaylist.value.tracks?.length) return;
-                    
-                    for (const track of currentPlaylist.value.tracks) {
-                        const streamUrl = API + '/api/playback/stream/' + track.id;
-                        try {
-                            const response = await fetch(streamUrl, {
-                                headers: { 'Authorization': 'Bearer ' + localStorage.getItem('access_token') }
-                            });
-                            if (response.ok) {
-                                const blob = await response.blob();
-                                const url = window.URL.createObjectURL(blob);
-                                const a = document.createElement('a');
-                                a.href = url;
-                                a.download = track.title + '.' + (track.file_format || 'mp3');
-                                document.body.appendChild(a);
-                                a.click();
-                                document.body.removeChild(a);
-                                window.URL.revokeObjectURL(url);
-                                await new Promise(r => setTimeout(r, 500));
-                            }
-                        } catch (e) {
-                            console.error('Download error:', e);
-                        }
-                    }
+                    if (!currentPlaylist.value || !currentPlaylist.value.id) return;
+                    window.location.href = API + '/api/playlists/' + currentPlaylist.value.id + '/download';
                 }
                 
                 async function next() {

@@ -34,6 +34,38 @@ def get_playlist(playlist_id: int, db: Session = Depends(get_db)):
     
     return {"id": playlist.id, "name": playlist.name, "tracks": tracks, "created_at": playlist.created_at}
 
+@router.get("/{playlist_id}/download")
+def download_playlist(playlist_id: int, db: Session = Depends(get_db)):
+    import zipfile
+    import io
+    from fastapi.responses import Response
+    
+    playlist = db.query(Playlist).filter(Playlist.id == playlist_id).first()
+    if not playlist:
+        raise HTTPException(status_code=404, detail="Playlist not found")
+    
+    pt_list = db.query(PlaylistTrack).filter(PlaylistTrack.playlist_id == playlist_id).order_by(PlaylistTrack.position).all()
+    
+    zip_buffer = io.BytesIO()
+    with zipfile.ZipFile(zip_buffer, 'w', zipfile.ZipFile.ZIP_DEFLATED) as zf:
+        for pt in pt_list:
+            track = db.query(Track).filter(Track.id == pt.track_id).first()
+            if track and track.path and os.path.exists(track.path):
+                filename = os.path.basename(track.path)
+                try:
+                    with open(track.path, 'rb') as f:
+                        zf.writestr(filename, f.read())
+                except Exception as e:
+                    print(f"Error adding track {filename}: {e}")
+    
+    zip_buffer.seek(0)
+    
+    return Response(
+        content=zip_buffer.getvalue(),
+        media_type="application/zip",
+        headers={"Content-Disposition": f'attachment; filename="{playlist.name}.zip"'}
+    )
+
 @router.post("")
 async def create_playlist(request: Request, db: Session = Depends(get_db)):
     data = await request.json()
