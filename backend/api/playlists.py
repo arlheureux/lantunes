@@ -1,14 +1,20 @@
 import sys
 import os
+import uuid
+import threading
+import time
 backend_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, backend_dir)
 
 from fastapi import APIRouter, Depends, HTTPException, Request
+from fastapi.responses import StreamingResponse
 from sqlalchemy.orm import Session
-from database import get_db, Playlist, PlaylistTrack, Track
+from database import get_db, Playlist, PlaylistTrack, Track, DownloadJob
 from typing import List, Optional
+from datetime import datetime
 
 router = APIRouter(prefix="/api/playlists", tags=["playlists"])
+
 
 @router.get("")
 def get_playlists(db: Session = Depends(get_db)):
@@ -18,6 +24,7 @@ def get_playlists(db: Session = Depends(get_db)):
         track_count = db.query(PlaylistTrack).filter(PlaylistTrack.playlist_id == p.id).count()
         result.append({"id": p.id, "name": p.name, "track_count": track_count, "created_at": p.created_at})
     return result
+
 
 @router.get("/{playlist_id}")
 def get_playlist(playlist_id: int, db: Session = Depends(get_db)):
@@ -33,6 +40,100 @@ def get_playlist(playlist_id: int, db: Session = Depends(get_db)):
             tracks.append(track.as_dict())
     
     return {"id": playlist.id, "name": playlist.name, "tracks": tracks, "created_at": playlist.created_at}
+
+
+def stream_zip(job_id: int):
+    from database import SessionLocal
+    import zipfile
+    import io
+    
+    db = SessionLocal()
+    try:
+        job = db.query(DownloadJob).filter(DownloadJob.id == job_id).first()
+        if not job:
+            return
+        
+        playlist = db.query(Playlist).filter(Playlist.id == job.playlist_id).first()
+        if not playlist:
+            job.status = "error"
+            job.error = "Playlist not found"
+            db.commit()
+            return
+        
+        pt_list = db.query(PlaylistTrack).filter(PlaylistTrack.playlist_id == job.playlist_id).order_by(PlaylistTrack.position).all()
+        job.total = len(pt_list)
+        db.commit()
+        
+        zip_buffer = io.BytesIO()
+        with zipfile.ZipFile(zip_buffer, 'w', zipfile.ZIP_DEFLATED) as zf:
+            for i, pt in enumerate(pt_list):
+                track = db.query(Track).filter(Track.id == pt.track_id).first()
+                if track and track.path and os.path.exists(track.path):
+                    filename = os.path.basename(track.path)
+                    with open(track.path, 'rb') as f:
+                        zf.writestr(filename, f.read())
+                job.progress = i + 1
+                db.commit()
+        
+        cache_dir = os.path.join(backend_dir, "cache", "downloads")
+        os.makedirs(cache_dir, exist_ok=True)
+        zip_path = os.path.join(cache_dir, f"playlist_{playlist.id}_{job.id}.zip")
+        
+        zip_buffer.seek(0)
+        with open(zip_path, 'wb') as f:
+            f.write(zip_buffer.getvalue())
+        
+        job.zip_path = zip_path
+        job.status = "completed"
+        job.completed_at = datetime.utcnow()
+        db.commit()
+        
+    except Exception as e:
+        try:
+            job.status = "error"
+            job.error = str(e)
+            db.commit()
+        except:
+            pass
+    finally:
+        db.close()
+
+
+@router.post("/{playlist_id}/download/async")
+def create_download_job(playlist_id: int, db: Session = Depends(get_db)):
+    playlist = db.query(Playlist).filter(Playlist.id == playlist_id).first()
+    if not playlist:
+        raise HTTPException(status_code=404, detail="Playlist not found")
+    
+    pt_list = db.query(PlaylistTrack).filter(PlaylistTrack.playlist_id == playlist_id).all()
+    if not pt_list:
+        raise HTTPException(status_code=400, detail="Playlist is empty")
+    
+    job = DownloadJob(playlist_id=playlist_id, status="pending", total=len(pt_list))
+    db.add(job)
+    db.commit()
+    db.refresh(job)
+    
+    thread = threading.Thread(target=stream_zip, args=(job.id,))
+    thread.start()
+    
+    return {"job_id": job.id, "status": "pending"}
+
+
+@router.get("/download/{job_id}")
+def get_download_job(job_id: int, db: Session = Depends(get_db)):
+    job = db.query(DownloadJob).filter(DownloadJob.id == job_id).first()
+    if not job:
+        raise HTTPException(status_code=404, detail="Job not found")
+    
+    return {
+        "id": job.id,
+        "status": job.status,
+        "progress": job.progress,
+        "total": job.total,
+        "error": job.error
+    }
+
 
 @router.get("/{playlist_id}/download")
 def download_playlist(playlist_id: int, db: Session = Depends(get_db)):
@@ -62,8 +163,8 @@ def download_playlist(playlist_id: int, db: Session = Depends(get_db)):
     
     zip_buffer.seek(0)
     
-    return Response(
-        content=zip_buffer.getvalue(),
+    return StreamingResponse(
+        iter([zip_buffer.getvalue()]),
         media_type="application/zip",
         headers={"Content-Disposition": f'attachment; filename="{playlist.name}.zip"'}
     )

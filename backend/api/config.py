@@ -41,13 +41,14 @@ def update_config(data: ConfigUpdate):
     return {"saved": True}
 
 def run_migration():
-    """Add missing columns to playback_state table"""
+    """Add missing columns to playback_state and download_jobs tables"""
     from backend.models import engine
     import sqlite3
     
     conn = sqlite3.connect(engine.url.database)
     cursor = conn.cursor()
     
+    # Playback state columns
     cursor.execute("PRAGMA table_info(playback_state)")
     columns = [row[1] for row in cursor.fetchall()]
     
@@ -59,6 +60,23 @@ def run_migration():
     
     if "repeat" not in columns:
         cursor.execute("ALTER TABLE playback_state ADD COLUMN repeat TEXT DEFAULT 'off'")
+    
+    # Download jobs table
+    cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='download_jobs'")
+    if not cursor.fetchone():
+        cursor.execute("""
+            CREATE TABLE download_jobs (
+                id INTEGER PRIMARY KEY,
+                playlist_id INTEGER,
+                status TEXT DEFAULT 'pending',
+                progress INTEGER DEFAULT 0,
+                total INTEGER DEFAULT 0,
+                error TEXT,
+                zip_path TEXT,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                completed_at TIMESTAMP
+            )
+        """)
     
     conn.commit()
     conn.close()

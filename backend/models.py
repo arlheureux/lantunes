@@ -86,6 +86,18 @@ class Client(Base):
     last_seen = Column(DateTime, default=func.now())
     is_controller = Column(Boolean, default=True)
 
+class DownloadJob(Base):
+    __tablename__ = "download_jobs"
+    id = Column(Integer, primary_key=True)
+    playlist_id = Column(Integer, ForeignKey("playlists.id"))
+    status = Column(String(20), default="pending")
+    progress = Column(Integer, default=0)
+    total = Column(Integer, default=0)
+    error = Column(String(500))
+    zip_path = Column(String(500))
+    created_at = Column(DateTime, default=func.now())
+    completed_at = Column(DateTime)
+
 class PlaybackState(Base):
     __tablename__ = "playback_state"
     id = Column(Integer, primary_key=True, default=1)
