@@ -1718,7 +1718,11 @@
                 async function createPlaylist() {
                     const name = prompt('Enter playlist name:');
                     if (!name) return;
-                    await apiCall('/api/playlists?name=' + encodeURIComponent(name), { method: 'POST' });
+                    await apiCall('/api/playlists', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ name: name })
+                    });
                     const p = await apiCall('/api/playlists');
                     if (p) playlists.value = p;
                 }
@@ -1766,6 +1770,7 @@
                     
                     await apiCall('/api/playlists', {
                         method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({ name: name, track_ids: trackIds })
                     });
                     loadLibrary();
@@ -1809,7 +1814,11 @@
                 
                 async function createAndAddToPlaylist() {
                     if (!newPlaylistName.value.trim()) return;
-                    const result = await apiCall('/api/playlists?name=' + encodeURIComponent(newPlaylistName.value), { method: 'POST' });
+                    const result = await apiCall('/api/playlists', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ name: newPlaylistName.value })
+                    });
                     if (result && result.id) {
                         if (playlistDialog.value.track) {
                             await apiCall('/api/playlists/' + result.id + '/tracks?track_id=' + playlistDialog.value.track.id, { method: 'POST' });
@@ -1819,6 +1828,11 @@
                                 for (const track of albumDetails.tracks) {
                                     await apiCall('/api/playlists/' + result.id + '/tracks?track_id=' + track.id, { method: 'POST' });
                                 }
+                            }
+                        }
+                    }
+                    playlistDialog.value.show = false;
+                }
                             }
                         }
                         const p = await apiCall('/api/playlists');

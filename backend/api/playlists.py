@@ -3,10 +3,10 @@ import os
 backend_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, backend_dir)
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Request
 from sqlalchemy.orm import Session
 from database import get_db, Playlist, PlaylistTrack, Track
-from typing import List
+from typing import List, Optional
 
 router = APIRouter(prefix="/api/playlists", tags=["playlists"])
 
@@ -35,11 +35,25 @@ def get_playlist(playlist_id: int, db: Session = Depends(get_db)):
     return {"id": playlist.id, "name": playlist.name, "tracks": tracks, "created_at": playlist.created_at}
 
 @router.post("")
-def create_playlist(name: str, db: Session = Depends(get_db)):
+def create_playlist(request: Request, db: Session = Depends(get_db)):
+    data = request.json()
+    name = data.get("name")
+    track_ids = data.get("track_ids", [])
+    
+    if not name:
+        raise HTTPException(status_code=400, detail="Playlist name required")
+    
     playlist = Playlist(name=name)
     db.add(playlist)
     db.commit()
     db.refresh(playlist)
+    
+    # Add tracks if provided
+    for i, track_id in enumerate(track_ids):
+        pt = PlaylistTrack(playlist_id=playlist.id, track_id=track_id, position=i)
+        db.add(pt)
+    db.commit()
+    
     return {"id": playlist.id, "name": playlist.name}
 
 @router.put("/{playlist_id}")
