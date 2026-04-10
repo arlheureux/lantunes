@@ -47,7 +47,7 @@ def download_playlist(playlist_id: int, db: Session = Depends(get_db)):
     pt_list = db.query(PlaylistTrack).filter(PlaylistTrack.playlist_id == playlist_id).order_by(PlaylistTrack.position).all()
     
     zip_buffer = io.BytesIO()
-    with zipfile.ZipFile(zip_buffer, 'w', zipfile.ZipFile.ZIP_DEFLATED) as zf:
+    with zipfile.ZipFile(zip_buffer, 'w', zipfile.ZIP_DEFLATED) as zf:
         for pt in pt_list:
             track = db.query(Track).filter(Track.id == pt.track_id).first()
             if track and track.path and os.path.exists(track.path):
