@@ -946,6 +946,18 @@
                                 </div>
                             </div>
                         </div>
+                        
+                        <div v-if="isMobile && playlists.length" style="margin-top:32px;">
+                            <h2>Playlists</h2>
+                            <div style="display:flex;gap:10px;overflow-x:auto;padding-bottom:10px;">
+                                <div v-for="p in playlists.slice(0,6)" :key="p.id" @click="viewPlaylist(p.id)" style="flex-shrink:0;width:120px;cursor:pointer;">
+                                    <div style="width:100%;aspect-ratio:1;background:linear-gradient(135deg, #f59e0b 0%, #d97706 100%);border-radius:8px;margin-bottom:8px;display:flex;align-items:center;justify-content:center;">
+                                        <i class="fas fa-list" style="font-size:32px;color:#fff;"></i>
+                                    </div>
+                                    <div style="font-size:13px;text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ p.name }}</div>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
                 
