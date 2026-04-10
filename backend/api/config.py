@@ -40,7 +40,6 @@ def update_config(data: ConfigUpdate):
     
     return {"saved": True}
 
-@router.post("/migrate")
 def run_migration():
     """Add missing columns to playback_state table"""
     from backend.models import engine
@@ -49,7 +48,6 @@ def run_migration():
     conn = sqlite3.connect(engine.url.database)
     cursor = conn.cursor()
     
-    # Check current columns
     cursor.execute("PRAGMA table_info(playback_state)")
     columns = [row[1] for row in cursor.fetchall()]
     
@@ -64,5 +62,11 @@ def run_migration():
     
     conn.commit()
     conn.close()
-    
-    return {"success": True, "columns": columns}
+
+
+run_migration()
+
+
+@router.post("/migrate")
+def run_migration_endpoint():
+    return {"success": True}
