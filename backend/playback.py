@@ -150,6 +150,12 @@ class PlaybackController:
         self._sessions[session_id]["is_player"] = True
         return True
     
+    def get_player_device_id(self) -> str:
+        """Get the device ID of the current player session"""
+        if self._player_session_id and self._player_session_id in self._sessions:
+            return self._sessions[self._player_session_id].get("device_id")
+        return None
+    
     def update_device_name(self, device_id: str, device_name: str):
         """Update device name"""
         for session in self._sessions.values():
