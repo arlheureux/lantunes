@@ -169,6 +169,36 @@ def download_playlist(playlist_id: int, db: Session = Depends(get_db)):
         headers={"Content-Disposition": f'attachment; filename="{playlist.name}.zip"'}
     )
 
+
+@router.get("/{playlist_id}/download/tracks")
+def get_download_tracks(playlist_id: int, db: Session = Depends(get_db)):
+    """Get list of track URLs for sequential download"""
+    playlist = db.query(Playlist).filter(Playlist.id == playlist_id).first()
+    if not playlist:
+        raise HTTPException(status_code=404, detail="Playlist not found")
+    
+    pt_list = db.query(PlaylistTrack).filter(PlaylistTrack.playlist_id == playlist_id).order_by(PlaylistTrack.position).all()
+    if not pt_list:
+        raise HTTPException(status_code=400, detail="Playlist is empty")
+    
+    tracks = []
+    for pt in pt_list:
+        track = db.query(Track).filter(Track.id == pt.track_id).first()
+        if track and track.path and os.path.exists(track.path):
+            tracks.append({
+                "id": track.id,
+                "title": track.title,
+                "filename": os.path.basename(track.path),
+                "url": f"/api/playback/stream/{track.id}",
+                "format": track.file_format,
+                "duration": track.duration
+            })
+    
+    if not tracks:
+        raise HTTPException(status_code=404, detail="No valid tracks found")
+    
+    return {"playlist": playlist.name, "count": len(tracks), "tracks": tracks}
+
 @router.post("")
 async def create_playlist(request: Request, db: Session = Depends(get_db)):
     data = await request.json()
