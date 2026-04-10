@@ -1639,18 +1639,13 @@
                 }
                 
                 async function setVolume() {
-                    sendControl('set_volume', { volume: volume.value });
+                    const targetPlayer = getPlayerSession()?.id || deviceId;
+                    await apiCall('/api/playback/volume?volume=' + volume.value + '&session=' + encodeURIComponent(targetPlayer), { method: 'POST' });
                 }
                 
                 function sendWS(event, data) {
                     if (ws && ws.readyState === WebSocket.OPEN) {
                         ws.send(JSON.stringify({ event, data }));
-                    }
-                }
-                
-                function sendControl(action, extraData = {}) {
-                    if (ws && ws.readyState === WebSocket.OPEN) {
-                        ws.send(JSON.stringify({ event: 'control', data: { action, ...extraData } }));
                     }
                 }
                 
@@ -1759,15 +1754,15 @@
                 }
                 
                 async function playTrackNext(track) {
-                    sendControl('play_next', { track_id: track.id });
+                    await apiCall('/api/playback/play-next?track_id=' + track.id, { method: 'POST' });
                 }
                 
                 async function addToQueue(track) {
-                    sendControl('add_to_queue', { track_id: track.id });
+                    await apiCall('/api/playback/queue/add?track_id=' + track.id, { method: 'POST' });
                 }
                 
                 async function removeFromQueue(index) {
-                    sendControl('remove_from_queue', { index });
+                    await apiCall('/api/playback/queue/remove?index=' + index, { method: 'POST' });
                 }
                 
                 async function saveQueueAsPlaylist() {
@@ -2088,18 +2083,24 @@
                 }
                 
                 async function togglePlay() {
-                    console.log('TogglePlay clicked, isPlaying:', playbackState.value.is_playing);
+                    const targetPlayer = getPlayerSession()?.id || deviceId;
+                    console.log('TogglePlay clicked, targetPlayer:', targetPlayer, 'isPlaying:', playbackState.value.is_playing);
                     isLoading.value = true;
                     try {
                         if (playbackState.value.is_playing) {
+                            // Get current position before pausing
                             const currentPos = audioPlayer.value ? Math.floor(audioPlayer.value.currentTime) : 0;
-                            sendControl('pause', { position: currentPos });
+                            // Route pause command to player session with current position
+                            await apiCall('/api/playback/pause?position=' + currentPos + '&session=' + encodeURIComponent(targetPlayer), { method: 'POST' });
+                            // Also pause locally if we're the player
                             if (isThisDevicePlayer()) {
                                 audioPlayer.value?.pause();
                             }
                         } else {
+                            // Get current position before playing (for resume)
                             const currentPos = audioPlayer.value ? Math.floor(audioPlayer.value.currentTime) : 0;
-                            sendControl('play', { position: currentPos });
+                            // Route play command to player session with current position
+                            await apiCall('/api/playback/play?position=' + currentPos + '&session=' + encodeURIComponent(targetPlayer), { method: 'POST' });
                         }
                     } finally {
                         isLoading.value = false;
@@ -2166,46 +2167,58 @@
                     }
                 }
                 
-async function next() {
-                    console.log('Next clicked');
-                    sendControl('next');
+                async function next() {
+                    const targetPlayer = getPlayerSession()?.id || deviceId;
+                    console.log('Next clicked, targetPlayer:', targetPlayer);
+                    // Just route - state updated via WebSocket
+                    await apiCall('/api/playback/next?session=' + encodeURIComponent(targetPlayer), { method: 'POST' });
                 }
                 
                 async function previous() {
-                    console.log('Previous clicked');
-                    sendControl('previous');
+                    const targetPlayer = getPlayerSession()?.id || deviceId;
+                    console.log('Previous clicked, targetPlayer:', targetPlayer);
+                    // Just route - state updated via WebSocket
+                    await apiCall('/api/playback/previous?session=' + encodeURIComponent(targetPlayer), { method: 'POST' });
                 }
                 
                 async function seek(e) {
                     const rect = e.currentTarget.getBoundingClientRect();
                     const percent = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
                     const pos = Math.floor(percent * playbackState.value.track.duration);
-                    sendControl('seek', { position: pos });
+                    const targetPlayer = getPlayerSession()?.id || deviceId;
+                    await apiCall('/api/playback/seek?position=' + pos + '&session=' + encodeURIComponent(targetPlayer), { method: 'POST' });
                     playbackState.value.position = pos;
+                    // Also seek local audio if we're the player
                     if (audioPlayer.value && isThisDevicePlayer()) {
                         audioPlayer.value.currentTime = pos;
                     }
                 }
                 
                 async function playFromQueue(index) {
+                    // First set the queue position, then play
                     const queueIds = playbackState.value.queue || [];
                     if (queueIds.length === 0) return;
                     
-                    sendControl('set_queue', { track_ids: queueIds, start_index: index });
-                    sendControl('play');
+                    const targetPlayer = getPlayerSession()?.id || deviceId;
+                    await apiCall('/api/playback/queue?track_ids=' + queueIds.join(',') + '&start_index=' + index + '&session=' + encodeURIComponent(targetPlayer), { method: 'POST' });
+                    await apiCall('/api/playback/play?session=' + encodeURIComponent(targetPlayer), { method: 'POST' });
                     showMobileQueue.value = false;
                 }
                 
                 async function toggleShuffle() {
-                    sendControl('toggle_shuffle');
+                    const targetPlayer = getPlayerSession()?.id || deviceId;
+                    await apiCall('/api/playback/shuffle?session=' + encodeURIComponent(targetPlayer), { method: 'POST' });
                 }
                 
                 async function toggleRepeat() {
-                    sendControl('toggle_repeat');
+                    const targetPlayer = getPlayerSession()?.id || deviceId;
+                    await apiCall('/api/playback/repeat?session=' + encodeURIComponent(targetPlayer), { method: 'POST' });
                 }
                 
                 async function shufflePlay() {
-                    sendControl('shuffle_play', { count: 50 });
+                    const targetPlayer = getPlayerSession()?.id || deviceId;
+                    // Just route - state updated via WebSocket
+                    await apiCall('/api/playback/shuffle-play?count=50&session=' + encodeURIComponent(targetPlayer), { method: 'POST' });
                 }
                 
                 document.addEventListener('click', closeContextMenu);
