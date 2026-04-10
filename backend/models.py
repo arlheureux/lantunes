@@ -93,9 +93,9 @@ class PlaybackState(Base):
     position = Column(Integer, default=0)
     is_playing = Column(Boolean, default=False)
     volume = Column(Float, default=1.0)
-    queue = Column(Text, nullable=True)
+    queue = Column(String, nullable=True)
     shuffle_mode = Column(Boolean, default=False)
-    repeat_mode = Column String(20, default="off")
+    repeat = Column(String(20), default="off")
     updated_at = Column(DateTime, default=func.now(), onupdate=func.now())
 
 class User(Base):
