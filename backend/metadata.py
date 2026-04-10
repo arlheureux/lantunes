@@ -104,7 +104,7 @@ def fetch_cover_from_lastfm(artist: str, album: str, api_key: str) -> Optional[b
         return None
     
     try:
-        search_url = "http://ws.audioscrobbler.com/2.0/"
+        search_url = "https://ws.audioscrobbler.com/2.0/"
         params = {
             'method': 'album.search',
             'album': album,
