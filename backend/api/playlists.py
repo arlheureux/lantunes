@@ -45,18 +45,20 @@ def download_playlist(playlist_id: int, db: Session = Depends(get_db)):
         raise HTTPException(status_code=404, detail="Playlist not found")
     
     pt_list = db.query(PlaylistTrack).filter(PlaylistTrack.playlist_id == playlist_id).order_by(PlaylistTrack.position).all()
+    if not pt_list:
+        raise HTTPException(status_code=400, detail="Playlist is empty")
     
     zip_buffer = io.BytesIO()
     with zipfile.ZipFile(zip_buffer, 'w', zipfile.ZIP_DEFLATED) as zf:
         for pt in pt_list:
             track = db.query(Track).filter(Track.id == pt.track_id).first()
-            if track and track.path and os.path.exists(track.path):
-                filename = os.path.basename(track.path)
-                try:
-                    with open(track.path, 'rb') as f:
-                        zf.writestr(filename, f.read())
-                except Exception as e:
-                    print(f"Error adding track {filename}: {e}")
+            if not track:
+                continue
+            if not track.path or not os.path.exists(track.path):
+                raise HTTPException(status_code=404, detail=f"Track file not found: {track.path}")
+            filename = os.path.basename(track.path)
+            with open(track.path, 'rb') as f:
+                zf.writestr(filename, f.read())
     
     zip_buffer.seek(0)
     
