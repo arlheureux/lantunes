@@ -105,6 +105,20 @@ class PlaybackController:
         
         logger.info(f"Device registered: {device_name} ({device_id})")
     
+    def get_sessions(self) -> List[dict]:
+        """Get list of all sessions"""
+        result = []
+        for session_id, session in self._sessions.items():
+            result.append({
+                "id": session_id,
+                "device_id": session.get("device_id"),
+                "device_name": session.get("device_name"),
+                "device_owner": session.get("device_owner"),
+                "connected": session.get("connected", True),
+                "is_player": session.get("is_player", False)
+            })
+        return result
+    
     def set_player_session(self, session_id: str) -> bool:
         """Set which session is the player"""
         if session_id not in self._sessions:
