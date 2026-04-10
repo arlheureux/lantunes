@@ -16,6 +16,23 @@ class PlaybackController:
         self._sessions: dict = {}
         self._player_session_id: str = None
         self._shuffle_mode: bool = False
+        self._repeat_mode: str = "off"
+    
+    @property
+    def shuffle_mode(self):
+        return self._shuffle_mode
+    
+    @shuffle_mode.setter
+    def shuffle_mode(self, value):
+        self._shuffle_mode = value
+    
+    @property
+    def repeat_mode(self):
+        return self._repeat_mode
+    
+    @repeat_mode.setter
+    def repeat_mode(self, value):
+        self._repeat_mode = value
     
     def add_connection(self, ws):
         """Add WebSocket connection only if not already present"""
