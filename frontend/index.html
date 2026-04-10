@@ -934,30 +934,6 @@
                                 <span class="duration">{{ formatDuration(t.duration) }}</span>
                             </div>
                         </div>
-                        
-                        <div v-if="isMobile && genres.length" style="margin-top:32px;">
-                            <h2>Genres</h2>
-                            <div style="display:flex;gap:10px;overflow-x:auto;padding-bottom:10px;">
-                                <div v-for="g in genres.slice(0,6)" :key="g" @click="viewGenre(g)" style="flex-shrink:0;width:120px;cursor:pointer;">
-                                    <div style="width:100%;aspect-ratio:1;background:linear-gradient(135deg, #667eea 0%, #764ba2 100%);border-radius:8px;margin-bottom:8px;display:flex;align-items:center;justify-content:center;">
-                                        <i class="fas fa-music" style="font-size:32px;color:#fff;"></i>
-                                    </div>
-                                    <div style="font-size:13px;text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ g }}</div>
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <div v-if="isMobile && playlists.length" style="margin-top:32px;">
-                            <h2>Playlists</h2>
-                            <div style="display:flex;gap:10px;overflow-x:auto;padding-bottom:10px;">
-                                <div v-for="p in playlists.slice(0,6)" :key="p.id" @click="viewPlaylist(p.id)" style="flex-shrink:0;width:120px;cursor:pointer;">
-                                    <div style="width:100%;aspect-ratio:1;background:linear-gradient(135deg, #f59e0b 0%, #d97706 100%);border-radius:8px;margin-bottom:8px;display:flex;align-items:center;justify-content:center;">
-                                        <i class="fas fa-list" style="font-size:32px;color:#fff;"></i>
-                                    </div>
-                                    <div style="font-size:13px;text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ p.name }}</div>
-                                </div>
-                            </div>
-                        </div>
                     </div>
                 </div>
                 
@@ -1325,9 +1301,9 @@
                 <i class="fas fa-music"></i>
                 Tracks
             </div>
-            <div class="mobile-nav-item" :class="{ active: view === 'albums' }" @click="view = 'albums'">
-                <i class="fas fa-compact-disc"></i>
-                Albums
+            <div class="mobile-nav-item" :class="{ active: view === 'more' }" @click="showMoreMenu = true">
+                <i class="fas fa-bars"></i>
+                More
             </div>
             <div class="mobile-nav-item" :class="{ active: view === 'artists' }" @click="view = 'artists'">
                 <i class="fas fa-user"></i>
@@ -1336,6 +1312,22 @@
             <div class="mobile-nav-item" :class="{ active: view === 'settings' }" @click="view = 'settings'">
                 <i class="fas fa-cog"></i>
                 Settings
+            </div>
+        </div>
+        
+        <!-- Mobile More Menu Modal -->
+        <div class="dialog-overlay" v-if="showMoreMenu" @click.self="showMoreMenu = false">
+            <div class="dialog" style="max-width: 320px;">
+                <h3>More</h3>
+                <div class="dialog-item" @click="view = 'albums'; showMoreMenu = false">
+                    <i class="fas fa-compact-disc" style="margin-right: 12px;"></i>Albums
+                </div>
+                <div class="dialog-item" @click="view = 'genres'; showMoreMenu = false">
+                    <i class="fas fa-music" style="margin-right: 12px;"></i>Genres
+                </div>
+                <div class="dialog-item" @click="view = 'playlists'; showMoreMenu = false">
+                    <i class="fas fa-heart" style="margin-right: 12px;"></i>Playlists
+                </div>
             </div>
         </div>
         
@@ -1531,6 +1523,7 @@
                 const showMobileQueue = ref(false);
                 const showDeviceModal = ref(false);
                 const showPlayerModal = ref(false);
+                const showMoreMenu = ref(false);
                 
                 // Update isMobile on resize
                 window.addEventListener('resize', () => {
@@ -2440,7 +2433,7 @@
                     openAlbumEditDialog, saveAlbumMetadata, removeAlbumArtwork, albumEditDialog,
                     letters, scrollToLetter, selectedLetter, filteredArtists, albumContextMenu,
                     sessions, selectedSessionId, currentSessionId, deviceName, updateDeviceName, focusSearch, setPlayerSession,
-                    users, showUserForm, newUser, isAdmin, isMobile, showMobileQueue, showDeviceModal, showPlayerModal, loadUsers, createUser, deleteUser, logout,
+                    users, showUserForm, newUser, isAdmin, isMobile, showMobileQueue, showDeviceModal, showPlayerModal, showMoreMenu, loadUsers, createUser, deleteUser, logout,
                     viewPlaylist, playPlaylist, deletePlaylist, downloadPlaylist, shufflePlaylist, shuffleCount, loading, loadQueueTracks
                 };
             }
