@@ -18,6 +18,7 @@ router = APIRouter(prefix="/api/playback", tags=["playback"])
 TRANSCODE_DIR = os.path.join(os.path.dirname(os.path.dirname(__file__)), "cache", "transcode")
 os.makedirs(TRANSCODE_DIR, exist_ok=True)
 
+
 def cleanup_old_transcodes():
     """Remove transcoded files older than 1 hour"""
     import time
@@ -29,9 +30,8 @@ def cleanup_old_transcodes():
             except OSError:
                 pass
 
-atexit.register(cleanup_old_transcodes)
 
-router = APIRouter(prefix="/api/playback", tags=["playback"])
+atexit.register(cleanup_old_transcodes)
 
 class PlayRequest(BaseModel):
     track_id: Optional[int] = Field(default=None)

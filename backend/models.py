@@ -29,7 +29,7 @@ class Album(Base):
     genre = Column(String(100))
     artwork_path = Column(String(500))
     created_at = Column(DateTime, default=func.now())
-    artist = relationship("Artist", back_populates="albums")
+    artist = relationship("Artist", back_populates="albums", foreign_keys=[artist_id])
     tracks = relationship("Track", back_populates="album")
 
 class Track(Base):
@@ -93,8 +93,9 @@ class PlaybackState(Base):
     position = Column(Integer, default=0)
     is_playing = Column(Boolean, default=False)
     volume = Column(Float, default=1.0)
-    queue = Column(Text, nullable=True)  # Stored as comma-separated track IDs
+    queue = Column(Text, nullable=True)
     shuffle_mode = Column(Boolean, default=False)
+    repeat_mode = Column String(20, default="off")
     updated_at = Column(DateTime, default=func.now(), onupdate=func.now())
 
 class User(Base):

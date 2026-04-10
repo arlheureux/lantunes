@@ -83,70 +83,7 @@ class PlaybackController:
         ]
     
     def get_player_device_id(self) -> str:
-        """Get the device ID of the player session (for backward compatibility)"""
-        if self._player_session_id and self._player_session_id in self._sessions:
-            return self._sessions[self._player_session_id]["device_id"]
-        return None
-    
-    def is_device_player(self, device_id: str) -> bool:
-        """Check if device is the player (for backward compatibility)"""
-        return self.get_player_device_id() == device_id
-    
-    def add_connection(self, ws):
-        """Add WebSocket connection"""
-        if ws not in self._ws_connections:
-            self._ws_connections.append(ws)
-    
-    def remove_connection(self, ws):
-        """Remove WebSocket connection and associated session"""
-        if ws in self._ws_connections:
-            self._ws_connections.remove(ws)
-        # Also clean up session
-        session_to_remove = None
-        for session_id, session_info in self._sessions.items():
-            if session_info["ws"] == ws:
-                session_to_remove = session_id
-                break
-        if session_to_remove:
-            del self._sessions[session_to_remove]
-            if self._player_session_id == session_to_remove:
-                self._player_session_id = None
-                if self._sessions:
-                    self._player_session_id = next(iter(self._sessions.keys()))
-                    if self._player_session_id:
-                        self._sessions[self._player_session_id]["is_player"] = True
-    
-    def broadcast_sessions(self):
-        """Broadcast session list to all connected clients"""
-        import asyncio
-        import concurrent.futures
-        
-        sessions_data = {"sessions": self.get_sessions()}
-        msg = json.dumps({"event": "sessions", "data": sessions_data})
-        
-        def send_msg(ws):
-            try:
-                loop = asyncio.new_event_loop()
-                asyncio.set_event_loop(loop)
-                loop.run_until_complete(ws.send_text(msg))
-                loop.close()
-            except Exception as e:
-                print(f"Error sending sessions: {e}")
-                return ws
-            return None
-        
-        with concurrent.futures.ThreadPoolExecutor(max_workers=4) as executor:
-            for session in self._sessions.values():
-                if session.get("ws"):
-                    executor.submit(send_msg, session["ws"])
-        
-        # Also send to any other connections
-        for ws in self._ws_connections:
-            if ws and ws not in [s.get("ws") for s in self._sessions.values()]:
-                executor.submit(send_msg, ws)
-    
-    def get_player_device_id(self) -> str:
-        """Get the current player device ID (from player session)"""
+        """Get the device ID of the player session"""
         if self._player_session_id and self._player_session_id in self._sessions:
             return self._sessions[self._player_session_id].get("device_id")
         return None
@@ -156,26 +93,24 @@ class PlaybackController:
         return device_id == self.get_player_device_id()
     
     def add_connection(self, ws):
-        self._ws_connections.append(ws)
+        """Add WebSocket connection"""
+        if ws not in self._ws_connections:
+            self._ws_connections.append(ws)
     
     def remove_connection(self, ws):
-        """Remove WebSocket connection but keep session for reconnection"""
+        """Remove WebSocket connection and mark session as disconnected for reconnection"""
         if ws in self._ws_connections:
             self._ws_connections.remove(ws)
         
-        # Mark session as disconnected but keep it for reconnection
         for session_id, session_info in self._sessions.items():
             if session_info.get("ws") == ws:
                 session_info["ws"] = None
                 session_info["connected"] = False
-                print(f"[Playback] Session {session_id} disconnected but kept for reconnection")
                 break
         
-        # If player session disconnected, reassign player to another connected session
         if self._player_session_id:
             player_session = self._sessions.get(self._player_session_id)
             if not player_session or not player_session.get("connected"):
-                # Player disconnected - find another connected session
                 for sid, sess in self._sessions.items():
                     if sess.get("connected"):
                         self._player_session_id = sid
