@@ -121,6 +121,28 @@ class PlaybackController:
                     # No connected sessions - player becomes None
                     self._player_session_id = None
     
+    def broadcast_sessions(self):
+        """Broadcast session list to all connected clients"""
+        import asyncio
+        import concurrent.futures
+        
+        sessions_data = {"sessions": self.get_sessions()}
+        msg = json.dumps({"event": "sessions", "data": sessions_data})
+        
+        def send_msg(ws):
+            try:
+                loop = asyncio.new_event_loop()
+                asyncio.set_event_loop(loop)
+                loop.run_until_complete(ws.send_text(msg))
+                loop.close()
+            except Exception:
+                pass
+        
+        with concurrent.futures.ThreadPoolExecutor(max_workers=4) as executor:
+            for session in self._sessions.values():
+                if session.get("ws"):
+                    executor.submit(send_msg, session["ws"])
+    
     def reconnect_session(self, ws, session_id: str):
         """Reconnect a session that was previously disconnected"""
         if session_id in self._sessions:
