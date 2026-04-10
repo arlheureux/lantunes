@@ -85,6 +85,47 @@ class PlaybackController:
         """Get the current player session ID"""
         return self._player_session_id
     
+    def register_device(self, ws, session_id: str, device_id: str, device_name: str, device_owner: str = None):
+        """Register a device session"""
+        self._sessions[session_id] = {
+            "device_id": device_id,
+            "device_name": device_name,
+            "device_owner": device_owner,
+            "ws": ws,
+            "connected": True,
+            "is_player": False
+        }
+        
+        # If no player session, make this one the player
+        if not self._player_session_id:
+            self._player_session_id = session_id
+            self._sessions[session_id]["is_player"] = True
+        else:
+            self._sessions[session_id]["is_player"] = False
+        
+        logger.info(f"Device registered: {device_name} ({device_id})")
+    
+    def set_player_session(self, session_id: str) -> bool:
+        """Set which session is the player"""
+        if session_id not in self._sessions:
+            return False
+        
+        # Demote current player
+        if self._player_session_id and self._player_session_id in self._sessions:
+            self._sessions[self._player_session_id]["is_player"] = False
+        
+        # Promote new player
+        self._player_session_id = session_id
+        self._sessions[session_id]["is_player"] = True
+        return True
+    
+    def update_device_name(self, device_id: str, device_name: str):
+        """Update device name"""
+        for session in self._sessions.values():
+            if session.get("device_id") == device_id:
+                session["device_name"] = device_name
+                break
+    
     def broadcast(self, event: str, data: dict):
         """Broadcast message to all sessions"""
         msg = json.dumps({"event": event, "data": data})
