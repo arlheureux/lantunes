@@ -35,8 +35,8 @@ def get_playlist(playlist_id: int, db: Session = Depends(get_db)):
     return {"id": playlist.id, "name": playlist.name, "tracks": tracks, "created_at": playlist.created_at}
 
 @router.post("")
-def create_playlist(request: Request, db: Session = Depends(get_db)):
-    data = request.json()
+async def create_playlist(request: Request, db: Session = Depends(get_db)):
+    data = await request.json()
     name = data.get("name")
     track_ids = data.get("track_ids", [])
     
