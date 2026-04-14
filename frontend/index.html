@@ -2765,7 +2765,7 @@ const playbackState = ref({ track: null, position: 0, is_playing: false, volume:
                     const filtered = filteredAlbums.value;
                     if (filtered.length) {
                         const randomAlbum = filtered[Math.floor(Math.random() * filtered.length)];
-                        sendControl('play_queue', { track_ids: [randomAlbum.id], start_index: 0 });
+                        await playAlbum(randomAlbum);
                     }
                 }
                 
@@ -2773,7 +2773,7 @@ const playbackState = ref({ track: null, position: 0, is_playing: false, volume:
                     const filtered = filteredArtists.value;
                     if (filtered.length) {
                         const randomArtist = filtered[Math.floor(Math.random() * filtered.length)];
-                        viewArtist(randomArtist.id);
+                        await playArtist(randomArtist.id);
                     }
                 }
                 
