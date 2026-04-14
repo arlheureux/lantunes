@@ -2222,6 +2222,7 @@
                         if (msg.event === 'playback_state') {
                             const prevPlaying = playbackState.value.is_playing;
                             const oldTrackId = playbackState.value.track?.id;
+                            const oldPosition = playbackState.value.position;  // Capture old position BEFORE updating
                             playbackState.value = msg.data;
                             queue.value = msg.data.queue || [];
                             loadQueueTracks();
@@ -2242,7 +2243,6 @@
                             }
                             
                             // Sync position from remote seek while playing
-                            const oldPosition = playbackState.value.position;
                             const newPosition = msg.data.position;
                             if (amIPlayer && msg.data.is_playing && oldPosition !== newPosition && audioPlayer.value) {
                                 const posDiff = Math.abs(audioPlayer.value.currentTime - newPosition);
