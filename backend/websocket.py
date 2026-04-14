@@ -165,6 +165,7 @@ async def websocket_endpoint(websocket: WebSocket):
                     if playback.shuffle_mode:
                         playback.toggle_shuffle(db)
                     playback.set_queue(db, track_ids, start_index, session_id=session_id)
+                    playback.play(db)
                     playback.broadcast_playback_state()
             finally:
                 db.close()

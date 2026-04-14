@@ -1662,7 +1662,7 @@
                 function setPlayerSession(targetSessionId) {
                     sendWS('set_player', { session_id: targetSessionId });
                     selectedSessionId.value = targetSessionId;
-                    if (isMobile.value && playbackState.value.track) {
+                    if (isMobile.value) {
                         showPlayerModal.value = true;
                     }
                 }
