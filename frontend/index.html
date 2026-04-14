@@ -1373,8 +1373,8 @@
             </div>
         </div>
         
-        <!-- Player Modal for Mobile (full screen when tapping album art) -->
-        <div class="mobile-queue-overlay" v-if="showPlayerModal && isMobile" @click.self="showPlayerModal = false">
+        <!-- Player Modal (full screen when tapping album art) -->
+        <div class="mobile-queue-overlay" v-if="showPlayerModal" @click.self="showPlayerModal = false">
             <div class="mobile-queue-header">
                 <h3>Now Playing</h3>
                 <button @click="showPlayerModal = false"><i class="fas fa-times"></i></button>
