@@ -1341,7 +1341,7 @@
                         <i class="fas fa-save"></i> Save
                     </button>
                 </h3>
-                <div v-for="(id, i) in queue" :key="i" class="queue-item" style="padding:4px 0;cursor:pointer;display:flex;align-items:center;" :style="{ background: playbackState.queue_index === i ? 'rgba(29,185,84,0.1)' : '' }" @click="playFromQueue(i)">
+                <div v-for="(id, i) in playbackState.queue" :key="i" class="queue-item" style="padding:4px 0;cursor:pointer;display:flex;align-items:center;" :style="{ background: playbackState.queue_index === i ? 'rgba(29,185,84,0.1)' : '' }" @click="playFromQueue(i)">
                     <span style="color:var(--text-muted);min-width:24px;">
                         <span v-if="playbackState.queue_index === i"><i class="fas fa-volume-up" style="color:var(--accent);"></i></span>
                         <span v-else>{{ i + 1 }}</span>
@@ -1401,7 +1401,7 @@
                 <button @click="showMobileQueue = false"><i class="fas fa-times"></i></button>
             </div>
             <div class="mobile-queue-list">
-                <div v-for="(id, i) in queue" :key="i" class="mobile-queue-item" :class="{ playing: playbackState.queue_index === i }" @click="playFromQueue(i)">
+                <div v-for="(id, i) in playbackState.queue" :key="i" class="mobile-queue-item" :class="{ playing: playbackState.queue_index === i }" @click="playFromQueue(i)">
                     <span class="num">
                         <span v-if="playbackState.queue_index === i" class="playing-icon"><i class="fas fa-volume-up"></i></span>
                         <span v-else>{{ i + 1 }}</span>
@@ -1487,8 +1487,8 @@
                         <span>{{ formatDuration(playbackState.track?.duration || 0) }}</span>
                     </div>
                 </div>
-                <div v-if="playbackState.queue && playbackState.playbackState.queue.length > 0" class="modal-queue-container">
-                    <div style="color:var(--text-secondary);font-size:14px;margin-bottom:16px;text-transform:uppercase;letter-spacing:1px;">Queue ({{ playbackState.playbackState.queue.length }})</div>
+                <div v-if="playbackState.queue && playbackState.queue.length > 0" class="modal-queue-container">
+                    <div style="color:var(--text-secondary);font-size:14px;margin-bottom:16px;text-transform:uppercase;letter-spacing:1px;">Queue ({{ playbackState.queue.length }})</div>
                     <div v-for="(id, i) in playbackState.queue" :key="i" @click="playFromQueue(i)" :style="{background: playbackState.queue_index === i ? '#333' : 'transparent', padding:'10px', borderRadius:'8px', cursor:'pointer', display:'flex', alignItems:'center', gap:'12px'}">
                         <span style="flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ getTrackTitle(id) }}</span>
                         <span style="color:var(--text-muted);font-size:12px;">{{ getTrackDuration(id) }}</span>
@@ -1895,7 +1895,7 @@ const playbackState = ref({ track: null, position: 0, is_playing: false, volume:
                     const name = prompt('Enter playlist name:');
                     if (!name) return;
                     
-                    const trackIds = queue.value;
+                    const trackIds = playbackState.value.queue;
                     if (trackIds.length === 0) return;
                     
                     await apiCall('/api/playlists', {
@@ -2332,8 +2332,9 @@ const playbackState = ref({ track: null, position: 0, is_playing: false, volume:
                 }
                 
                 function loadQueueTracks() {
-                    if (!queue.value || queue.value.length === 0) return;
-                    const ids = queue.value.filter(id => !trackCache.value[id]);
+                    const q = playbackState.value.queue;
+                    if (!q || q.length === 0) return;
+                    const ids = q.filter(id => !trackCache.value[id]);
                     if (ids.length === 0) return;
                     
                     const token = localStorage.getItem('access_token');
@@ -2371,7 +2372,6 @@ const playbackState = ref({ track: null, position: 0, is_playing: false, volume:
                             const oldTrackId = playbackState.value.track?.id;
                             const oldPosition = playbackState.value.position;  // Capture old position BEFORE updating
                             playbackState.value = msg.data;
-                            queue.value = msg.data.queue || [];
                             loadQueueTracks();
                             
                             // Auto-play: only if this device is player AND (track changed or just started playing OR resuming same track)
@@ -2420,7 +2420,7 @@ const playbackState = ref({ track: null, position: 0, is_playing: false, volume:
                                 }
                             }
                         } else if (msg.event === 'queue_updated') {
-                            queue.value = msg.data.queue || [];
+                            playbackState.value.queue = msg.data.queue || [];
                             loadQueueTracks();
                         } else if (msg.event === 'position_update') {
                             // Update position on non-player devices
@@ -2451,7 +2451,7 @@ const playbackState = ref({ track: null, position: 0, is_playing: false, volume:
                                 const queueIndex = msg.data.queue_index;
                                 
                                 if (amIPlayer) {
-                                    if (queue && playbackState.queue.length > 0) {
+                                    if (queue && playbackState.value.queue.length > 0) {
                                         playbackState.value.queue = queue;
                                         playbackState.value.queue_index = queueIndex !== undefined ? queueIndex : 0;
                                         const playId = trackId || queue[playbackState.value.queue_index];
@@ -2471,7 +2471,7 @@ const playbackState = ref({ track: null, position: 0, is_playing: false, volume:
                                 playbackState.value.is_playing = false;
                             } else if (action === 'next') {
                                 if (amIPlayer && playbackState.value.queue) {
-                                    const nextIndex = (playbackState.value.queue_index + 1) % playbackState.value.playbackState.queue.length;
+                                    const nextIndex = (playbackState.value.queue_index + 1) % playbackState.value.queue.length;
                                     playbackState.value.queue_index = nextIndex;
                                     const nextId = playbackState.value.queue[nextIndex];
                                     if (nextId) playStream(nextId);
@@ -2480,7 +2480,7 @@ const playbackState = ref({ track: null, position: 0, is_playing: false, volume:
                                 if (amIPlayer && playbackState.value.queue) {
                                     const prevIndex = playbackState.value.queue_index > 0 
                                         ? playbackState.value.queue_index - 1 
-                                        : playbackState.value.playbackState.queue.length - 1;
+                                        : playbackState.value.queue.length - 1;
                                     playbackState.value.queue_index = prevIndex;
                                     const prevId = playbackState.value.queue[prevIndex];
                                     if (prevId) playStream(prevId);
