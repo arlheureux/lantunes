@@ -20,7 +20,7 @@ PUBLIC_ENDPOINTS = [
 ]
 
 # Paths that are always public (non-API)
-PUBLIC_PATHS = ["/", "/index.html", "/login.html", "/favicon.ico"]
+PUBLIC_PATHS = ["/", "/index.html", "/login.html", "/favicon.ico", "/health", "/health/ready"]
 
 class AuthMiddleware(BaseHTTPMiddleware):
     async def dispatch(self, request: Request, call_next):

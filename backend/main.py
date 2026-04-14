@@ -1,7 +1,16 @@
 import sys
 import os
+import logging
+
 backend_dir = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, backend_dir)
+
+# Configure logging
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+)
+logger = logging.getLogger(__name__)
 
 from fastapi import FastAPI, WebSocket, Request
 from fastapi.staticfiles import StaticFiles
@@ -14,6 +23,8 @@ from api import auth, users
 from websocket import websocket_endpoint
 from middleware import AuthMiddleware
 
+logger.info("Starting LanTunes backend")
+
 limiter = Limiter(key_func=get_remote_address)
 
 app = FastAPI(title="LanTunes")
@@ -25,6 +36,14 @@ async def rate_limit_handler(request: Request, exc: RateLimitExceeded):
         status_code=429,
         content={"detail": "Too many requests. Please try again later."}
     )
+
+@app.get("/health")
+async def health_check():
+    return {"status": "ok"}
+
+@app.get("/health/ready")
+async def readiness_check():
+    return {"status": "ready"}
 
 # Add auth middleware
 app.add_middleware(AuthMiddleware)
