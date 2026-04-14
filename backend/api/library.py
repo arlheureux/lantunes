@@ -42,12 +42,10 @@ def get_tracks_batch(ids: list[int], db: Session = Depends(get_db)):
     return {t.id: t.as_dict() for t in tracks}
 
 @router.get("/albums")
-def get_albums(db: Session = Depends(get_db), page: int = 1, limit: int = 50):
-    """Get albums with optional pagination."""
-    offset = (page - 1) * limit
-    albums = db.query(Album).options(joinedload(Album.artist)).order_by(Album.title).offset(offset).limit(limit).all()
-    total = db.query(Album).count()
-    return {"albums": [{"id": a.id, "title": a.title, "artist": a.artist.name if a.artist else "Unknown", "year": a.year, "artwork": a.artwork_path} for a in albums], "total": total, "page": page, "limit": limit}
+def get_albums(db: Session = Depends(get_db)):
+    """Get all albums."""
+    albums = db.query(Album).options(joinedload(Album.artist)).order_by(Album.title).all()
+    return [{"id": a.id, "title": a.title, "artist": a.artist.name if a.artist else "Unknown", "year": a.year, "artwork": a.artwork_path} for a in albums]
 
 @router.get("/albums/recent")
 def get_recent_albums(db: Session = Depends(get_db), limit: int = 8):

@@ -1557,9 +1557,14 @@
                         <button class="btn" @click="view = 'settings'">Scan Library</button>
                     </div>
 <div v-else>
-                        <h1 style="margin-bottom:24px;">Albums <span style="font-size:16px;font-weight:400;color:var(--text-secondary);">({{ albums.length }})</span></h1>
+                        <h1 style="margin-bottom:16px;">Albums <span style="font-size:16px;font-weight:400;color:var(--text-secondary);">({{ albums.length }})</span></h1>
+                        <div class="letter-filter" style="margin-bottom:16px;display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
+                            <span style="color:var(--text-muted);font-size:14px;">Filter:</span>
+                            <button @click="selectedAlbumLetter = null" :style="!selectedAlbumLetter ? 'border-color:var(--accent);color:var(--accent);' : ''" style="background:none;border:1px solid #444;border-radius:16px;padding:6px 14px;color:#aaa;cursor:pointer;font-size:13px;">All</button>
+                            <button v-for="letter in letters" :key="letter" @click="selectedAlbumLetter = letter" :style="selectedAlbumLetter === letter ? 'border-color:var(--accent);color:var(--accent);' : ''" style="background:none;border:1px solid #444;border-radius:16px;padding:6px 14px;color:#aaa;cursor:pointer;font-size:13px;">{{ letter }}</button>
+                        </div>
                         <div class="album-grid">
-                            <div class="album-card" v-for="a in albums" :key="a.id" @click="viewAlbum(a.id)" @contextmenu.prevent="showAlbumContextMenu($event, a)">
+                            <div class="album-card" v-for="a in filteredAlbums" :key="a.id" @click="viewAlbum(a.id)" @contextmenu.prevent="showAlbumContextMenu($event, a)">
                                 <div class="album-cover">
                                     <img v-if="a.artwork" :src="'/api/library/artwork/' + a.id">
                                     <div v-else class="album-placeholder">
@@ -2615,8 +2620,7 @@ const playbackState = ref({ track: null, position: 0, is_playing: false, volume:
                             apiCall('/api/library/genres'),
                             apiCall('/api/config')
                         ]);
-                        // Handle both old format (array) and new format ({albums: []})
-                        if (a) albums.value = a.albums || a;
+                        if (a) albums.value = a;
                         if (ra) recentAlbums.value = ra;
                         if (ar) artists.value = ar;
                         if (p) playlists.value = p;
@@ -2747,6 +2751,17 @@ const playbackState = ref({ track: null, position: 0, is_playing: false, volume:
                         if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
                     }
                 }
+                
+                const selectedAlbumLetter = ref(null);
+                
+                const filteredAlbums = computed(() => {
+                    if (!selectedAlbumLetter.value) return albums.value;
+                    return albums.value.filter(a => {
+                        const firstChar = a.title.charAt(0).toUpperCase();
+                        if (selectedAlbumLetter.value === '#') return !'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.includes(firstChar);
+                        return firstChar === selectedAlbumLetter.value;
+                    });
+                });
                 
                 async function saveAlbumMetadata() {
                     if (!albumEditDialog.value.id) return;
@@ -3163,7 +3178,7 @@ const playbackState = ref({ track: null, position: 0, is_playing: false, volume:
                     openPlaylistDialog, addToPlaylist, createAndAddToPlaylist, newPlaylistName,
                     showAlbumContextMenu, closeAlbumContextMenu, openAlbumPlaylistDialog,
                     openAlbumEditDialog, saveAlbumMetadata, removeAlbumArtwork, albumEditDialog,
-                    letters, scrollToLetter, selectedLetter, filteredArtists, albumContextMenu,
+                    letters, scrollToLetter, selectedLetter, filteredArtists, selectedAlbumLetter, filteredAlbums, albumContextMenu,
                     sessions, selectedSessionId, currentSessionId, deviceName, updateDeviceName, focusSearch, setPlayerSession,
                     users, showUserForm, newUser, isAdmin, isMobile, showMobileQueue, showDeviceModal, showPlayerModal, showMoreMenu, loadUsers, createUser, deleteUser, logout,
                     viewPlaylist, playPlaylist, deletePlaylist, downloadPlaylist, shufflePlaylist, shuffleCount, loading, loadQueueTracks
