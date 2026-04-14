@@ -1487,9 +1487,9 @@
                         <span>{{ formatDuration(playbackState.track?.duration || 0) }}</span>
                     </div>
                 </div>
-                <div v-if="queue.length > 0" class="modal-queue-container">
-                    <div style="color:var(--text-secondary);font-size:14px;margin-bottom:16px;text-transform:uppercase;letter-spacing:1px;">Queue ({{ queue.length }})</div>
-                    <div v-for="(id, i) in queue" :key="i" @click="playFromQueue(i)" :style="{background: playbackState.queue_index === i ? '#333' : 'transparent', padding:'10px', borderRadius:'8px', cursor:'pointer', display:'flex', alignItems:'center', gap:'12px'}">
+                <div v-if="playbackState.queue && playbackState.queue.length > 0" class="modal-queue-container">
+                    <div style="color:var(--text-secondary);font-size:14px;margin-bottom:16px;text-transform:uppercase;letter-spacing:1px;">Queue ({{ playbackState.queue.length }})</div>
+                    <div v-for="(id, i) in playbackState.queue" :key="i" @click="playFromQueue(i)" :style="{background: playbackState.queue_index === i ? '#333' : 'transparent', padding:'10px', borderRadius:'8px', cursor:'pointer', display:'flex', alignItems:'center', gap:'12px'}">
                         <span style="flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ getTrackTitle(id) }}</span>
                         <span style="color:var(--text-muted);font-size:12px;">{{ getTrackDuration(id) }}</span>
                     </div>
