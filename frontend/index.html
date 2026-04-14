@@ -1849,14 +1849,6 @@
                     sendControl('shuffle_play', { count });
                 }
                 
-                async function playFromQueue(index) {
-                    const queueIds = playbackState.value.queue || [];
-                    if (queueIds.length === 0) return;
-                    
-                    sendControl('play_queue', { track_ids: queueIds, start_index: index });
-                    showMobileQueue.value = false;
-                }
-                
                 async function deleteUser(userId) {
                     if (confirm('Delete this user?')) {
                         await apiCall('/api/users/' + userId, { method: 'DELETE' });
@@ -2397,7 +2389,7 @@
                     onTimeUpdate, onEnded, createPlaylist, saveConfig, scanLibrary, formatDuration, getTrackTitle,
                     loadTracks, prevPage, nextPage, showContextMenu, closeContextMenu, playTrackNext, addToQueue,
                     removeFromQueue, saveQueueAsPlaylist,
-                    toggleShuffle, toggleRepeat, shufflePlay,
+                    toggleShuffle, toggleRepeat, shufflePlay, playFromQueue,
                     openPlaylistDialog, addToPlaylist, createAndAddToPlaylist, newPlaylistName,
                     showAlbumContextMenu, closeAlbumContextMenu, openAlbumPlaylistDialog,
                     openAlbumEditDialog, saveAlbumMetadata, removeAlbumArtwork, albumEditDialog,
