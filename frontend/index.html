@@ -1709,9 +1709,10 @@
                         const pos = audioPlayer.value.currentTime;
                         playbackState.value.position = pos;
                         
-                        // Update position every 2 seconds - local only, no server needed
+                        // Send position to server every 2 seconds so other devices can sync
                         if (playbackState.value.is_playing && Math.abs(pos - lastPositionSent) >= 2) {
                             lastPositionSent = pos;
+                            sendControl('update_position', { position: Math.floor(pos) });
                         }
                     }
                 }
@@ -2255,6 +2256,11 @@
                         } else if (msg.event === 'queue_updated') {
                             queue.value = msg.data.queue || [];
                             loadQueueTracks();
+                        } else if (msg.event === 'position_update') {
+                            // Update position on non-player devices
+                            if (!isThisDevicePlayer()) {
+                                playbackState.value.position = msg.data.position;
+                            }
                         } else if (msg.event === 'sessions') {
                             console.log('Sessions received:', JSON.stringify(msg.data.sessions));
                             sessions.value = msg.data.sessions || [];

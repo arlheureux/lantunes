@@ -155,6 +155,10 @@ async def websocket_endpoint(websocket: WebSocket):
                             logger.info(f"play_queue: track_ids={track_ids}, start_index={start_index}")
                             playback.set_queue(db, track_ids, start_index, session_id=session_id)
                             playback.play(db)
+                        elif action == 'update_position':
+                            position = payload.get('position')
+                            if position is not None:
+                                playback.update_position(db, position)
                         
                         # Broadcast state to all clients immediately after command
                         playback.broadcast_playback_state()

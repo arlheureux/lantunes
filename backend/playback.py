@@ -233,6 +233,30 @@ class PlaybackController:
                 if ws:
                     executor.submit(send_msg, ws)
     
+    def broadcast_position_update(self, position: int):
+        """Broadcast position update to all OTHER devices (not the player)"""
+        import asyncio
+        import concurrent.futures
+        
+        msg = json.dumps({"event": "position_update", "data": {"position": position}})
+        
+        def send_msg(ws, skip_session_id):
+            try:
+                loop = asyncio.new_event_loop()
+                asyncio.set_event_loop(loop)
+                loop.run_until_complete(ws.send_text(msg))
+                loop.close()
+            except Exception:
+                pass
+        
+        with concurrent.futures.ThreadPoolExecutor(max_workers=4) as executor:
+            for session_id, session in self._sessions.items():
+                # Skip the player session - they already have the position
+                if session_id == self._player_session_id:
+                    continue
+                if session.get("ws"):
+                    executor.submit(send_msg, session["ws"], session_id)
+    
     def get_state(self, db: Session) -> dict:
         state = db.query(PlaybackState).filter(PlaybackState.id == 1).first()
         if not state:
@@ -364,12 +388,14 @@ class PlaybackController:
         return self.get_state(db)
     
     def update_position(self, db: Session, position: int):
-        """Update current position in DB while playing"""
+        """Update current position in DB while playing, then broadcast to other devices"""
         state = db.query(PlaybackState).filter(PlaybackState.id == 1).first()
         if state and state.is_playing:
             state.position = position
             state.updated_at = datetime.utcnow()
             db.commit()
+            # Broadcast position to other devices (not the player - they already have it)
+            self.broadcast_position_update(position)
     
     def pause(self, db: Session, position: int = None, session_id: str = None):
         state = db.query(PlaybackState).filter(PlaybackState.id == 1).first()
