@@ -767,9 +767,8 @@
         }
         .player-modal .modal-right {
             flex: 0 0 40%;
-            background: #1a1a1a;
-            border-left: 1px solid #333;
-            padding: 20px;
+            background: #121212;
+            padding: 24px;
             display: flex;
             flex-direction: column;
             min-height: 0;
@@ -873,25 +872,31 @@
             flex: 1;
             min-height: 0;
             overflow-y: auto;
+            background: #1e1e1e;
+            border-radius: 12px;
+            padding: 16px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
         }
         .player-modal .modal-queue-section .queue-header {
             color: var(--text-secondary);
-            font-size: 14px;
+            font-size: 13px;
+            font-weight: 600;
             margin-bottom: 16px;
             text-transform: uppercase;
             letter-spacing: 1px;
         }
         .player-modal .modal-queue-section .queue-item {
-            padding: 12px;
+            padding: 10px 12px;
             border-radius: 8px;
             cursor: pointer;
             display: flex;
             align-items: center;
             gap: 12px;
-            transition: background 0.15s ease;
+            transition: all 0.15s ease;
+            margin-bottom: 4px;
         }
         .player-modal .modal-queue-section .queue-item:hover {
-            background: rgba(255,255,255,0.1);
+            background: rgba(255,255,255,0.08);
         }
         .player-modal .modal-queue-section .queue-item.playing {
             background: #333;
