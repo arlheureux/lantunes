@@ -1627,7 +1627,6 @@
                     </div>
                     <div class="track-list">
                         <div class="track-row" v-for="t in currentAlbum.tracks" :key="t.id" @click="playTrack(t)" @contextmenu.prevent="showContextMenu($event, t)">
-                            <span class="num">{{ t.track_number }}</span>
                             <span class="title">{{ t.title }}</span>
                             <span class="duration">{{ formatDuration(t.duration) }}</span>
                             <button class="menu-btn" @click.stop="showContextMenu($event, t)"><i class="fas fa-ellipsis-h"></i></button>
@@ -1709,7 +1708,6 @@
                     <div v-if="!currentPlaylist.tracks?.length" class="empty">No tracks in this playlist</div>
                     <div v-else class="track-list">
                         <div class="track-row" v-for="(t, idx) in currentPlaylist.tracks" :key="t.id" @click="playTrack(t)" @contextmenu.prevent="showContextMenu($event, t)">
-                            <span class="num">{{ idx + 1 }}</span>
                             <span class="title">{{ t.title }}</span>
                             <span class="duration">{{ formatDuration(t.duration) }}</span>
                             <button class="menu-btn" @click.stop="showContextMenu($event, t)"><i class="fas fa-ellipsis-h"></i></button>
@@ -1913,11 +1911,10 @@
             </div>
             <div class="mobile-queue-list">
                 <div v-for="(id, i) in playbackState.queue" :key="i" class="mobile-queue-item" :class="{ playing: playbackState.queue_index === i }" @click="playFromQueue(i)">
-                    <span class="num">
+                    <span class="title">
                         <span v-if="playbackState.queue_index === i" class="playing-icon"><i class="fas fa-volume-up"></i></span>
-                        <span v-else>{{ i + 1 }}</span>
+                        {{ getTrackTitle(id) }}
                     </span>
-                    <span class="title">{{ getTrackTitle(id) }}</span>
                 </div>
                 <div v-if="playbackState.queue.length === 0" class="empty-state" style="padding:40px 20px;">
                     <div class="empty-state-icon" style="width:60px;height:60px;">
