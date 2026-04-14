@@ -254,3 +254,91 @@ def fetch_missing_artist_images(db: Session = Depends(get_db)):
     
     db.commit()
     return {"fetched": fetched, "total_without_artwork": len(artists_without_art)}
+
+@router.get("/fetch-artwork/stream")
+async def fetch_artwork_stream():
+    """SSE endpoint for fetching missing artwork (album covers + artist images)"""
+    import concurrent.futures
+    from metadata import fetch_album_cover, fetch_artist_image
+    
+    async def event_generator():
+        progress_data = {"current": 0, "total": 0, "message": "Starting...", "stage": "preparing", "percent": 0}
+        
+        def send_progress(msg, current, total, stage):
+            progress_data.update({
+                "message": msg,
+                "current": current,
+                "total": total,
+                "stage": stage,
+                "percent": round((current / total * 100), 1) if total > 0 else 0
+            })
+        
+        def run_fetch():
+            from database import SessionLocal
+            db = SessionLocal()
+            albums_fetched = 0
+            artists_fetched = 0
+            
+            try:
+                # Fetch album covers
+                albums = db.query(Album).filter(Album.artwork_path == None).all()
+                total_albums = len(albums)
+                
+                if total_albums > 0:
+                    send_progress(f"Fetching album covers ({total_albums} albums)", 0, total_albums, "album_covers")
+                    
+                    for i, album in enumerate(albums):
+                        send_progress(f"Fetching: {album.title}", i + 1, total_albums, "album_covers")
+                        artist = db.query(Artist).filter(Artist.id == album.artist_id).first()
+                        if artist:
+                            year_str = str(album.year) if album.year else None
+                            artwork_path = fetch_album_cover(artist.name, album.title, album.id, year_str)
+                            if artwork_path:
+                                album.artwork_path = artwork_path
+                                albums_fetched += 1
+                    
+                    db.commit()
+                
+                # Fetch artist images
+                artists = db.query(Artist).filter(Artist.artwork_path == None).all()
+                total_artists = len(artists)
+                
+                if total_artists > 0:
+                    send_progress(f"Fetching artist images ({total_artists} artists)", 0, total_artists, "artist_images")
+                    
+                    for i, artist in enumerate(artists):
+                        send_progress(f"Fetching: {artist.name}", i + 1, total_artists, "artist_images")
+                        artwork_path = fetch_artist_image(artist.name, artist.id)
+                        if artwork_path:
+                            artist.artwork_path = artwork_path
+                            artists_fetched += 1
+                    
+                    db.commit()
+                
+                return {"albums_fetched": albums_fetched, "artists_fetched": artists_fetched}
+                
+            except Exception as e:
+                return {"error": str(e), "albums_fetched": albums_fetched, "artists_fetched": artists_fetched}
+            finally:
+                db.close()
+        
+        with concurrent.futures.ThreadPoolExecutor() as executor:
+            future = executor.submit(run_fetch)
+            
+            while not future.done():
+                if progress_data.get("message"):
+                    yield f"data: {json.dumps(progress_data)}\n\n"
+                await asyncio.sleep(0.3)
+            
+            result = future.result()
+            final_data = {
+                "current": progress_data.get("total", 0),
+                "total": progress_data.get("total", 0),
+                "message": f"Complete! Fetched {result.get('albums_fetched', 0)} album covers, {result.get('artists_fetched', 0)} artist images",
+                "stage": "complete",
+                "percent": 100,
+                "result": result
+            }
+            yield f"data: {json.dumps(final_data)}\n\n"
+    
+    return StreamingResponse(event_generator(), media_type="text/event-stream")

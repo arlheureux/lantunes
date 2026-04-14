@@ -12,6 +12,7 @@ PUBLIC_ENDPOINTS = [
     "/api/library/artwork/",
     "/api/library/tracks/batch",
     "/api/library/scan/stream",
+    "/api/library/fetch-artwork/stream",
     "/api/config/migrate",
     "/docs",
     "/openapi.json",

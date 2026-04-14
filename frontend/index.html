@@ -2412,10 +2412,42 @@ const playbackState = ref({ track: null, position: 0, is_playing: false, volume:
                 }
                 
                 async function fetchMissingArtwork() {
+                    isScanning.value = true;
+                    scanProgress.value = { current: 0, total: 0, percent: 0, message: 'Connecting...', stage: 'preparing' };
                     scanResult.value = 'Fetching missing artwork...';
-                    const r = await apiCall('/api/library/fetch-covers', { method: 'POST' });
-                    const r2 = await apiCall('/api/library/fetch-artist-images', { method: 'POST' });
-                    scanResult.value = `Fetched ${r?.fetched || 0} album covers, ${r2?.fetched || 0} artist images`;
+                    
+                    try {
+                        const eventSource = new EventSource('/api/library/fetch-artwork/stream');
+                        
+                        eventSource.onmessage = (event) => {
+                            try {
+                                const data = JSON.parse(event.data);
+                                scanProgress.value = data;
+                                scanResult.value = data.message || 'Fetching artwork...';
+                                
+                                if (data.stage === 'complete' || data.stage === 'error') {
+                                    eventSource.close();
+                                    isScanning.value = false;
+                                    if (data.result && !data.result.error) {
+                                        scanResult.value = `Complete! Fetched ${data.result.albums_fetched} album covers, ${data.result.artists_fetched} artist images`;
+                                    } else if (data.result?.error) {
+                                        scanResult.value = 'Error: ' + data.result.error;
+                                    }
+                                }
+                            } catch (e) {
+                                console.error('Failed to parse progress:', e);
+                            }
+                        };
+                        
+                        eventSource.onerror = () => {
+                            eventSource.close();
+                            isScanning.value = false;
+                            scanResult.value = 'Fetch artwork connection error';
+                        };
+                    } catch (e) {
+                        isScanning.value = false;
+                        scanResult.value = 'Fetch artwork failed: ' + e.message;
+                    }
                 }
                 
                 function formatDuration(seconds) {
