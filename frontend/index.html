@@ -1335,8 +1335,8 @@
                 </div>
             </div>
             
-            <div class="queue-section" v-if="queue.length">
-                <h3>Queue <span style="font-weight:normal;font-size:12px;color:var(--text-muted);">({{ queue.length }})</span>
+            <div class="queue-section" v-if="playbackState.queue.length">
+                <h3>Queue <span style="font-weight:normal;font-size:12px;color:var(--text-muted);">({{ playbackState.queue.length }})</span>
                     <button @click="saveQueueAsPlaylist" style="margin-left:8px;background:none;border:none;color:var(--text-muted);cursor:pointer;font-size:12px;" title="Save as playlist">
                         <i class="fas fa-save"></i> Save
                     </button>
@@ -1397,7 +1397,7 @@
         <!-- Mobile Queue Modal (on top of player modal) -->
         <div class="mobile-queue-overlay" v-if="showMobileQueue" style="z-index: 3000;" @click.self="showMobileQueue = false">
             <div class="mobile-queue-header">
-                <h3>Queue ({{ queue.length }})</h3>
+                <h3>Queue ({{ playbackState.queue.length }})</h3>
                 <button @click="showMobileQueue = false"><i class="fas fa-times"></i></button>
             </div>
             <div class="mobile-queue-list">
@@ -1408,7 +1408,7 @@
                     </span>
                     <span class="title">{{ getTrackTitle(id) }}</span>
                 </div>
-                <div v-if="queue.length === 0" class="empty-state" style="padding:40px 20px;">
+                <div v-if="playbackState.queue.length === 0" class="empty-state" style="padding:40px 20px;">
                     <div class="empty-state-icon" style="width:60px;height:60px;">
                         <svg viewBox="0 0 24 24"><path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z"/></svg>
                     </div>
@@ -1487,8 +1487,8 @@
                         <span>{{ formatDuration(playbackState.track?.duration || 0) }}</span>
                     </div>
                 </div>
-                <div v-if="playbackState.queue && playbackState.queue.length > 0" class="modal-queue-container">
-                    <div style="color:var(--text-secondary);font-size:14px;margin-bottom:16px;text-transform:uppercase;letter-spacing:1px;">Queue ({{ playbackState.queue.length }})</div>
+                <div v-if="playbackState.queue && playbackState.playbackState.queue.length > 0" class="modal-queue-container">
+                    <div style="color:var(--text-secondary);font-size:14px;margin-bottom:16px;text-transform:uppercase;letter-spacing:1px;">Queue ({{ playbackState.playbackState.queue.length }})</div>
                     <div v-for="(id, i) in playbackState.queue" :key="i" @click="playFromQueue(i)" :style="{background: playbackState.queue_index === i ? '#333' : 'transparent', padding:'10px', borderRadius:'8px', cursor:'pointer', display:'flex', alignItems:'center', gap:'12px'}">
                         <span style="flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ getTrackTitle(id) }}</span>
                         <span style="color:var(--text-muted);font-size:12px;">{{ getTrackDuration(id) }}</span>
@@ -2449,7 +2449,7 @@ const playbackState = ref({ track: null, position: 0, is_playing: false, volume:
                                 const queueIndex = msg.data.queue_index;
                                 
                                 if (amIPlayer) {
-                                    if (queue && queue.length > 0) {
+                                    if (queue && playbackState.queue.length > 0) {
                                         playbackState.value.queue = queue;
                                         playbackState.value.queue_index = queueIndex !== undefined ? queueIndex : 0;
                                         const playId = trackId || queue[playbackState.value.queue_index];
@@ -2469,7 +2469,7 @@ const playbackState = ref({ track: null, position: 0, is_playing: false, volume:
                                 playbackState.value.is_playing = false;
                             } else if (action === 'next') {
                                 if (amIPlayer && playbackState.value.queue) {
-                                    const nextIndex = (playbackState.value.queue_index + 1) % playbackState.value.queue.length;
+                                    const nextIndex = (playbackState.value.queue_index + 1) % playbackState.value.playbackState.queue.length;
                                     playbackState.value.queue_index = nextIndex;
                                     const nextId = playbackState.value.queue[nextIndex];
                                     if (nextId) playStream(nextId);
@@ -2478,7 +2478,7 @@ const playbackState = ref({ track: null, position: 0, is_playing: false, volume:
                                 if (amIPlayer && playbackState.value.queue) {
                                     const prevIndex = playbackState.value.queue_index > 0 
                                         ? playbackState.value.queue_index - 1 
-                                        : playbackState.value.queue.length - 1;
+                                        : playbackState.value.playbackState.queue.length - 1;
                                     playbackState.value.queue_index = prevIndex;
                                     const prevId = playbackState.value.queue[prevIndex];
                                     if (prevId) playStream(prevId);
@@ -2570,7 +2570,7 @@ const playbackState = ref({ track: null, position: 0, is_playing: false, volume:
                 
                 return {
                     view, searchQuery, searchResults, albums, recentAlbums, artists, playlists, genres, currentGenre, genreAlbums, config, scanResult,
-                    currentAlbum, currentArtist, currentPlaylist, playbackState, queue, volume, audioPlayer, progressPercent,
+                    currentAlbum, currentArtist, currentPlaylist, playbackState, volume, audioPlayer, progressPercent,
                     isLoading,
                     tracks, tracksPage, tracksLimit, tracksTotalPages, contextMenu, playlistDialog,
                     search, viewAlbum, viewArtist, viewGenre, playTrack, playAlbum, playArtist, togglePlay, next, previous, seek, setVolume,
