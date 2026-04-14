@@ -149,6 +149,12 @@ async def websocket_endpoint(websocket: WebSocket):
                             logger.info(f"remove_from_queue: index={index}")
                             if index is not None:
                                 playback.remove_from_queue(index)
+                        elif action == 'play_queue':
+                            track_ids = payload.get('track_ids', [])
+                            start_index = payload.get('start_index', 0)
+                            logger.info(f"play_queue: track_ids={track_ids}, start_index={start_index}")
+                            playback.set_queue(db, track_ids, start_index, session_id=session_id)
+                            playback.play(db)
                         
                         # Broadcast state to all clients immediately after command
                         playback.broadcast_playback_state()
