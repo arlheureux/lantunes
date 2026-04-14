@@ -148,7 +148,7 @@ async def websocket_endpoint(websocket: WebSocket):
                             index = payload.get('index')
                             logger.info(f"remove_from_queue: index={index}")
                             if index is not None:
-                                playback.remove_from_queue(db, index)
+                                playback.remove_from_queue(index)
                         
                         # Broadcast state to all clients immediately after command
                         playback.broadcast_playback_state()
