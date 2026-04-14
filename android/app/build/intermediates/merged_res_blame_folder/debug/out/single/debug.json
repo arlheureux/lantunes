@@ -1,0 +1,26 @@
+[
+    {
+        "merged": "/home/arnaud/.gradle/daemon/8.10.2/com.lantunes.app-merged_res-35:/layout_activity_settings.xml.flat",
+        "source": "/home/arnaud/.gradle/daemon/8.10.2/com.lantunes.app-main-37:/layout/activity_settings.xml"
+    },
+    {
+        "merged": "/home/arnaud/.gradle/daemon/8.10.2/com.lantunes.app-merged_res-35:/drawable_ic_wifi_off.xml.flat",
+        "source": "/home/arnaud/.gradle/daemon/8.10.2/com.lantunes.app-main-37:/drawable/ic_wifi_off.xml"
+    },
+    {
+        "merged": "/home/arnaud/.gradle/daemon/8.10.2/com.lantunes.app-merged_res-35:/drawable_ic_error.xml.flat",
+        "source": "/home/arnaud/.gradle/daemon/8.10.2/com.lantunes.app-main-37:/drawable/ic_error.xml"
+    },
+    {
+        "merged": "/home/arnaud/.gradle/daemon/8.10.2/com.lantunes.app-merged_res-35:/drawable_ic_launcher.xml.flat",
+        "source": "/home/arnaud/.gradle/daemon/8.10.2/com.lantunes.app-main-37:/drawable/ic_launcher.xml"
+    },
+    {
+        "merged": "com.lantunes.app-merged_res-35:/layout_activity_settings.xml.flat",
+        "source": "com.lantunes.app-main-37:/layout/activity_settings.xml"
+    },
+    {
+        "merged": "/home/arnaud/.gradle/daemon/8.10.2/com.lantunes.app-merged_res-35:/layout_activity_main.xml.flat",
+        "source": "/home/arnaud/.gradle/daemon/8.10.2/com.lantunes.app-main-37:/layout/activity_main.xml"
+    }
+]
