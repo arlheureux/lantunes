@@ -2233,6 +2233,14 @@
                             const amIPlayer = isThisDevicePlayer();
                             console.log('Track changed:', trackChanged, 'Just started playing:', justStartedPlaying, 'Resuming same track:', resumingSameTrack, 'Am I player:', amIPlayer, 'Has stream_url:', !!msg.data.track?.stream_url);
                             
+                            // If we went from playing to not playing, pause the audio
+                            const wasPlaying = prevPlaying;
+                            const isNowPlaying = msg.data.is_playing;
+                            if (wasPlaying && !isNowPlaying && amIPlayer && audioPlayer.value) {
+                                audioPlayer.value.pause();
+                                console.log('Paused audio due to remote pause');
+                            }
+                            
                             // Stop audio if we were player but no longer are
                             if (!amIPlayer && audioPlayer.value && audioPlayer.value.src) {
                                 audioPlayer.value.pause();
