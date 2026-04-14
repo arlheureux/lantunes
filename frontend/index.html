@@ -2712,7 +2712,7 @@ const playbackState = ref({ track: null, position: 0, is_playing: false, volume:
                 }
                 
                 const letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ#'.split('');
-                const selectedLetter = ref(null);
+                const selectedLetter = ref('A');
                 
                 const filteredArtists = computed(() => {
                     if (!selectedLetter.value) return artists.value;
@@ -2746,7 +2746,7 @@ const playbackState = ref({ track: null, position: 0, is_playing: false, volume:
                     }
                 }
                 
-                const selectedAlbumLetter = ref(null);
+                const selectedAlbumLetter = ref('A');
                 
                 const filteredAlbums = computed(() => {
                     if (!selectedAlbumLetter.value) return albums.value;
