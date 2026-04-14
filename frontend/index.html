@@ -2255,7 +2255,8 @@
                 function connectWS() {
                     console.log('Connecting WebSocket...');
                     const token = localStorage.getItem('access_token');
-                    const wsUrl = token ? 'ws://' + location.host + '/ws?token=' + encodeURIComponent(token) : 'ws://' + location.host + '/ws';
+                    const wsProtocol = location.protocol === 'https:' ? 'wss:' : 'ws:';
+                    const wsUrl = token ? wsProtocol + '//' + location.host + '/ws?token=' + encodeURIComponent(token) : wsProtocol + '//' + location.host + '/ws';
                     ws = new WebSocket(wsUrl);
                     ws.onopen = () => {
                         console.log('WebSocket connected, registering device:', deviceId);
