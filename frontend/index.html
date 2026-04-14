@@ -2231,6 +2231,14 @@
                             const resumingSameTrack = !trackChanged && prevPlaying === false && msg.data.is_playing === true;
                             const amIPlayer = isThisDevicePlayer();
                             console.log('Track changed:', trackChanged, 'Just started playing:', justStartedPlaying, 'Resuming same track:', resumingSameTrack, 'Am I player:', amIPlayer, 'Has stream_url:', !!msg.data.track?.stream_url);
+                            
+                            // Stop audio if we were player but no longer are
+                            if (!amIPlayer && audioPlayer.value && audioPlayer.value.src) {
+                                audioPlayer.value.pause();
+                                audioPlayer.value.src = '';
+                                console.log('Stopped playback - no longer player');
+                            }
+                            
                             if (amIPlayer && msg.data.track?.stream_url && (trackChanged || justStartedPlaying || resumingSameTrack)) {
                                 console.log('Auto-playing track:', msg.data.track.id, 'position:', msg.data.position);
                                 playStream(msg.data.track.id);
