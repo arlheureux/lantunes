@@ -1451,7 +1451,7 @@
                 </div>
                 
                 <div v-if="view === 'tracks'">
-                    <h1>All Tracks <span style="font-size:16px;font-weight:400;color:var(--text-secondary);">({{ tracksTotal }} total)</span></h1>
+                    <h1>All Tracks <span style="font-size:16px;font-weight:400;color:var(--text-secondary);">({{ tracksTotal }})</span></h1>
                     <div class="limit-selector">
                         <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
                             <span style="color:var(--text-muted);font-size:13px;">Shuffle:</span>
@@ -1556,19 +1556,20 @@
                         <p>Scan your music library to find albums.</p>
                         <button class="btn" @click="view = 'settings'">Scan Library</button>
                     </div>
-                    <div v-else>
-                        <h1 style="margin-bottom:24px;">Albums <span style="font-size:16px;font-weight:400;color:var(--text-secondary);">({{ albums.length }} total)</span></h1>
+<div v-else>
+                        <h1 style="margin-bottom:24px;">Albums <span style="font-size:16px;font-weight:400;color:var(--text-secondary);">({{ albums.length }})</span></h1>
                         <div class="album-grid">
-                        <div class="album-card" v-for="a in albums" :key="a.id" @click="viewAlbum(a.id)" @contextmenu.prevent="showAlbumContextMenu($event, a)">
-                            <div class="album-cover">
-                                <img v-if="a.artwork" :src="'/api/library/artwork/' + a.id">
-                                <div v-else class="album-placeholder">
-                                    <i class="fas fa-compact-disc" style="font-size:48px;color:#555;"></i>
+                            <div class="album-card" v-for="a in albums" :key="a.id" @click="viewAlbum(a.id)" @contextmenu.prevent="showAlbumContextMenu($event, a)">
+                                <div class="album-cover">
+                                    <img v-if="a.artwork" :src="'/api/library/artwork/' + a.id">
+                                    <div v-else class="album-placeholder">
+                                        <i class="fas fa-compact-disc" style="font-size:48px;color:#555;"></i>
+                                    </div>
+                                    <div class="album-play-btn" @click.stop="playAlbum(a)"><i class="fas fa-play"></i></div>
                                 </div>
-                                <div class="album-play-btn" @click.stop="playAlbum(a)"><i class="fas fa-play"></i></div>
+                                <div class="name">{{ a.title }}</div>
+                                <div class="artist">{{ a.artist }}</div>
                             </div>
-                            <div class="name">{{ a.title }}</div>
-                            <div class="artist">{{ a.artist }}</div>
                         </div>
                     </div>
                 </div>
@@ -1583,13 +1584,13 @@
                         <button class="btn" @click="view = 'settings'">Scan Library</button>
                     </div>
                     <template v-else>
-                        <h1 style="margin-bottom:16px;">Artists <span style="font-size:16px;font-weight:400;color:var(--text-secondary);">({{ artists.length }} total)</span></h1>
+                        <h1 style="margin-bottom:16px;">Artists <span style="font-size:16px;font-weight:400;color:var(--text-secondary);">({{ artists.length }})</span></h1>
                         <div class="letter-filter" style="margin-bottom:16px;display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
                             <span style="color:var(--text-muted);font-size:14px;">Filter:</span>
                             <button @click="selectedLetter = null" :class="{ 'btn-active': !selectedLetter }" style="background:none;border:1px solid #444;border-radius:16px;padding:6px 14px;color:#aaa;cursor:pointer;font-size:13px;" :style="!selectedLetter ? 'border-color:var(--accent);color:var(--accent);' : ''">All</button>
                             <button v-for="letter in letters" :key="letter" @click="selectedLetter = letter" :class="{ 'btn-active': selectedLetter === letter }" style="background:none;border:1px solid #444;border-radius:16px;padding:6px 14px;color:#aaa;cursor:pointer;font-size:13px;" :style="selectedLetter === letter ? 'border-color:var(--accent);color:var(--accent);' : ''">{{ letter }}</button>
                         </div>
-<div class="album-grid">
+                        <div class="album-grid">
                             <div class="album-card" v-for="a in filteredArtists" :key="a.id" :id="'artist-' + a.id" @click="viewArtist(a.id)">
                                 <div class="album-cover" style="border-radius: 50%; overflow: hidden;">
                                     <img v-if="a.artwork" :src="'/api/library/artwork/artist/' + a.id" style="width:100%;height:100%;object-fit:cover;">
@@ -1720,7 +1721,7 @@
                 </div>
                 
                 <div v-if="view === 'genres'">
-                    <h1>Genres <span style="font-size:16px;font-weight:400;color:var(--text-secondary);">({{ genres.length }} total)</span></h1>
+                    <h1>Genres <span style="font-size:16px;font-weight:400;color:var(--text-secondary);">({{ genres.length }})</span></h1>
                     <div v-if="genres.length === 0" class="empty-state">
                         <div class="empty-state-icon">
                             <svg viewBox="0 0 24 24"><path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z"/></svg>
