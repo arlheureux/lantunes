@@ -1679,6 +1679,7 @@
                 </div>
                 
                 <div v-if="view === 'playlists'">
+                    <h1 style="margin-bottom:16px;">Playlists <span style="font-size:16px;font-weight:400;color:var(--text-secondary);">({{ playlists.length }})</span></h1>
                     <button class="btn" @click="createPlaylist" style="margin-bottom:20px;">New Playlist</button>
                     <div v-if="!loading.library && playlists.length === 0" class="empty-state">
                         <div class="empty-state-icon">
