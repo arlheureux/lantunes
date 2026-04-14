@@ -1087,14 +1087,15 @@
                             <button @click="selectedLetter = null" :class="{ 'btn-active': !selectedLetter }" style="background:none;border:1px solid #444;border-radius:16px;padding:6px 14px;color:#aaa;cursor:pointer;font-size:13px;" :style="!selectedLetter ? 'border-color:var(--accent);color:var(--accent);' : ''">All</button>
                             <button v-for="letter in letters" :key="letter" @click="selectedLetter = letter" :class="{ 'btn-active': selectedLetter === letter }" style="background:none;border:1px solid #444;border-radius:16px;padding:6px 14px;color:#aaa;cursor:pointer;font-size:13px;" :style="selectedLetter === letter ? 'border-color:var(--accent);color:var(--accent);' : ''">{{ letter }}</button>
                         </div>
-                        <div class="album-grid">
-                        <div class="album-card" v-for="a in filteredArtists" :key="a.id" :id="'artist-' + a.id" @click="viewArtist(a.id)">
-                            <div style="width:100%;aspect-ratio:1;background:linear-gradient(135deg, #4a4a4a 0%, #2a2a2a 100%);border-radius:50%;margin-bottom:8px;display:flex;align-items:center;justify-content:center;">
-                                <i class="fas fa-user" style="font-size:48px;color:#555;"></i>
+<div class="album-grid">
+                            <div class="album-card" v-for="a in filteredArtists" :key="a.id" :id="'artist-' + a.id" @click="viewArtist(a.id)">
+                                <div class="album-cover" style="border-radius: 50%;">
+                                    <i class="fas fa-user" style="font-size:48px;color:#555;position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);"></i>
+                                    <div class="album-play-btn" style="opacity: 1; transform: translateY(0);" @click.stop="playArtist(a.id)"><i class="fas fa-play"></i></div>
+                                </div>
+                                <div class="name">{{ a.name }}</div>
                             </div>
-                            <div class="name">{{ a.name }}</div>
                         </div>
-                    </div>
                     </template>
                 </div>
                 
@@ -2081,6 +2082,22 @@
                     sendControl('play_queue', { track_ids: trackIds, start_index: 0 });
                 }
                 
+                async function playArtist(artistId) {
+                    const artistDetails = await apiCall('/api/library/artists/' + artistId);
+                    if (!artistDetails || !artistDetails.albums || artistDetails.albums.length === 0) return;
+                    
+                    const allTrackIds = [];
+                    for (const album of artistDetails.albums) {
+                        const albumDetails = await apiCall('/api/library/albums/' + album.id);
+                        if (albumDetails && albumDetails.tracks) {
+                            allTrackIds.push(...albumDetails.tracks.map(t => t.id));
+                        }
+                    }
+                    if (allTrackIds.length > 0) {
+                        sendControl('play_queue', { track_ids: allTrackIds, start_index: 0 });
+                    }
+                }
+                
                 const letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ#'.split('');
                 const selectedLetter = ref(null);
                 
@@ -2511,7 +2528,7 @@
                     currentAlbum, currentArtist, currentPlaylist, playbackState, queue, volume, audioPlayer, progressPercent,
                     isLoading,
                     tracks, tracksPage, tracksLimit, tracksTotalPages, contextMenu, playlistDialog,
-                    search, viewAlbum, viewArtist, viewGenre, playTrack, playAlbum, togglePlay, next, previous, seek, setVolume,
+                    search, viewAlbum, viewArtist, viewGenre, playTrack, playAlbum, playArtist, togglePlay, next, previous, seek, setVolume,
                     onTimeUpdate, onEnded, createPlaylist, saveConfig, scanLibrary, formatDuration, getTrackTitle, getTrackDuration,
                     loadTracks, prevPage, nextPage, showContextMenu, closeContextMenu, playTrackNext, addToQueue,
                     removeFromQueue, saveQueueAsPlaylist,
