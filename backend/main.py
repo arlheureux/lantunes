@@ -21,7 +21,7 @@ app = FastAPI(title="LanTunes")
 app.state.limiter = limiter
 
 def get_git_info():
-    """Get current git commit hash and version"""
+    """Get current git commit hash"""
     try:
         project_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
         result = subprocess.run(
@@ -32,15 +32,7 @@ def get_git_info():
         )
         commit = result.stdout.strip()
         
-        tag_result = subprocess.run(
-            ['git', 'describe', '--tags', '--abbrev=0'],
-            cwd=project_dir,
-            capture_output=True,
-            text=True
-        )
-        version = tag_result.stdout.strip() if tag_result.returncode == 0 else "v1.0.0"
-        
-        return {"version": version, "commit": commit}
+        return {"version": "v1.0.0", "commit": commit}
     except Exception as e:
         return {"version": "v1.0.0", "commit": "unknown"}
 
