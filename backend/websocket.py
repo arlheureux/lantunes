@@ -117,13 +117,13 @@ async def websocket_endpoint(websocket: WebSocket):
                         logger.info(f" No player session available")
                         continue
                     
-# Route command to player session via WebSocket
+                    # Route command to player session via WebSocket
                     if action in ['play', 'pause', 'stop', 'next', 'previous']:
                         result = playback.route_command(player_session, action)
-                        logger.info(f' Routed {action} to {player_session}: {result}')
+                        logger.info(f" Routed {action} to {player_session}: {result}")
                     elif action == 'seek' and position is not None:
                         result = playback.route_command(player_session, 'seek', {'position': position})
-                        logger.info(f' Routed seek to {player_session}: {result}')
+                        logger.info(f" Routed seek to {player_session}: {result}")
                     elif action == 'toggle_shuffle':
                         playback.toggle_shuffle(db)
                     elif action == 'toggle_repeat':
@@ -143,10 +143,14 @@ async def websocket_endpoint(websocket: WebSocket):
                         index = payload.get('index')
                         if index is not None:
                             playback.remove_from_queue(db, index)
+                    
+                    # Broadcast state to all clients immediately after command
+                    playback.broadcast_playback_state()
                 
                 elif event == 'set_volume':
                     volume = payload.get('volume', 1.0)
                     playback.set_volume(db, volume, session_id=session_id)
+                    playback.broadcast_playback_state()
                 
                 elif event == 'set_queue':
                     track_ids = payload.get('track_ids', [])
@@ -160,12 +164,6 @@ async def websocket_endpoint(websocket: WebSocket):
                     if playback.shuffle_mode:
                         playback.toggle_shuffle(db)
                     playback.set_queue(db, track_ids, start_index, session_id=session_id)
-                    playback.broadcast_playback_state()
-                
-                elif event == "command_executed":
-                    # Client reports that command was executed - broadcast updated state
-                    action = payload.get("action")
-                    logger.info(f" Command executed: {action}")
                     playback.broadcast_playback_state()
             finally:
                 db.close()
