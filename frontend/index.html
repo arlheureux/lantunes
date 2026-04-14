@@ -1712,10 +1712,9 @@
                         const pos = audioPlayer.value.currentTime;
                         playbackState.value.position = pos;
                         
-                        // Send position to server every 2 seconds while playing
+                        // Update position every 2 seconds - local only, no server needed
                         if (playbackState.value.is_playing && Math.abs(pos - lastPositionSent) >= 2) {
                             lastPositionSent = pos;
-                            apiCall('/api/playback/position?position=' + Math.floor(pos), { method: 'POST' }).catch(() => {});
                         }
                     }
                 }
@@ -1847,9 +1846,7 @@
                 const shuffleCount = ref(50);
                 
                 async function shufflePlaylist(count) {
-                    const targetPlayer = getPlayerSession()?.id || deviceId;
-                    const url = '/api/playback/shuffle-play?count=' + count + '&session=' + encodeURIComponent(targetPlayer);
-                    await apiCall(url, { method: 'POST' });
+                    sendControl('shuffle_play', { count });
                 }
                 
                 async function playFromQueue(index) {
@@ -1991,13 +1988,8 @@
                 
                 async function playTrack(track) {
                     console.log('Playing track:', track);
-                    // Determine which session controls playback - always use player session
-                    const targetSession = getPlayerSession()?.id || currentSessionId.value;
-                    
-                    // Send play request - just route the command (Jellyfin style)
-                    // State will be updated via WebSocket broadcast
-                    const url = '/api/playback/play?track_id=' + track.id + '&queue=' + track.id + '&session=' + encodeURIComponent(targetSession);
-                    await apiCall(url, { method: 'POST' });
+                    sendControl('set_queue', { track_ids: [track.id], start_index: 0 });
+                    sendControl('play');
                 }
                 
                 function playStream(trackId) {
@@ -2021,14 +2013,9 @@
                     const albumDetails = await apiCall('/api/library/albums/' + album.id);
                     if (!albumDetails || !albumDetails.tracks) return;
                     
-                    const trackIds = albumDetails.tracks.map(t => t.id).join(',');
-                    const targetPlayer = getPlayerSession()?.id || deviceId;
-                    const url = '/api/playback/play?queue=' + trackIds + '&session=' + encodeURIComponent(targetPlayer);
-                    
-                    // With Jellyfin-style, we just route the command and wait for state via WebSocket
-                    await apiCall(url, { method: 'POST' });
-                    
-                    // State will be updated via WebSocket broadcast - no need to set manually
+                    const trackIds = albumDetails.tracks.map(t => t.id);
+                    sendControl('set_queue', { track_ids: trackIds, start_index: 0 });
+                    sendControl('play');
                 }
                 
                 const letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ#'.split('');
@@ -2104,11 +2091,9 @@
                 
                 async function playPlaylist() {
                     if (!currentPlaylist.value || !currentPlaylist.value.tracks?.length) return;
-                    const trackIds = currentPlaylist.value.tracks.map(t => t.id).join(',');
-                    const targetPlayer = getPlayerSession()?.id || deviceId;
-                    const url = '/api/playback/play?queue=' + trackIds + '&session=' + encodeURIComponent(targetPlayer);
-                    // Just route - state updated via WebSocket
-                    await apiCall(url, { method: 'POST' });
+                    const trackIds = currentPlaylist.value.tracks.map(t => t.id);
+                    sendControl('set_queue', { track_ids: trackIds, start_index: 0 });
+                    sendControl('play');
                 }
                 
                 async function deletePlaylist() {
