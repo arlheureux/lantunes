@@ -88,6 +88,21 @@ async def websocket_endpoint(websocket: WebSocket):
                             # New registration
                             playback.register_device(websocket, session_id, device_id, device_name, device_owner)
                             logger.info(f" New session registered: {session_id}")
+                        
+                        # Always send current playback state to newly registered/reconnecting device
+                        db2 = SessionLocal()
+                        state = playback.get_state(db2)
+                        db2.close()
+                        state_msg = json.dumps({"event": "playback_state", "data": state})
+                        try:
+                            loop = asyncio.new_event_loop()
+                            asyncio.set_event_loop(loop)
+                            loop.run_until_complete(websocket.send_text(state_msg))
+                            loop.close()
+                            logger.info(f" Sent playback state to device: {session_id}")
+                        except Exception as e:
+                            logger.info(f" Error sending state: {e}")
+                        
                         logger.info(f" Sessions after register: {list(playback._sessions.keys())}")
                         playback.broadcast_sessions()
                 
