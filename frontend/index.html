@@ -1543,8 +1543,10 @@
                     </div>
 <div v-else>
                         <h1 style="margin-bottom:16px;">Albums <span style="font-size:16px;font-weight:400;color:var(--text-secondary);">({{ albums.length }})</span></h1>
-                        <div class="letter-filter" style="margin-bottom:16px;display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
+                        <div style="margin-bottom:16px;display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
+                            <button @click="selectedAlbumLetter = null" style="background:none;border:1px solid #444;border-radius:16px;padding:6px 14px;color:#aaa;cursor:pointer;font-size:13px;">All</button>
                             <button v-for="letter in letters" :key="letter" @click="selectedAlbumLetter = letter" :style="selectedAlbumLetter === letter ? 'border-color:var(--accent);color:var(--accent);' : ''" style="background:none;border:1px solid #444;border-radius:16px;padding:6px 14px;color:#aaa;cursor:pointer;font-size:13px;">{{ letter }}</button>
+                            <button @click="playRandomAlbum" style="background:none;border:1px solid var(--accent);border-radius:16px;padding:6px 14px;color:var(--accent);cursor:pointer;font-size:13px;"><i class="fas fa-random"></i> Play Random</button>
                         </div>
                         <div class="album-grid">
                             <div class="album-card" v-for="a in filteredAlbums" :key="a.id" @click="viewAlbum(a.id)" @contextmenu.prevent="showAlbumContextMenu($event, a)">
@@ -1573,8 +1575,10 @@
                     </div>
                     <template v-else>
                         <h1 style="margin-bottom:16px;">Artists <span style="font-size:16px;font-weight:400;color:var(--text-secondary);">({{ artists.length }})</span></h1>
-                        <div class="letter-filter" style="margin-bottom:16px;display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
+                        <div style="margin-bottom:16px;display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
+                            <button @click="selectedLetter = null" style="background:none;border:1px solid #444;border-radius:16px;padding:6px 14px;color:#aaa;cursor:pointer;font-size:13px;">All</button>
                             <button v-for="letter in letters" :key="letter" @click="selectedLetter = letter" :class="{ 'btn-active': selectedLetter === letter }" style="background:none;border:1px solid #444;border-radius:16px;padding:6px 14px;color:#aaa;cursor:pointer;font-size:13px;" :style="selectedLetter === letter ? 'border-color:var(--accent);color:var(--accent);' : ''">{{ letter }}</button>
+                            <button @click="playRandomArtist" style="background:none;border:1px solid var(--accent);border-radius:16px;padding:6px 14px;color:var(--accent);cursor:pointer;font-size:13px;"><i class="fas fa-random"></i> Play Random</button>
                         </div>
                         <div class="album-grid">
                             <div class="album-card" v-for="a in filteredArtists" :key="a.id" :id="'artist-' + a.id" @click="viewArtist(a.id)">
@@ -2757,6 +2761,22 @@ const playbackState = ref({ track: null, position: 0, is_playing: false, volume:
                     });
                 });
                 
+                async function playRandomAlbum() {
+                    const filtered = filteredAlbums.value;
+                    if (filtered.length) {
+                        const randomAlbum = filtered[Math.floor(Math.random() * filtered.length)];
+                        sendControl('play_queue', { track_ids: [randomAlbum.id], start_index: 0 });
+                    }
+                }
+                
+                async function playRandomArtist() {
+                    const filtered = filteredArtists.value;
+                    if (filtered.length) {
+                        const randomArtist = filtered[Math.floor(Math.random() * filtered.length)];
+                        viewArtist(randomArtist.id);
+                    }
+                }
+                
                 async function saveAlbumMetadata() {
                     if (!albumEditDialog.value.id) return;
                     const url = '/api/library/albums/' + albumEditDialog.value.id + 
@@ -3153,7 +3173,7 @@ const playbackState = ref({ track: null, position: 0, is_playing: false, volume:
                     openPlaylistDialog, addToPlaylist, createAndAddToPlaylist, newPlaylistName,
                     showAlbumContextMenu, closeAlbumContextMenu, openAlbumPlaylistDialog,
                     openAlbumEditDialog, saveAlbumMetadata, removeAlbumArtwork, albumEditDialog,
-                    letters, scrollToLetter, selectedLetter, filteredArtists, selectedAlbumLetter, filteredAlbums, selectedGenreLetter, filteredGenres, albumContextMenu,
+                    letters, scrollToLetter, selectedLetter, filteredArtists, selectedAlbumLetter, filteredAlbums, selectedGenreLetter, filteredGenres, playRandomAlbum, playRandomArtist, albumContextMenu,
                     sessions, selectedSessionId, currentSessionId, deviceName, updateDeviceName, focusSearch, setPlayerSession,
                     users, showUserForm, newUser, isAdmin, isMobile, showMobileQueue, showDeviceModal, showPlayerModal, showMoreMenu, loadUsers, createUser, deleteUser, logout,
                     viewPlaylist, playPlaylist, deletePlaylist, downloadPlaylist, shufflePlaylist, shuffleCount, loading, loadQueueTracks
