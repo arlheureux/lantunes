@@ -1451,7 +1451,7 @@
                 </div>
                 
                 <div v-if="view === 'tracks'">
-                    <h1>All Tracks</h1>
+                    <h1>All Tracks <span style="font-size:16px;font-weight:400;color:var(--text-secondary);">({{ tracksTotal }} total)</span></h1>
                     <div class="limit-selector">
                         <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
                             <span style="color:var(--text-muted);font-size:13px;">Shuffle:</span>
@@ -1556,7 +1556,9 @@
                         <p>Scan your music library to find albums.</p>
                         <button class="btn" @click="view = 'settings'">Scan Library</button>
                     </div>
-                    <div v-else class="album-grid">
+                    <div v-else>
+                        <h1 style="margin-bottom:24px;">Albums <span style="font-size:16px;font-weight:400;color:var(--text-secondary);">({{ albums.length }} total)</span></h1>
+                        <div class="album-grid">
                         <div class="album-card" v-for="a in albums" :key="a.id" @click="viewAlbum(a.id)" @contextmenu.prevent="showAlbumContextMenu($event, a)">
                             <div class="album-cover">
                                 <img v-if="a.artwork" :src="'/api/library/artwork/' + a.id">
@@ -1581,6 +1583,7 @@
                         <button class="btn" @click="view = 'settings'">Scan Library</button>
                     </div>
                     <template v-else>
+                        <h1 style="margin-bottom:16px;">Artists <span style="font-size:16px;font-weight:400;color:var(--text-secondary);">({{ artists.length }} total)</span></h1>
                         <div class="letter-filter" style="margin-bottom:16px;display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
                             <span style="color:var(--text-muted);font-size:14px;">Filter:</span>
                             <button @click="selectedLetter = null" :class="{ 'btn-active': !selectedLetter }" style="background:none;border:1px solid #444;border-radius:16px;padding:6px 14px;color:#aaa;cursor:pointer;font-size:13px;" :style="!selectedLetter ? 'border-color:var(--accent);color:var(--accent);' : ''">All</button>
