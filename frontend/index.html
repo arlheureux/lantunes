@@ -330,6 +330,7 @@
                     justify-content: center;
                     padding: 60px 40px;
                     gap: 24px;
+                    text-align: center;
                 }
                 .player-modal .modal-col-right {
                     display: flex;
@@ -337,6 +338,16 @@
                     padding: 60px 40px;
                     gap: 24px;
                     border-left: 1px solid #333;
+                    overflow: hidden;
+                    height: 100%;
+                }
+                .player-modal .modal-queue-container {
+                    flex: 1;
+                    min-height: 0;
+                    overflow-y: auto;
+                    background: #1a1a1a;
+                    border-radius: 12px;
+                    padding: 16px;
                 }
                 
                 .mobile-queue-header {
@@ -1430,8 +1441,8 @@
                 <i class="fas fa-times"></i>
             </button>
             <div class="modal-col modal-col-left">
-                <div style="width:100%;max-width:400px;max-height:50vh;border-radius:16px;overflow:hidden;box-shadow:0 8px 32px rgba(0,0,0,0.5);">
-                    <img v-if="playbackState.track?.album_id" :src="'/api/library/artwork/' + playbackState.track.album_id" style="width:100%;height:100%;object-fit:contain;background:#1a1a1a;" @error="$event.target.style.display='none'">
+                <div style="width:100%;max-width:350px;max-height:50vh;border-radius:16px;overflow:hidden;box-shadow:0 8px 32px rgba(0,0,0,0.5);display:flex;align-items:center;justify-content:center;background:#1a1a1a;">
+                    <img v-if="playbackState.track?.album_id" :src="'/api/library/artwork/' + playbackState.track.album_id" style="width:100%;height:auto;max-height:100%;object-fit:contain;" @error="$event.target.style.display='none'">
                     <div v-else style="width:100%;height:100%;background:#333;display:flex;align-items:center;justify-content:center;">
                         <i class="fas fa-music" style="font-size:80px;color:#555;"></i>
                     </div>
@@ -1476,7 +1487,7 @@
                         <span>{{ formatDuration(playbackState.track?.duration || 0) }}</span>
                     </div>
                 </div>
-                <div v-if="queue.length > 0" style="flex:1;overflow-y:auto;background:#1a1a1a;border-radius:12px;padding:16px;">
+                <div v-if="queue.length > 0" class="modal-queue-container">
                     <div style="color:var(--text-secondary);font-size:14px;margin-bottom:16px;text-transform:uppercase;letter-spacing:1px;">Queue ({{ queue.length }})</div>
                     <div v-for="(id, i) in queue" :key="i" @click="playFromQueue(i)" :style="{background: playbackState.queue_index === i ? '#333' : 'transparent', padding:'10px', borderRadius:'8px', cursor:'pointer', display:'flex', alignItems:'center', gap:'12px'}">
                         <span style="flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ getTrackTitle(id) }}</span>
