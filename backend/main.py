@@ -1,6 +1,5 @@
 import sys
 import os
-import subprocess
 backend_dir = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, backend_dir)
 
@@ -20,32 +19,12 @@ limiter = Limiter(key_func=get_remote_address)
 app = FastAPI(title="LanTunes")
 app.state.limiter = limiter
 
-def get_git_info():
-    """Get current git commit hash"""
-    try:
-        project_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-        result = subprocess.run(
-            ['git', 'rev-parse', 'HEAD'],
-            cwd=project_dir,
-            capture_output=True,
-            text=True
-        )
-        commit = result.stdout.strip()
-        
-        return {"version": "v1.0.0", "commit": commit}
-    except Exception as e:
-        return {"version": "v1.0.0", "commit": "unknown"}
-
 @app.exception_handler(RateLimitExceeded)
 async def rate_limit_handler(request: Request, exc: RateLimitExceeded):
     return JSONResponse(
         status_code=429,
         content={"detail": "Too many requests. Please try again later."}
     )
-
-@app.get("/api/version")
-async def get_version():
-    return get_git_info()
 
 # Add auth middleware
 app.add_middleware(AuthMiddleware)
