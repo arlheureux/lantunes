@@ -1402,24 +1402,24 @@
                             </button>
                         </div>
                         <div class="stats-grid" style="display:grid;grid-template-columns:repeat(4, 1fr);gap:12px;margin-bottom:32px;">
-                            <div @click="view = 'tracks'" style="background:var(--bg-surface);border-radius:var(--radius-md);padding:20px;cursor:pointer;transition:all 0.2s;" onmouseover="this.style.background='var(--bg-hover)'" onmouseout="this.style.background='var(--bg-surface)'">
+                            <div @click="!loading.library && (view = 'tracks')" :style="loading.library ? 'opacity:0.5;pointer-events:none;' : ''" style="background:var(--bg-surface);border-radius:var(--radius-md);padding:20px;cursor:pointer;transition:all 0.2s;" onmouseover="!loading.library && (this.style.background='var(--bg-hover)')" onmouseout="this.style.background='var(--bg-surface)'">
                                 <i class="fas fa-music" style="font-size:24px;color:var(--accent);margin-bottom:12px;"></i>
-                                <div style="font-size:28px;font-weight:700;">{{ tracksTotal }}</div>
+                                <div style="font-size:28px;font-weight:700;">{{ loading.library ? '...' : tracksTotal }}</div>
                                 <div style="font-size:12px;color:var(--text-muted);">Tracks</div>
                             </div>
-                            <div @click="view = 'albums'" style="background:var(--bg-surface);border-radius:var(--radius-md);padding:20px;cursor:pointer;transition:all 0.2s;" onmouseover="this.style.background='var(--bg-hover)'" onmouseout="this.style.background='var(--bg-surface)'">
+                            <div @click="!loading.library && (view = 'albums')" :style="loading.library ? 'opacity:0.5;pointer-events:none;' : ''" style="background:var(--bg-surface);border-radius:var(--radius-md);padding:20px;cursor:pointer;transition:all 0.2s;" onmouseover="!loading.library && (this.style.background='var(--bg-hover)')" onmouseout="this.style.background='var(--bg-surface)'">
                                 <i class="fas fa-compact-disc" style="font-size:24px;color:var(--accent);margin-bottom:12px;"></i>
-                                <div style="font-size:28px;font-weight:700;">{{ albums.length }}</div>
+                                <div style="font-size:28px;font-weight:700;">{{ loading.library ? '...' : albums.length }}</div>
                                 <div style="font-size:12px;color:var(--text-muted);">Albums</div>
                             </div>
-                            <div @click="view = 'artists'" style="background:var(--bg-surface);border-radius:var(--radius-md);padding:20px;cursor:pointer;transition:all 0.2s;" onmouseover="this.style.background='var(--bg-hover)'" onmouseout="this.style.background='var(--bg-surface)'">
+                            <div @click="!loading.library && (view = 'artists')" :style="loading.library ? 'opacity:0.5;pointer-events:none;' : ''" style="background:var(--bg-surface);border-radius:var(--radius-md);padding:20px;cursor:pointer;transition:all 0.2s;" onmouseover="!loading.library && (this.style.background='var(--bg-hover)')" onmouseout="this.style.background='var(--bg-surface)'">
                                 <i class="fas fa-user" style="font-size:24px;color:var(--accent);margin-bottom:12px;"></i>
-                                <div style="font-size:28px;font-weight:700;">{{ artists.length }}</div>
+                                <div style="font-size:28px;font-weight:700;">{{ loading.library ? '...' : artists.length }}</div>
                                 <div style="font-size:12px;color:var(--text-muted);">Artists</div>
                             </div>
-                            <div @click="view = 'playlists'" style="background:var(--bg-surface);border-radius:var(--radius-md);padding:20px;cursor:pointer;transition:all 0.2s;" onmouseover="this.style.background='var(--bg-hover)'" onmouseout="this.style.background='var(--bg-surface)'">
+                            <div @click="!loading.library && (view = 'playlists')" :style="loading.library ? 'opacity:0.5;pointer-events:none;' : ''" style="background:var(--bg-surface);border-radius:var(--radius-md);padding:20px;cursor:pointer;transition:all 0.2s;" onmouseover="!loading.library && (this.style.background='var(--bg-hover)')" onmouseout="this.style.background='var(--bg-surface)'">
                                 <i class="fas fa-heart" style="font-size:24px;color:var(--accent);margin-bottom:12px;"></i>
-                                <div style="font-size:28px;font-weight:700;">{{ playlists.length }}</div>
+                                <div style="font-size:28px;font-weight:700;">{{ loading.library ? '...' : playlists.length }}</div>
                                 <div style="font-size:12px;color:var(--text-muted);">Playlists</div>
                             </div>
                         </div>
@@ -1718,8 +1718,13 @@
                 </div>
                 
                 <div v-if="view === 'genres'">
-                    <h1>Genres <span style="font-size:16px;font-weight:400;color:var(--text-secondary);">({{ genres.length }})</span></h1>
-                    <div v-if="genres.length === 0" class="empty-state">
+                    <h1 style="margin-bottom:16px;">Genres <span style="font-size:16px;font-weight:400;color:var(--text-secondary);">({{ genres.length }})</span></h1>
+                    <div class="letter-filter" style="margin-bottom:16px;display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
+                        <span style="color:var(--text-muted);font-size:14px;">Filter:</span>
+                        <button @click="selectedGenreLetter = null" :style="!selectedGenreLetter ? 'border-color:var(--accent);color:var(--accent);' : ''" style="background:none;border:1px solid #444;border-radius:16px;padding:6px 14px;color:#aaa;cursor:pointer;font-size:13px;">All</button>
+                        <button v-for="letter in letters" :key="letter" @click="selectedGenreLetter = letter" :style="selectedGenreLetter === letter ? 'border-color:var(--accent);color:var(--accent);' : ''" style="background:none;border:1px solid #444;border-radius:16px;padding:6px 14px;color:#aaa;cursor:pointer;font-size:13px;">{{ letter }}</button>
+                    </div>
+                    <div v-if="filteredGenres.length === 0" class="empty-state">
                         <div class="empty-state-icon">
                             <svg viewBox="0 0 24 24"><path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z"/></svg>
                         </div>
@@ -1727,7 +1732,7 @@
                         <p>Genres will appear after scanning your library.</p>
                     </div>
                     <div v-else class="album-grid">
-                        <div class="album-card" v-for="g in genres" :key="g" @click="viewGenre(g)" style="cursor:pointer;">
+                        <div class="album-card" v-for="g in filteredGenres" :key="g" @click="viewGenre(g)" style="cursor:pointer;">
                             <div style="width:100%;aspect-ratio:1;background:linear-gradient(135deg, #667eea 0%, #764ba2 100%);border-radius:4px;margin-bottom:8px;display:flex;align-items:center;justify-content:center;">
                                 <i class="fas fa-music" style="font-size:48px;color:#fff;"></i>
                             </div>
@@ -2123,7 +2128,7 @@
         </div>
         
         <!-- Mobile Player Bar -->
-        <div class="player-bar-mobile" v-if="isMobile && playbackState.track">
+        <div class="player-bar-mobile" v-if="isMobile && playbackState.track" @touchstart="onTouchStart" @touchend="onTouchEnd">
             <div class="track-info">
                 <div class="track-artwork" @click="showPlayerModal = true" style="cursor:pointer;">
                     <img v-if="playbackState.track?.album_id" :src="'/api/library/artwork/' + playbackState.track.album_id" @error="$event.target.style.display='none'">
@@ -2738,6 +2743,17 @@ const playbackState = ref({ track: null, position: 0, is_playing: false, volume:
                     });
                 });
                 
+                const selectedGenreLetter = ref(null);
+                
+                const filteredGenres = computed(() => {
+                    if (!selectedGenreLetter.value) return genres.value;
+                    return genres.value.filter(g => {
+                        const firstChar = g.charAt(0).toUpperCase();
+                        if (selectedGenreLetter.value === '#') return !'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.includes(firstChar);
+                        return firstChar === selectedGenreLetter.value;
+                    });
+                });
+                
                 function scrollToLetter(letter) {
                     const firstArtist = artists.value.find(a => {
                         const firstChar = a.name.charAt(0).toUpperCase();
@@ -2873,6 +2889,16 @@ const playbackState = ref({ track: null, position: 0, is_playing: false, volume:
                 async function previous() {
                     console.log('Previous clicked');
                     sendControl('previous');
+                }
+                
+                let touchStartX = 0;
+                function onTouchStart(e) {
+                    touchStartX = e.touches[0].clientX;
+                }
+                function onTouchEnd(e) {
+                    const diff = e.changedTouches[0].clientX - touchStartX;
+                    if (diff > 50) sendControl('previous');
+                    else if (diff < -50) sendControl('next');
                 }
                 
                 async function seek(e) {
@@ -3176,7 +3202,7 @@ const playbackState = ref({ track: null, position: 0, is_playing: false, volume:
                     openPlaylistDialog, addToPlaylist, createAndAddToPlaylist, newPlaylistName,
                     showAlbumContextMenu, closeAlbumContextMenu, openAlbumPlaylistDialog,
                     openAlbumEditDialog, saveAlbumMetadata, removeAlbumArtwork, albumEditDialog,
-                    letters, scrollToLetter, selectedLetter, filteredArtists, selectedAlbumLetter, filteredAlbums, albumContextMenu,
+                    letters, scrollToLetter, selectedLetter, filteredArtists, selectedAlbumLetter, filteredAlbums, selectedGenreLetter, filteredGenres, albumContextMenu,
                     sessions, selectedSessionId, currentSessionId, deviceName, updateDeviceName, focusSearch, setPlayerSession,
                     users, showUserForm, newUser, isAdmin, isMobile, showMobileQueue, showDeviceModal, showPlayerModal, showMoreMenu, loadUsers, createUser, deleteUser, logout,
                     viewPlaylist, playPlaylist, deletePlaylist, downloadPlaylist, shufflePlaylist, shuffleCount, loading, loadQueueTracks
