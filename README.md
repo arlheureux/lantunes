@@ -4,15 +4,18 @@ A self-hosted LAN music streaming server with multi-client sync and device casti
 
 ## Features
 
-- **Web Interface** - Beautiful, responsive UI for desktop and mobile
-- **Lossless Audio** - FLAC, ALAC, WAV, and other lossless formats
-- **M4A/AAC Support** - Automatic transcoding for browser compatibility  
+- **Beautiful Web Interface** - Modern, responsive UI for desktop and mobile
+- **Lossless Audio** - FLAC, ALAC, WAV, and other lossless formats supported
+- **M4A/AAC Support** - Automatic transcoding for browser compatibility
 - **Multi-Client Sync** - All connected devices stay in sync via WebSockets
 - **Device Casting** - "Play To" feature to send audio to a specific device
 - **Library Management** - Automatic scanning with metadata extraction
 - **Playlists** - Create and manage playlists
 - **Search** - Search across tracks, albums, and artists
-- **Shuffle Play** - Random playback mode
+- **Letter Filtering** - Filter Albums, Artists, and Genres by first letter
+- **Play Random** - One-click to play a random album or artist
+- **Stats Dashboard** - Home page shows library statistics
+- **Mobile Optimized** - Touch-friendly with swipe gestures
 
 ## Requirements
 
@@ -47,7 +50,25 @@ Access from any device on your LAN:
 http://<your-server-ip>:8080
 ```
 
-## Cast Play To
+## Usage
+
+### Playing Music
+
+- Click any track to play it
+- Use shuffle buttons to play random tracks
+- Use "Play Random" button on Albums or Artists page to play a random selection
+- Swipe left/right on mobile player to skip tracks
+
+### Library Navigation
+
+- **Home** - Stats dashboard and recently added content
+- **All Tracks** - Browse all tracks in your library
+- **Albums** - Browse by album with letter filtering
+- **Artists** - Browse by artist with letter filtering
+- **Genres** - Browse by genre with letter filtering
+- **Playlists** - Create and manage playlists
+
+### Device Casting
 
 When multiple devices are connected:
 1. Select which device should play audio from the dropdown in the player bar
@@ -55,6 +76,10 @@ When multiple devices are connected:
 3. The other devices act as remote controls
 
 ## API Endpoints
+
+### Health
+- `GET /health` - Health check
+- `GET /health/ready` - Readiness check
 
 ### Library
 - `GET /api/library/tracks` - List tracks
@@ -101,3 +126,18 @@ python main.py
 - **Frontend**: Vue.js 3, Font Awesome
 - **Database**: SQLite
 - **Audio**: FFmpeg for transcoding
+
+## License
+
+Copyright (C) 2024 LanTunes
+
+**NO COMMERCIAL USE** - This software is for personal use only.
+
+This program is free software: you can redistribute it and/or modify it under
+the terms of the GNU Affero General Public License as published by the
+Free Software Foundation, either version 3 of the License, or (at your
+option) any later version.
+
+See the LICENSE file for full license text.
+
+Commercial use, resale, or redistribution is strictly prohibited.
