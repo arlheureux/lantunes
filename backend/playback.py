@@ -603,9 +603,5 @@ class PlaybackController:
         if success.result():
             return {"status": "routed", "session": target_session_id, "action": action}
         return {"error": "Failed to send command"}
-    
-    def broadcast_command_result(self, action: str):
-        """Broadcast that a command was executed - all clients update their state"""
-        self.broadcast_playback_state()
 
 playback = PlaybackController()

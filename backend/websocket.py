@@ -108,22 +108,23 @@ async def websocket_endpoint(websocket: WebSocket):
                         playback.broadcast_sessions()
                 
                 elif event == "control":
-                    # Remote control - route command to player session (Jellyfin style)
+                    # Remote control - execute on server side
                     action = payload.get("action")
                     position = payload.get("position")
-                    player_session = playback.get_player_session()
                     
-                    if not player_session:
-                        logger.info(f" No player session available")
-                        continue
-                    
-                    # Route command to player session via WebSocket
-                    if action in ['play', 'pause', 'stop', 'next', 'previous']:
-                        result = playback.route_command(player_session, action)
-                        logger.info(f" Routed {action} to {player_session}: {result}")
+                    # Execute action directly on server
+                    if action == 'play':
+                        playback.play(db, position=position)
+                    elif action == 'pause':
+                        playback.pause(db, position=position if position else None)
+                    elif action == 'stop':
+                        playback.stop(db)
+                    elif action == 'next':
+                        playback.next(db)
+                    elif action == 'previous':
+                        playback.previous(db)
                     elif action == 'seek' and position is not None:
-                        result = playback.route_command(player_session, 'seek', {'position': position})
-                        logger.info(f" Routed seek to {player_session}: {result}")
+                        playback.seek(db, position)
                     elif action == 'toggle_shuffle':
                         playback.toggle_shuffle(db)
                     elif action == 'toggle_repeat':
