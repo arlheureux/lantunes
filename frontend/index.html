@@ -40,7 +40,10 @@
         /* Sidebar - Desktop */
         .sidebar { width: var(--sidebar-width); background: linear-gradient(180deg, #1a1a1a 0%, #121212 100%); padding: 16px 0; border-right: 1px solid #282828; flex-shrink: 0; }
         .sidebar-logo { padding: 0 20px 20px; font-size: 20px; font-weight: 700; color: var(--text-primary); display: flex; align-items: center; gap: 10px; }
+        .sidebar-logo > div { display: flex; flex-direction: column; gap: 2px; }
         .sidebar-logo i { color: var(--accent); }
+        .sidebar-logo-info { font-size: 11px; color: var(--text-muted); font-weight: 400; }
+        .sidebar-logo-info span { color: var(--accent); }
         .sidebar-item { padding: 12px 20px; cursor: pointer; display: flex; align-items: center; gap: 14px; color: var(--text-secondary); transition: all var(--transition-fast); border-left: 3px solid transparent; }
         .sidebar-item:hover { color: var(--text-primary); background: rgba(255,255,255,0.05); }
         .sidebar-item.active { color: var(--accent); background: rgba(29, 185, 84, 0.1); border-left-color: var(--accent); }
@@ -841,7 +844,13 @@
         <div class="main-content">
             <div class="sidebar">
                 <div class="sidebar-logo">
-                    <i class="fas fa-music"></i> LanTunes
+                    <i class="fas fa-music"></i> 
+                    <div>
+                        LanTunes
+                        <div class="sidebar-logo-info" v-if="version">
+                            <span>{{ version.version }}</span> · {{ version.commit?.substring(0, 12) }}
+                        </div>
+                    </div>
                 </div>
                 <div class="sidebar-item" :class="{ active: view === 'library' }" @click="view = 'library'">
                     <i class="fas fa-home"></i> Home
@@ -1668,6 +1677,7 @@
                 const currentArtist = ref(null);
                 const currentPlaylist = ref(null);
                 const playbackState = ref({ track: null, position: 0, is_playing: false, volume: 1.0, queue: [], queue_index: 0 });
+                const version = ref(null);
                 const isLoading = ref(false);
                 const queue = ref([]);
                 const volume = ref(1.0);
@@ -2521,6 +2531,14 @@
                     connectWS();
                     loadUsers();
                     
+                    // Load version info
+                    try {
+                        const v = await fetch('/api/version').then(r => r.json());
+                        version.value = v;
+                    } catch (e) {
+                        console.log('Could not load version');
+                    }
+                    
                     // Keyboard shortcuts
                     document.addEventListener('keydown', (e) => {
                         // Ignore if typing in input
@@ -2565,7 +2583,7 @@
                     currentAlbum, currentArtist, currentPlaylist, playbackState, queue, volume, audioPlayer, progressPercent,
                     isLoading,
                     tracks, tracksPage, tracksLimit, tracksTotalPages, contextMenu, playlistDialog,
-                    search, viewAlbum, viewArtist, viewGenre, playTrack, playAlbum, playArtist, togglePlay, next, previous, seek, setVolume,
+                    search, viewAlbum, viewArtist, viewGenre, playTrack, playAlbum, playArtist, togglePlay, next, previous, seek, setVolume, version,
                     onTimeUpdate, onEnded, createPlaylist, saveConfig, scanLibrary, formatDuration, getTrackTitle, getTrackDuration,
                     loadTracks, prevPage, nextPage, showContextMenu, closeContextMenu, playTrackNext, addToQueue,
                     removeFromQueue, saveQueueAsPlaylist,
