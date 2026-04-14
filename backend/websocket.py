@@ -108,45 +108,52 @@ async def websocket_endpoint(websocket: WebSocket):
                         playback.broadcast_sessions()
                 
                 elif event == "control":
-                    # Remote control - execute on server side
-                    action = payload.get("action")
-                    position = payload.get("position")
-                    
-                    # Execute action directly on server
-                    if action == 'play':
-                        playback.play(db, position=position)
-                    elif action == 'pause':
-                        playback.pause(db, position=position if position else None)
-                    elif action == 'stop':
-                        playback.stop(db)
-                    elif action == 'next':
-                        playback.next(db)
-                    elif action == 'previous':
-                        playback.previous(db)
-                    elif action == 'seek' and position is not None:
-                        playback.seek(db, position)
-                    elif action == 'toggle_shuffle':
-                        playback.toggle_shuffle(db)
-                    elif action == 'toggle_repeat':
-                        playback.toggle_repeat(db)
-                    elif action == 'shuffle_play':
-                        count = payload.get('count', 50)
-                        playback.play_random(db, count)
-                    elif action == 'play_next':
-                        track_id = payload.get('track_id')
-                        if track_id:
-                            playback.play_next(db, track_id)
-                    elif action == 'add_to_queue':
-                        track_id = payload.get('track_id')
-                        if track_id:
-                            playback.add_to_queue(db, track_id)
-                    elif action == 'remove_from_queue':
-                        index = payload.get('index')
-                        if index is not None:
-                            playback.remove_from_queue(db, index)
-                    
-                    # Broadcast state to all clients immediately after command
-                    playback.broadcast_playback_state()
+                    try:
+                        # Remote control - execute on server side
+                        action = payload.get("action")
+                        position = payload.get("position")
+                        logger.info(f"Control: action={action}, position={position}")
+                        
+                        # Execute action directly on server
+                        if action == 'play':
+                            logger.info(f"Executing play with position={position}")
+                            playback.play(db, position=position)
+                        elif action == 'pause':
+                            logger.info(f"Executing pause with position={position}")
+                            playback.pause(db, position=position if position else None)
+                        elif action == 'stop':
+                            playback.stop(db)
+                        elif action == 'next':
+                            playback.next(db)
+                        elif action == 'previous':
+                            playback.previous(db)
+                        elif action == 'seek' and position is not None:
+                            playback.seek(db, position)
+                        elif action == 'toggle_shuffle':
+                            playback.toggle_shuffle(db)
+                        elif action == 'toggle_repeat':
+                            playback.toggle_repeat(db)
+                        elif action == 'shuffle_play':
+                            count = payload.get('count', 50)
+                            playback.play_random(db, count)
+                        elif action == 'play_next':
+                            track_id = payload.get('track_id')
+                            if track_id:
+                                playback.play_next(db, track_id)
+                        elif action == 'add_to_queue':
+                            track_id = payload.get('track_id')
+                            if track_id:
+                                playback.add_to_queue(db, track_id)
+                        elif action == 'remove_from_queue':
+                            index = payload.get('index')
+                            logger.info(f"remove_from_queue: index={index}")
+                            if index is not None:
+                                playback.remove_from_queue(db, index)
+                        
+                        # Broadcast state to all clients immediately after command
+                        playback.broadcast_playback_state()
+                    except Exception as e:
+                        logger.error(f"Error in control handler: {e}")
                 
                 elif event == 'set_volume':
                     volume = payload.get('volume', 1.0)
@@ -160,13 +167,18 @@ async def websocket_endpoint(websocket: WebSocket):
                     playback.broadcast_playback_state()
                 
                 elif event == 'play_queue':
-                    track_ids = payload.get('track_ids', [])
-                    start_index = payload.get('start_index', 0)
-                    if playback.shuffle_mode:
-                        playback.toggle_shuffle(db)
-                    playback.set_queue(db, track_ids, start_index, session_id=session_id)
-                    playback.play(db)
-                    playback.broadcast_playback_state()
+                    try:
+                        track_ids = payload.get('track_ids', [])
+                        start_index = payload.get('start_index', 0)
+                        logger.info(f"play_queue: track_ids={track_ids}, start_index={start_index}")
+                        if playback.shuffle_mode:
+                            playback.toggle_shuffle(db)
+                        playback.set_queue(db, track_ids, start_index, session_id=session_id)
+                        logger.info("Calling playback.play(db)")
+                        playback.play(db)
+                        playback.broadcast_playback_state()
+                    except Exception as e:
+                        logger.error(f"Error in play_queue handler: {e}")
             finally:
                 db.close()
             
