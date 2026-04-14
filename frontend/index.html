@@ -1588,7 +1588,7 @@
                 <div class="modal-queue-title">Queue ({{ queue.length }})</div>
                 <div v-for="(id, i) in queue" :key="i" class="queue-item" :class="{ playing: playbackState.queue_index === i }" @click="playFromQueue(i)">
                     <span class="queue-item-title">{{ getTrackTitle(id) }}</span>
-                    <span class="queue-item-duration">{{ formatDuration(trackCache.value[id]?.duration || 0) }}</span>
+                    <span class="queue-item-duration">{{ getTrackDuration(id) }}</span>
                 </div>
             </div>
         </div>
@@ -2344,6 +2344,13 @@
                     return 'Track ' + trackId;
                 }
                 
+                function getTrackDuration(trackId) {
+                    if (trackCache.value[trackId]) {
+                        return formatDuration(trackCache.value[trackId].duration);
+                    }
+                    return '0:00';
+                }
+                
                 function loadQueueTracks() {
                     if (!queue.value || queue.value.length === 0) return;
                     const ids = queue.value.filter(id => !trackCache.value[id]);
@@ -2589,7 +2596,7 @@
                     isLoading,
                     tracks, tracksPage, tracksLimit, tracksTotalPages, contextMenu, playlistDialog,
                     search, viewAlbum, viewArtist, viewGenre, playTrack, playAlbum, togglePlay, next, previous, seek, setVolume,
-                    onTimeUpdate, onEnded, createPlaylist, saveConfig, scanLibrary, formatDuration, getTrackTitle,
+                    onTimeUpdate, onEnded, createPlaylist, saveConfig, scanLibrary, formatDuration, getTrackTitle, getTrackDuration,
                     loadTracks, prevPage, nextPage, showContextMenu, closeContextMenu, playTrackNext, addToQueue,
                     removeFromQueue, saveQueueAsPlaylist,
                     toggleShuffle, toggleRepeat, shufflePlay, playFromQueue,
