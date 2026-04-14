@@ -15,6 +15,10 @@ def get_artwork_path(album_id: int) -> Path:
     ARTWORK_DIR.mkdir(exist_ok=True)
     return ARTWORK_DIR / f"album_{album_id}.jpg"
 
+def get_artist_artwork_path(artist_id: int) -> Path:
+    ARTWORK_DIR.mkdir(exist_ok=True)
+    return ARTWORK_DIR / f"artist_{artist_id}.jpg"
+
 def fetch_cover_from_musicbrainz(artist: str, album: str, year: str = None) -> Optional[bytes]:
     """Fetch cover from MusicBrainz/Cover Art Archive"""
     try:
@@ -276,3 +280,110 @@ def extract_metadata(filepath: str) -> dict:
         print(f"Error extracting metadata from {filepath}: {e}")
     
     return meta
+
+def fetch_artist_image(artist_name: str, artist_id: int) -> Optional[str]:
+    """Fetch artist image from external providers"""
+    lastfm_config = config.get('lastfm', {})
+    lastfm_api_key = lastfm_config.get('api_key') if lastfm_config else None
+    
+    providers = []
+    
+    if lastfm_api_key:
+        providers.append(lambda: fetch_artist_from_lastfm(artist_name, lastfm_api_key))
+    
+    providers.append(lambda: fetch_artist_from_deezer(artist_name))
+    
+    for provider in providers:
+        try:
+            artwork_data = provider()
+            if artwork_data:
+                art_path = get_artist_artwork_path(artist_id)
+                with open(art_path, 'wb') as f:
+                    f.write(artwork_data)
+                return str(art_path)
+        except Exception as e:
+            print(f"Artist image provider failed: {e}")
+            continue
+    
+    return None
+
+def fetch_artist_from_deezer(artist_name: str) -> Optional[bytes]:
+    """Fetch artist image from Deezer API"""
+    try:
+        search_url = "https://api.deezer.com/search/artist"
+        params = {'q': artist_name, 'limit': 1}
+        
+        resp = requests.get(search_url, params=params, timeout=10)
+        if resp.status_code != 200:
+            return None
+        
+        data = resp.json()
+        artists = data.get('data', [])
+        if not artists:
+            return None
+        
+        picture_url = artists[0].get('picture_xl') or artists[0].get('picture_big') or artists[0].get('picture')
+        if not picture_url:
+            return None
+        
+        img_resp = requests.get(picture_url, timeout=10)
+        if img_resp.status_code == 200:
+            return img_resp.content
+    
+    except Exception as e:
+        print(f"Deezer artist lookup failed: {e}")
+    
+    return None
+
+def fetch_artist_from_lastfm(artist_name: str, api_key: str) -> Optional[bytes]:
+    """Fetch artist image from LastFM API"""
+    try:
+        search_url = "https://ws.audioscrobbler.com/2.0/"
+        params = {
+            'method': 'artist.search',
+            'artist': artist_name,
+            'api_key': api_key,
+            'format': 'json',
+            'limit': 1
+        }
+        
+        resp = requests.get(search_url, params=params, timeout=10)
+        if resp.status_code != 200:
+            return None
+        
+        data = resp.json()
+        artists = data.get('results', {}).get('artistmatches', {}).get('artist', [])
+        if not artists:
+            return None
+        
+        mbid = artists[0].get('mbid')
+        if not mbid:
+            return None
+        
+        info_url = "https://ws.audioscrobbler.com/2.0/"
+        info_params = {
+            'method': 'artist.getInfo',
+            'mbid': mbid,
+            'api_key': api_key,
+            'format': 'json'
+        }
+        
+        info_resp = requests.get(info_url, params=info_params, timeout=10)
+        if info_resp.status_code != 200:
+            return None
+        
+        info_data = info_resp.json()
+        images = info_data.get('artist', {}).get('image', [])
+        
+        for img in images:
+            if img.get('size') in ['extralarge', 'large', 'medium']:
+                url = img.get('#text')
+                if url:
+                    img_resp = requests.get(url, timeout=10)
+                    if img_resp.status_code == 200:
+                        return img_resp.content
+    
+    except Exception as e:
+        print(f"LastFM artist lookup failed: {e}")
+    
+    return None

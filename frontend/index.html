@@ -1588,8 +1588,11 @@
                         </div>
 <div class="album-grid">
                             <div class="album-card" v-for="a in filteredArtists" :key="a.id" :id="'artist-' + a.id" @click="viewArtist(a.id)">
-                                <div class="album-cover" style="border-radius: 50%;">
-                                    <i class="fas fa-user" style="font-size:48px;color:#555;position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);"></i>
+                                <div class="album-cover" style="border-radius: 50%; overflow: hidden;">
+                                    <img v-if="a.artwork" :src="'/api/library/artwork/artist/' + a.id" style="width:100%;height:100%;object-fit:cover;">
+                                    <div v-else style="width:100%;height:100%;background:linear-gradient(135deg, var(--bg-elevated) 0%, var(--bg-surface) 100%);display:flex;align-items:center;justify-content:center;">
+                                        <i class="fas fa-user" style="font-size:48px;color:var(--text-muted);"></i>
+                                    </div>
                                     <div class="album-play-btn" style="opacity: 1; transform: translateY(0);" @click.stop="playArtist(a.id)"><i class="fas fa-play"></i></div>
                                 </div>
                                 <div class="name">{{ a.name }}</div>
@@ -1636,8 +1639,18 @@
                     <button @click="view = 'artists'" style="margin-bottom:20px;background:none;border:none;color:#aaa;cursor:pointer;">
                         <i class="fas fa-arrow-left"></i> Back
                     </button>
-                    <h1>{{ currentArtist.name }}</h1>
-                    <p style="color:#aaa;margin-bottom:20px;">{{ currentArtist.albums?.length || 0 }} albums</p>
+                    <div style="display:flex;align-items:center;gap:24px;margin-bottom:16px;">
+                        <div style="width:120px;height:120px;border-radius:50%;overflow:hidden;flex-shrink:0;box-shadow:var(--shadow-lg);">
+                            <img v-if="currentArtist.artwork" :src="'/api/library/artwork/artist/' + currentArtist.id" style="width:100%;height:100%;object-fit:cover;">
+                            <div v-else style="width:100%;height:100%;background:linear-gradient(135deg, var(--bg-elevated) 0%, var(--bg-surface) 100%);display:flex;align-items:center;justify-content:center;">
+                                <i class="fas fa-user" style="font-size:40px;color:var(--text-muted);"></i>
+                            </div>
+                        </div>
+                        <div>
+                            <h1 style="margin-bottom:8px;">{{ currentArtist.name }}</h1>
+                            <p style="color:var(--text-secondary);">{{ currentArtist.albums?.length || 0 }} albums</p>
+                        </div>
+                    </div>
                     <button @click="playArtist(currentArtist.id)" style="background:var(--accent);color:#000;border:none;padding:12px 24px;border-radius:24px;font-size:14px;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:8px;margin-bottom:24px;">
                         <i class="fas fa-play"></i> Play All
                     </button>
@@ -1763,6 +1776,7 @@
                     
                     <button class="btn" @click="saveConfig">Save Config</button>
                     <button class="btn" @click="scanLibrary" style="margin-left:10px;margin-top:10px;">Scan Library</button>
+                    <button class="btn" @click="fetchMissingArtwork" style="margin-left:10px;margin-top:10px;background:var(--bg-elevated);color:var(--text-primary);">Fetch Missing Artwork</button>
                     <p style="margin-top:20px;color:#aaa;font-size:13px;">{{ scanResult }}</p>
                     
                     <!-- User Management (Admin only) -->
@@ -2341,6 +2355,13 @@ const playbackState = ref({ track: null, position: 0, is_playing: false, volume:
                     scanResult.value = 'Scanning...';
                     const r = await apiCall('/api/library/scan', { method: 'POST' });
                     scanResult.value = r ? JSON.stringify(r) : 'Scan failed';
+                }
+                
+                async function fetchMissingArtwork() {
+                    scanResult.value = 'Fetching missing artwork...';
+                    const r = await apiCall('/api/library/fetch-covers', { method: 'POST' });
+                    const r2 = await apiCall('/api/library/fetch-artist-images', { method: 'POST' });
+                    scanResult.value = `Fetched ${r?.fetched || 0} album covers, ${r2?.fetched || 0} artist images`;
                 }
                 
                 function formatDuration(seconds) {

@@ -180,3 +180,30 @@ def fetch_missing_covers(db: Session = Depends(get_db)):
     
     db.commit()
     return {"fetched": fetched, "total_without_artwork": len(albums_without_art)}
+
+@router.get("/artwork/artist/{artist_id}")
+def get_artist_artwork(artist_id: int, db: Session = Depends(get_db)):
+    from fastapi.responses import FileResponse
+    artist = db.query(Artist).filter(Artist.id == artist_id).first()
+    if not artist or not artist.artwork_path:
+        raise HTTPException(status_code=404, detail="Artist artwork not found")
+    if not os.path.exists(artist.artwork_path):
+        raise HTTPException(status_code=404, detail="Artist artwork file not found")
+    return FileResponse(artist.artwork_path, media_type="image/jpeg")
+
+@router.post("/fetch-artist-images")
+def fetch_missing_artist_images(db: Session = Depends(get_db)):
+    """Fetch images for artists that don't have artwork yet"""
+    from metadata import fetch_artist_image
+    
+    artists_without_art = db.query(Artist).filter(Artist.artwork_path == None).all()
+    fetched = 0
+    
+    for artist in artists_without_art:
+        artwork_path = fetch_artist_image(artist.name, artist.id)
+        if artwork_path:
+            artist.artwork_path = artwork_path
+            fetched += 1
+    
+    db.commit()
+    return {"fetched": fetched, "total_without_artwork": len(artists_without_art)}

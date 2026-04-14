@@ -2,7 +2,7 @@ import os
 from mutagen import File as MutagenFile
 from pathlib import Path
 from database import SessionLocal, Artist, Album, Track
-from metadata import extract_metadata, extract_and_save_artwork, fetch_album_cover
+from metadata import extract_metadata, extract_and_save_artwork, fetch_album_cover, fetch_artist_image
 
 AUDIO_EXTENSIONS = {'.flac', '.mp3', '.m4a', '.ogg', '.wav', '.aac', '.wma', 
                    '.opus', '.ape', '.alac', '.aiff', '.aif', '.m4b', '.mpc', '.mp+'}
@@ -103,6 +103,18 @@ def scan_library(music_path: str):
                 except Exception as e:
                     print(f"Error processing {filepath}: {e}")
                     errors += 1
+        
+        db.commit()
+        
+        # Fetch missing artist images
+        artists_without_art = db.query(Artist).filter(Artist.artwork_path == None).all()
+        for artist in artists_without_art:
+            try:
+                artwork_path = fetch_artist_image(artist.name, artist.id)
+                if artwork_path:
+                    artist.artwork_path = artwork_path
+            except Exception as e:
+                print(f"Error fetching artist image for {artist.name}: {e}")
         
         db.commit()
     except Exception as e:
