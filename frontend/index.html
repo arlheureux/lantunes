@@ -306,50 +306,6 @@
                     flex-direction: column;
                 }
                 
-                /* Desktop Player Modal */
-                .player-modal {
-                    position: fixed;
-                    top: 0;
-                    left: 0;
-                    right: 0;
-                    bottom: 0;
-                    background: #121212;
-                    z-index: 2500;
-                    display: flex;
-                    width: 100%;
-                    height: 100%;
-                }
-                .player-modal .modal-col {
-                    flex: 0 0 50%;
-                    box-sizing: border-box;
-                }
-                .player-modal .modal-col-left {
-                    display: flex;
-                    flex-direction: column;
-                    align-items: center;
-                    justify-content: center;
-                    padding: 60px 40px;
-                    gap: 24px;
-                    text-align: center;
-                }
-                .player-modal .modal-col-right {
-                    display: flex;
-                    flex-direction: column;
-                    padding: 60px 40px;
-                    gap: 24px;
-                    border-left: 1px solid #333;
-                    overflow: hidden;
-                    height: 100%;
-                }
-                .player-modal .modal-queue-container {
-                    flex: 1;
-                    min-height: 0;
-                    overflow-y: auto;
-                    background: #1a1a1a;
-                    border-radius: 12px;
-                    padding: 16px;
-                }
-                
                 .mobile-queue-header {
                     display: flex;
                     justify-content: space-between;
@@ -772,6 +728,182 @@
 
         /* Hide mobile nav by default (desktop) */
         .mobile-nav { display: none; }
+
+        /* Desktop Player Modal */
+        .player-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: #121212;
+            z-index: 2500;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 40px;
+            overflow-y: auto;
+        }
+        .player-modal .modal-close-btn {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: none;
+            border: none;
+            color: var(--text-secondary);
+            font-size: 24px;
+            cursor: pointer;
+            z-index: 10;
+        }
+        .player-modal .modal-close-btn:hover {
+            color: var(--text-primary);
+        }
+        .player-modal .modal-artwork {
+            width: 100%;
+            max-width: 400px;
+            aspect-ratio: 1;
+            border-radius: 16px;
+            overflow: hidden;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+            margin-bottom: 32px;
+            background: #1a1a1a;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .player-modal .modal-artwork img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        .player-modal .modal-artwork .placeholder {
+            width: 100%;
+            height: 100%;
+            background: #333;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .player-modal .modal-artwork .placeholder i {
+            font-size: 80px;
+            color: #555;
+        }
+        .player-modal .modal-track-info {
+            text-align: center;
+            margin-bottom: 24px;
+        }
+        .player-modal .modal-track-info .title {
+            font-size: 24px;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+        .player-modal .modal-track-info .album {
+            color: var(--text-secondary);
+            font-size: 16px;
+            margin-bottom: 4px;
+        }
+        .player-modal .modal-track-info .artist {
+            color: var(--text-muted);
+            font-size: 14px;
+        }
+        .player-modal .modal-track-info .meta {
+            color: var(--text-muted);
+            font-size: 13px;
+            margin-top: 8px;
+        }
+        .player-modal .modal-controls {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 24px;
+            font-size: 28px;
+            margin-bottom: 16px;
+        }
+        .player-modal .modal-controls button {
+            background: none;
+            border: none;
+            cursor: pointer;
+            color: var(--text-primary);
+        }
+        .player-modal .modal-controls button:hover {
+            transform: scale(1.1);
+        }
+        .player-modal .modal-controls .shuffle-btn,
+        .player-modal .modal-controls .repeat-btn {
+            color: var(--text-muted);
+        }
+        .player-modal .modal-controls .shuffle-btn.active,
+        .player-modal .modal-controls .repeat-btn.active {
+            color: var(--accent);
+        }
+        .player-modal .modal-controls .play-btn {
+            width: 64px;
+            height: 64px;
+            font-size: 24px;
+        }
+        .player-modal .modal-progress {
+            width: 100%;
+            max-width: 500px;
+            margin-bottom: 24px;
+        }
+        .player-modal .modal-progress .progress-bar {
+            height: 6px;
+        }
+        .player-modal .modal-progress .time-display {
+            display: flex;
+            justify-content: space-between;
+            font-size: 12px;
+            color: var(--text-muted);
+            margin-top: 8px;
+        }
+        .player-modal .modal-queue-section {
+            width: 100%;
+            max-width: 500px;
+            flex: 1;
+            min-height: 0;
+            overflow-y: auto;
+            background: #1a1a1a;
+            border-radius: 12px;
+            padding: 16px;
+        }
+        .player-modal .modal-queue-section .queue-header {
+            color: var(--text-secondary);
+            font-size: 14px;
+            margin-bottom: 16px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        .player-modal .modal-queue-section .queue-item {
+            padding: 10px;
+            border-radius: 8px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            transition: background 0.15s ease;
+        }
+        .player-modal .modal-queue-section .queue-item:hover {
+            background: rgba(255,255,255,0.1);
+        }
+        .player-modal .modal-queue-section .queue-item.playing {
+            background: #333;
+        }
+        .player-modal .modal-queue-section .queue-item .title {
+            flex: 1;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .player-modal .modal-queue-section .queue-item .duration {
+            color: var(--text-muted);
+            font-size: 12px;
+        }
+        .player-modal .modal-queue-section .queue-empty {
+            color: var(--text-muted);
+            text-align: center;
+            padding: 20px;
+        }
 
         /* Loading States */
         .loading-spinner {
@@ -1437,63 +1569,63 @@
         
         <!-- Player Modal - Desktop -->
         <div class="player-modal" v-if="showPlayerModal && !isMobile" @click.self="showPlayerModal = false">
-            <button @click="showPlayerModal = false" style="position:absolute;top:20px;right:20px;background:none;border:none;color:var(--text-secondary);font-size:24px;cursor:pointer;z-index:10;">
+            <button class="modal-close-btn" @click="showPlayerModal = false">
                 <i class="fas fa-times"></i>
             </button>
-            <div class="modal-col modal-col-left">
-                <div style="width:100%;max-width:350px;max-height:50vh;border-radius:16px;overflow:hidden;box-shadow:0 8px 32px rgba(0,0,0,0.5);display:flex;align-items:center;justify-content:center;background:#1a1a1a;">
-                    <img v-if="playbackState.track?.album_id" :src="'/api/library/artwork/' + playbackState.track.album_id" style="width:100%;height:auto;max-height:100%;object-fit:contain;" @error="$event.target.style.display='none'">
-                    <div v-else style="width:100%;height:100%;background:#333;display:flex;align-items:center;justify-content:center;">
-                        <i class="fas fa-music" style="font-size:80px;color:#555;"></i>
-                    </div>
-                </div>
-                <div style="text-align:center;">
-                    <div style="font-size:24px;font-weight:600;margin-bottom:8px;">{{ playbackState.track?.title || 'No track' }}</div>
-                    <div style="color:var(--text-secondary);font-size:16px;margin-bottom:4px;">{{ playbackState.track?.album || '' }}</div>
-                    <div style="color:var(--text-muted);font-size:14px;">{{ playbackState.track?.artist || '' }}</div>
+            <div class="modal-artwork">
+                <img v-if="playbackState.track?.album_id" :src="'/api/library/artwork/' + playbackState.track.album_id" @error="$event.target.parentElement.querySelector('.placeholder')?.style?.display !== 'none'">
+                <div v-else class="placeholder">
+                    <i class="fas fa-music"></i>
                 </div>
             </div>
-            <div class="modal-col modal-col-right">
-                <div style="display:flex;align-items:center;justify-content:center;gap:24px;font-size:28px;">
-                    <button @click="toggleShuffle" :style="{ color: playbackState.shuffle_mode ? 'var(--accent)' : 'var(--text-muted)' }" style="background:none;border:none;cursor:pointer;">
-                        <i class="fas fa-random"></i>
-                    </button>
-                    <button @click="previous" style="background:none;border:none;color:var(--text-primary);cursor:pointer;">
-                        <i class="fas fa-step-backward"></i>
-                    </button>
-                    <button @click="togglePlay" class="play-btn" :class="{ loading: isLoading }" style="width:64px;height:64px;font-size:24px;">
-                        <i v-if="isLoading" class="fas fa-spinner fa-spin"></i>
-                        <i v-else :class="playbackState.is_playing ? 'fas fa-pause' : 'fas fa-play'"></i>
-                    </button>
-                    <button @click="next" style="background:none;border:none;color:var(--text-primary);cursor:pointer;">
-                        <i class="fas fa-step-forward"></i>
-                    </button>
-                    <button @click="toggleRepeat" :style="{ color: playbackState.repeat_mode && playbackState.repeat_mode !== 'off' ? 'var(--accent)' : 'var(--text-muted)' }" style="background:none;border:none;cursor:pointer;">
-                        <i class="fas fa-redo"></i>
-                        <span v-if="playbackState.repeat_mode === 'one'" style="font-size:10px;position:absolute;margin-left:-8px;margin-top:8px;">1</span>
-                    </button>
-                </div>
-                <div style="text-align:center;color:var(--text-muted);font-size:13px;">
+            <div class="modal-track-info">
+                <div class="title">{{ playbackState.track?.title || 'No track' }}</div>
+                <div class="album">{{ playbackState.track?.album || '' }}</div>
+                <div class="artist">{{ playbackState.track?.artist || '' }}</div>
+                <div class="meta">
                     <span v-if="playbackState.track?.file_format">{{ playbackState.track.file_format }}</span>
                     <span v-if="playbackState.track?.bitrate"> · {{ playbackState.track.bitrate }}kbps</span>
                     <span v-if="playbackState.track?.sample_rate"> · {{ playbackState.track.sample_rate }}Hz</span>
                 </div>
-                <div style="width:100%;">
-                    <div class="progress-bar" style="height:6px;" @click="seek($event)">
-                        <div class="fill" :style="{ width: progressPercent + '%' }"></div>
-                    </div>
-                    <div style="display:flex;justify-content:space-between;font-size:12px;color:var(--text-muted);margin-top:8px;">
-                        <span>{{ formatDuration(playbackState.position) }}</span>
-                        <span>{{ formatDuration(playbackState.track?.duration || 0) }}</span>
-                    </div>
+            </div>
+            <div class="modal-controls">
+                <button class="shuffle-btn" :class="{ active: playbackState.shuffle_mode }" @click="toggleShuffle" title="Shuffle">
+                    <i class="fas fa-random"></i>
+                </button>
+                <button @click="previous" title="Previous">
+                    <i class="fas fa-step-backward"></i>
+                </button>
+                <button class="play-btn" :class="{ loading: isLoading }" @click="togglePlay">
+                    <i v-if="isLoading" class="fas fa-spinner fa-spin"></i>
+                    <i v-else :class="playbackState.is_playing ? 'fas fa-pause' : 'fas fa-play'"></i>
+                </button>
+                <button @click="next" title="Next">
+                    <i class="fas fa-step-forward"></i>
+                </button>
+                <button class="repeat-btn" :class="{ active: playbackState.repeat_mode && playbackState.repeat_mode !== 'off' }" @click="toggleRepeat" title="Repeat">
+                    <i class="fas fa-redo"></i>
+                    <span v-if="playbackState.repeat_mode === 'one'" style="font-size:10px;position:absolute;margin-left:-8px;margin-top:8px;">1</span>
+                </button>
+            </div>
+            <div class="modal-progress">
+                <div class="progress-bar" @click="seek($event)">
+                    <div class="fill" :style="{ width: progressPercent + '%' }"></div>
                 </div>
-                <div v-if="playbackState.queue && playbackState.queue.length > 0" class="modal-queue-container">
-                    <div style="color:var(--text-secondary);font-size:14px;margin-bottom:16px;text-transform:uppercase;letter-spacing:1px;">Queue ({{ playbackState.queue.length }})</div>
-                    <div v-for="(id, i) in playbackState.queue" :key="i" @click="playFromQueue(i)" :style="{background: playbackState.queue_index === i ? '#333' : 'transparent', padding:'10px', borderRadius:'8px', cursor:'pointer', display:'flex', alignItems:'center', gap:'12px'}">
-                        <span style="flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ getTrackTitle(id) }}</span>
-                        <span style="color:var(--text-muted);font-size:12px;">{{ getTrackDuration(id) }}</span>
-                    </div>
+                <div class="time-display">
+                    <span>{{ formatDuration(playbackState.position) }}</span>
+                    <span>{{ formatDuration(playbackState.track?.duration || 0) }}</span>
                 </div>
+            </div>
+            <div v-if="playbackState.queue && playbackState.queue.length > 0" class="modal-queue-section">
+                <div class="queue-header">Queue ({{ playbackState.queue.length }})</div>
+                <div class="queue-item" :class="{ playing: playbackState.queue_index === i }" v-for="(id, i) in playbackState.queue" :key="i" @click="playFromQueue(i)">
+                    <span class="title">{{ getTrackTitle(id) }}</span>
+                    <span class="duration">{{ getTrackDuration(id) }}</span>
+                </div>
+            </div>
+            <div v-else class="modal-queue-section">
+                <div class="queue-header">Queue</div>
+                <div class="queue-empty">Queue is empty</div>
             </div>
         </div>
         
