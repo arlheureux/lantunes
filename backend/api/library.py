@@ -1,12 +1,15 @@
 import sys
 import os
+import json
+import asyncio
 backend_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, backend_dir)
 
 from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi.responses import StreamingResponse
 from sqlalchemy.orm import Session, joinedload
 from database import get_db, Track, Album, Artist, Playlist, PlaylistTrack, Client
-from scanner import scan_library
+from scanner import scan_library, set_progress_callback
 
 import config as config_module
 
@@ -142,14 +145,58 @@ def search(q: str = Query(...), db: Session = Depends(get_db)):
     }
 
 @router.post("/scan")
-def trigger_scan(db: Session = Depends(get_db)):
+async def trigger_scan(db: Session = Depends(get_db)):
     music_path = config.get("library", {}).get("music_path", "")
     if not music_path:
         raise HTTPException(status_code=400, detail="Music path not configured")
     if not os.path.isdir(music_path):
         raise HTTPException(status_code=400, detail="Music path does not exist")
-    result = scan_library(music_path)
+    
+    # Run scan in a thread to not block the event loop
+    import concurrent.futures
+    with concurrent.futures.ThreadPoolExecutor() as executor:
+        result = await asyncio.get_event_loop().run_in_executor(
+            executor, scan_library, music_path, None
+        )
     return result
+
+@router.get("/scan/stream")
+async def scan_stream():
+    """SSE endpoint for scan progress"""
+    import concurrent.futures
+    
+    async def event_generator():
+        progress_data = {"current": 0, "total": 0, "message": "Starting...", "stage": "preparing", "percent": 0}
+        
+        def progress_callback(data):
+            progress_data.update(data)
+        
+        def run_scan():
+            from scanner import scan_library as _scan
+            return _scan(None, progress_callback)
+        
+        with concurrent.futures.ThreadPoolExecutor() as executor:
+            future = executor.submit(run_scan)
+            
+            # Keep sending progress while scan is running
+            while not future.done():
+                if progress_data.get("message"):
+                    yield f"data: {json.dumps(progress_data)}\n\n"
+                await asyncio.sleep(0.5)
+            
+            # Send final result
+            result = future.result()
+            final_data = {
+                "current": progress_data.get("total", 0),
+                "total": progress_data.get("total", 0),
+                "message": f"Scan complete! Added {result.get('added', 0)} tracks",
+                "stage": "complete",
+                "percent": 100,
+                "result": result
+            }
+            yield f"data: {json.dumps(final_data)}\n\n"
+    
+    return StreamingResponse(event_generator(), media_type="text/event-stream")
 
 @router.get("/artwork/{album_id}")
 def get_artwork(album_id: int, db: Session = Depends(get_db)):

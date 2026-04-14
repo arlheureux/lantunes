@@ -1775,9 +1775,27 @@
                     </div>
                     
                     <button class="btn" @click="saveConfig">Save Config</button>
-                    <button class="btn" @click="scanLibrary" style="margin-left:10px;margin-top:10px;">Scan Library</button>
-                    <button class="btn" @click="fetchMissingArtwork" style="margin-left:10px;margin-top:10px;background:var(--bg-elevated);color:var(--text-primary);">Fetch Missing Artwork</button>
-                    <p style="margin-top:20px;color:#aaa;font-size:13px;">{{ scanResult }}</p>
+                    <button class="btn" @click="scanLibrary" :disabled="isScanning" style="margin-left:10px;margin-top:10px;">
+                        <span v-if="isScanning"><i class="fas fa-spinner fa-spin"></i> Scanning...</span>
+                        <span v-else>Scan Library</span>
+                    </button>
+                    <button class="btn" @click="fetchMissingArtwork" :disabled="isScanning" style="margin-left:10px;margin-top:10px;background:var(--bg-elevated);color:var(--text-primary);">Fetch Missing Artwork</button>
+                    
+                    <!-- Scan Progress -->
+                    <div v-if="isScanning || scanProgress.percent > 0" style="margin-top:20px;">
+                        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+                            <span style="color:var(--text-secondary);font-size:13px;">{{ scanProgress.message }}</span>
+                            <span style="color:var(--accent);font-size:13px;font-weight:600;">{{ scanProgress.percent }}%</span>
+                        </div>
+                        <div style="width:100%;height:6px;background:var(--bg-elevated);border-radius:3px;overflow:hidden;">
+                            <div :style="{width: scanProgress.percent + '%', height:'100%', background:'var(--accent)', borderRadius:'3px', transition:'width 0.3s ease'}"></div>
+                        </div>
+                        <div style="display:flex;justify-content:space-between;margin-top:6px;font-size:12px;color:var(--text-muted);">
+                            <span>{{ scanProgress.current }} / {{ scanProgress.total }}</span>
+                            <span>{{ scanProgress.stage }}</span>
+                        </div>
+                    </div>
+                    <p v-else style="margin-top:20px;color:#aaa;font-size:13px;">{{ scanResult }}</p>
                     
                     <!-- User Management (Admin only) -->
                     <div v-if="isAdmin" style="margin-top:32px;">
@@ -2160,6 +2178,8 @@
                 });
                 const config = ref({ library: { music_path: '' } });
                 const scanResult = ref('');
+                const isScanning = ref(false);
+                const scanProgress = ref({ current: 0, total: 0, percent: 0, message: '', stage: '' });
                 const currentAlbum = ref(null);
                 const currentArtist = ref(null);
                 const currentPlaylist = ref(null);
@@ -2352,9 +2372,40 @@ const playbackState = ref({ track: null, position: 0, is_playing: false, volume:
                 }
                 
                 async function scanLibrary() {
+                    isScanning.value = true;
+                    scanProgress.value = { current: 0, total: 0, percent: 0, message: 'Connecting...', stage: 'preparing' };
                     scanResult.value = 'Scanning...';
-                    const r = await apiCall('/api/library/scan', { method: 'POST' });
-                    scanResult.value = r ? JSON.stringify(r) : 'Scan failed';
+                    
+                    try {
+                        const eventSource = new EventSource('/api/library/scan/stream');
+                        
+                        eventSource.onmessage = (event) => {
+                            try {
+                                const data = JSON.parse(event.data);
+                                scanProgress.value = data;
+                                scanResult.value = `${data.message} (${data.percent}%)`;
+                                
+                                if (data.stage === 'complete' || data.stage === 'error') {
+                                    eventSource.close();
+                                    isScanning.value = false;
+                                    if (data.result) {
+                                        scanResult.value = `Scan complete! Added ${data.result.added} tracks, ${data.result.errors} errors`;
+                                    }
+                                }
+                            } catch (e) {
+                                console.error('Failed to parse progress:', e);
+                            }
+                        };
+                        
+                        eventSource.onerror = () => {
+                            eventSource.close();
+                            isScanning.value = false;
+                            scanResult.value = 'Scan connection error';
+                        };
+                    } catch (e) {
+                        isScanning.value = false;
+                        scanResult.value = 'Scan failed: ' + e.message;
+                    }
                 }
                 
                 async function fetchMissingArtwork() {
@@ -3064,6 +3115,7 @@ const playbackState = ref({ track: null, position: 0, is_playing: false, volume:
                 
                 return {
                     view, searchQuery, searchResults, albums, recentAlbums, artists, playlists, genres, currentGenre, genreAlbums, config, scanResult,
+                    isScanning, scanProgress,
                     currentAlbum, currentArtist, currentPlaylist, playbackState, volume, audioPlayer, progressPercent,
                     isLoading,
                     tracks, tracksPage, tracksLimit, tracksTotalPages, contextMenu, playlistDialog,
