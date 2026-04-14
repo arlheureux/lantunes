@@ -668,11 +668,6 @@
                 .mobile-queue-item.playing {
                     background: rgba(29, 185, 84, 0.15);
                 }
-                .mobile-queue-item .num {
-                    width: 28px;
-                    color: var(--text-muted);
-                    font-size: 13px;
-                }
                 .mobile-queue-item .title {
                     flex: 1;
                     font-size: 15px;
@@ -1264,7 +1259,6 @@
         .skeleton-text-lg { height: 18px; margin-bottom: 8px; }
 
         .skeleton-track { display: flex; align-items: center; padding: 12px; gap: 16px; }
-        .skeleton-track .num { width: 32px; height: 14px; }
         .skeleton-track .title { flex: 1; height: 16px; }
         .skeleton-track .duration { width: 45px; height: 14px; }
 
@@ -2683,20 +2677,15 @@ const playbackState = ref({ track: null, position: 0, is_playing: false, volume:
                 }
                 
                 async function playTrack(track) {
-                    console.log('Playing track:', track);
                     sendControl('play_queue', { track_ids: [track.id], start_index: 0 });
                 }
                 
                 function playStream(trackId) {
-                    console.log('Streaming track:', trackId);
                     if (audioPlayer.value) {
                         const streamUrl = API + '/api/playback/stream/' + trackId;
-                        console.log('Stream URL:', streamUrl);
                         audioPlayer.value.src = streamUrl;
-                        // Seek to position before playing (for resume)
                         if (playbackState.value.position > 0) {
                             audioPlayer.value.currentTime = playbackState.value.position;
-                            console.log('Seeked to position on play:', playbackState.value.position);
                         }
                         audioPlayer.value.play().catch(e => console.error('Play error:', e));
                     } else {
@@ -2803,7 +2792,6 @@ const playbackState = ref({ track: null, position: 0, is_playing: false, volume:
                 }
                 
                 async function togglePlay() {
-                    console.log('TogglePlay clicked, isPlaying:', playbackState.value.is_playing);
                     isLoading.value = true;
                     try {
                         if (playbackState.value.is_playing) {
@@ -2879,12 +2867,10 @@ const playbackState = ref({ track: null, position: 0, is_playing: false, volume:
                 }
                 
                 async function next() {
-                    console.log('Next clicked');
                     sendControl('next');
                 }
                 
                 async function previous() {
-                    console.log('Previous clicked');
                     sendControl('previous');
                 }
                 
@@ -2970,66 +2956,52 @@ const playbackState = ref({ track: null, position: 0, is_playing: false, volume:
                 }
                 
                 function connectWS() {
-                    console.log('Connecting WebSocket...');
                     const token = localStorage.getItem('access_token');
                     const wsProtocol = location.protocol === 'https:' ? 'wss:' : 'ws:';
                     const wsUrl = token ? wsProtocol + '//' + location.host + '/ws?token=' + encodeURIComponent(token) : wsProtocol + '//' + location.host + '/ws';
                     ws = new WebSocket(wsUrl);
                     ws.onopen = () => {
-                        console.log('WebSocket connected, registering device:', deviceId);
                         registerDevice();
                     };
                     ws.onmessage = (e) => {
                         const msg = JSON.parse(e.data);
-                        console.log('WebSocket message:', msg.event, msg.data);
                         if (msg.event === 'playback_state') {
                             const prevPlaying = playbackState.value.is_playing;
                             const oldTrackId = playbackState.value.track?.id;
-                            const oldPosition = playbackState.value.position;  // Capture old position BEFORE updating
+                            const oldPosition = playbackState.value.position;
                             playbackState.value = msg.data;
                             loadQueueTracks();
                             
-                            // Auto-play: only if this device is player AND (track changed or just started playing OR resuming same track)
                             const trackChanged = oldTrackId !== msg.data.track?.id;
                             const justStartedPlaying = !prevPlaying && msg.data.is_playing;
                             const resumingSameTrack = !trackChanged && prevPlaying === false && msg.data.is_playing === true;
                             const amIPlayer = isThisDevicePlayer();
-                            console.log('Track changed:', trackChanged, 'Just started playing:', justStartedPlaying, 'Resuming same track:', resumingSameTrack, 'Am I player:', amIPlayer, 'Has stream_url:', !!msg.data.track?.stream_url);
                             
-                            // If we went from playing to not playing, pause the audio
                             const wasPlaying = prevPlaying;
                             const isNowPlaying = msg.data.is_playing;
                             if (wasPlaying && !isNowPlaying && amIPlayer && audioPlayer.value) {
                                 audioPlayer.value.pause();
-                                console.log('Paused audio due to remote pause');
                             }
                             
-                            // Sync position from remote seek while playing
                             const newPosition = msg.data.position;
                             if (amIPlayer && msg.data.is_playing && oldPosition !== newPosition && audioPlayer.value) {
                                 const posDiff = Math.abs(audioPlayer.value.currentTime - newPosition);
                                 if (posDiff > 2) {
                                     audioPlayer.value.currentTime = newPosition;
-                                    console.log('Synced position from remote seek:', newPosition);
                                 }
                             }
                             
-                            // Stop audio if we were player but no longer are
                             if (!amIPlayer && audioPlayer.value && audioPlayer.value.src) {
                                 audioPlayer.value.pause();
                                 audioPlayer.value.src = '';
-                                console.log('Stopped playback - no longer player');
                             }
                             
                             if (amIPlayer && msg.data.track?.stream_url && (trackChanged || justStartedPlaying || resumingSameTrack)) {
-                                console.log('Auto-playing track:', msg.data.track.id, 'position:', msg.data.position);
                                 playStream(msg.data.track.id);
-                                // Seek to saved position (for resume)
                                 if (msg.data.position > 0) {
                                     setTimeout(() => {
                                         if (audioPlayer.value) {
                                             audioPlayer.value.currentTime = msg.data.position;
-                                            console.log('Seeked to position:', msg.data.position);
                                         }
                                     }, 100);
                                 }
@@ -3038,21 +3010,15 @@ const playbackState = ref({ track: null, position: 0, is_playing: false, volume:
                             playbackState.value.queue = msg.data.queue || [];
                             loadQueueTracks();
                         } else if (msg.event === 'position_update') {
-                            // Update position on non-player devices
                             if (!isThisDevicePlayer()) {
                                 playbackState.value.position = msg.data.position;
                             }
                         } else if (msg.event === 'sessions') {
-                            console.log('Sessions received:', JSON.stringify(msg.data.sessions));
                             sessions.value = msg.data.sessions || [];
-                            console.log('sessions array updated, length:', sessions.value.length, 'sessions:', JSON.stringify(sessions.value));
                             const player = sessions.value.find(s => s.is_player);
                             selectedSessionId.value = player ? player.id : null;
-                            console.log('selectedSessionId:', selectedSessionId.value);
                         } else if (msg.event === 'command') {
-                            // Received command from server - execute locally (Jellyfin style)
                             const action = msg.data.action;
-                            console.log('Received command:', action, msg.data);
                             const amIPlayer = isThisDevicePlayer();
                             
                             if (action === 'pause') {
@@ -3119,12 +3085,10 @@ const playbackState = ref({ track: null, position: 0, is_playing: false, volume:
                                 ws.send(JSON.stringify({ event: 'command_executed', data: { action } }));
                             }
                         } else if (msg.event === 'devices') {
-                            // Legacy support - convert devices to sessions format
-                            console.log('Devices (legacy) received:', JSON.stringify(msg.data.devices));
                         }
                     };
                     ws.onerror = (e) => console.error('WebSocket error:', e);
-                    ws.onclose = () => console.log('WebSocket closed');
+                    ws.onclose = () => {};
                 }
                 
                 onMounted(async () => {
@@ -3174,12 +3138,8 @@ const playbackState = ref({ track: null, position: 0, is_playing: false, volume:
                     // Handle visibility change - reconnect WebSocket when page becomes visible (e.g., after phone unlock)
                     document.addEventListener('visibilitychange', () => {
                         if (document.visibilityState === 'visible') {
-                            console.log('Page became visible - checking WebSocket connection');
                             if (!ws || ws.readyState !== WebSocket.OPEN) {
-                                console.log('WebSocket not connected, reconnecting...');
                                 connectWS();
-                            } else {
-                                console.log('WebSocket already connected');
                             }
                         }
                     });
@@ -3206,13 +3166,6 @@ const playbackState = ref({ track: null, position: 0, is_playing: false, volume:
                 };
             }
         }).mount('#app');
-        
-        // PWA disabled for debugging
-        // if ('serviceWorker' in navigator) {
-        //     navigator.serviceWorker.register('/sw.js')
-        //         .then((reg) => console.log('SW registered:', reg.scope))
-        //         .catch((err) => console.log('SW registration failed:', err));
-        // }
     </script>
 </body>
 </html>
