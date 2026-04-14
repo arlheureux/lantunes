@@ -1694,11 +1694,8 @@
                 }
                 
                 function isThisDevicePlayer() {
-                    // Check if THIS device (by deviceId) is the player
-                    const playerSession = sessions.value.find(s => s.is_player);
-                    const isPlayer = playerSession ? (playerSession.device_id === deviceId) : (sessions.value.length <= 1);
-                    console.log('isThisDevicePlayer check:', { playerSession, deviceId, sessions: sessions.value.length, result: isPlayer });
-                    return isPlayer;
+                    // Use player_device_id from state - no race condition, same message source
+                    return playbackState.value.player_device_id === deviceId;
                 }
                 
                 function getPlayerSession() {
