@@ -1544,8 +1544,6 @@
 <div v-else>
                         <h1 style="margin-bottom:16px;">Albums <span style="font-size:16px;font-weight:400;color:var(--text-secondary);">({{ albums.length }})</span></h1>
                         <div class="letter-filter" style="margin-bottom:16px;display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
-                            <span style="color:var(--text-muted);font-size:14px;">Filter:</span>
-                            <button @click="selectedAlbumLetter = null" :style="!selectedAlbumLetter ? 'border-color:var(--accent);color:var(--accent);' : ''" style="background:none;border:1px solid #444;border-radius:16px;padding:6px 14px;color:#aaa;cursor:pointer;font-size:13px;">All</button>
                             <button v-for="letter in letters" :key="letter" @click="selectedAlbumLetter = letter" :style="selectedAlbumLetter === letter ? 'border-color:var(--accent);color:var(--accent);' : ''" style="background:none;border:1px solid #444;border-radius:16px;padding:6px 14px;color:#aaa;cursor:pointer;font-size:13px;">{{ letter }}</button>
                         </div>
                         <div class="album-grid">
@@ -1576,8 +1574,6 @@
                     <template v-else>
                         <h1 style="margin-bottom:16px;">Artists <span style="font-size:16px;font-weight:400;color:var(--text-secondary);">({{ artists.length }})</span></h1>
                         <div class="letter-filter" style="margin-bottom:16px;display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
-                            <span style="color:var(--text-muted);font-size:14px;">Filter:</span>
-                            <button @click="selectedLetter = null" :class="{ 'btn-active': !selectedLetter }" style="background:none;border:1px solid #444;border-radius:16px;padding:6px 14px;color:#aaa;cursor:pointer;font-size:13px;" :style="!selectedLetter ? 'border-color:var(--accent);color:var(--accent);' : ''">All</button>
                             <button v-for="letter in letters" :key="letter" @click="selectedLetter = letter" :class="{ 'btn-active': selectedLetter === letter }" style="background:none;border:1px solid #444;border-radius:16px;padding:6px 14px;color:#aaa;cursor:pointer;font-size:13px;" :style="selectedLetter === letter ? 'border-color:var(--accent);color:var(--accent);' : ''">{{ letter }}</button>
                         </div>
                         <div class="album-grid">
@@ -1712,8 +1708,6 @@
                 <div v-if="view === 'genres'">
                     <h1 style="margin-bottom:16px;">Genres <span style="font-size:16px;font-weight:400;color:var(--text-secondary);">({{ genres.length }})</span></h1>
                     <div class="letter-filter" style="margin-bottom:16px;display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
-                        <span style="color:var(--text-muted);font-size:14px;">Filter:</span>
-                        <button @click="selectedGenreLetter = null" :style="!selectedGenreLetter ? 'border-color:var(--accent);color:var(--accent);' : ''" style="background:none;border:1px solid #444;border-radius:16px;padding:6px 14px;color:#aaa;cursor:pointer;font-size:13px;">All</button>
                         <button v-for="letter in letters" :key="letter" @click="selectedGenreLetter = letter" :style="selectedGenreLetter === letter ? 'border-color:var(--accent);color:var(--accent);' : ''" style="background:none;border:1px solid #444;border-radius:16px;padding:6px 14px;color:#aaa;cursor:pointer;font-size:13px;">{{ letter }}</button>
                     </div>
                     <div v-if="filteredGenres.length === 0" class="empty-state">
