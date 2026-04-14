@@ -2241,6 +2241,17 @@
                                 console.log('Paused audio due to remote pause');
                             }
                             
+                            // Sync position from remote seek while playing
+                            const oldPosition = playbackState.value.position;
+                            const newPosition = msg.data.position;
+                            if (amIPlayer && msg.data.is_playing && oldPosition !== newPosition && audioPlayer.value) {
+                                const posDiff = Math.abs(audioPlayer.value.currentTime - newPosition);
+                                if (posDiff > 2) {
+                                    audioPlayer.value.currentTime = newPosition;
+                                    console.log('Synced position from remote seek:', newPosition);
+                                }
+                            }
+                            
                             // Stop audio if we were player but no longer are
                             if (!amIPlayer && audioPlayer.value && audioPlayer.value.src) {
                                 audioPlayer.value.pause();
