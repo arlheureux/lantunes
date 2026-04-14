@@ -1680,6 +1680,7 @@
                 const currentPlaylist = ref(null);
 const playbackState = ref({ track: null, position: 0, is_playing: false, volume: 1.0, queue: [], queue_index: 0 });
                 const volume = ref(1.0);
+                const isLoading = ref(false);
                 const audioPlayer = ref(null);
                 const contextMenu = ref({ show: false, x: 0, y: 0, track: null });
                 const albumContextMenu = ref({ show: false, x: 0, y: 0, album: null });
