@@ -1853,8 +1853,7 @@
                     const queueIds = playbackState.value.queue || [];
                     if (queueIds.length === 0) return;
                     
-                    sendControl('set_queue', { track_ids: queueIds, start_index: index });
-                    sendControl('play');
+                    sendControl('play_queue', { track_ids: queueIds, start_index: index });
                     showMobileQueue.value = false;
                 }
                 
@@ -1988,8 +1987,7 @@
                 
                 async function playTrack(track) {
                     console.log('Playing track:', track);
-                    sendControl('set_queue', { track_ids: [track.id], start_index: 0 });
-                    sendControl('play');
+                    sendControl('play_queue', { track_ids: [track.id], start_index: 0 });
                 }
                 
                 function playStream(trackId) {
@@ -2014,8 +2012,7 @@
                     if (!albumDetails || !albumDetails.tracks) return;
                     
                     const trackIds = albumDetails.tracks.map(t => t.id);
-                    sendControl('set_queue', { track_ids: trackIds, start_index: 0 });
-                    sendControl('play');
+                    sendControl('play_queue', { track_ids: trackIds, start_index: 0 });
                 }
                 
                 const letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ#'.split('');
@@ -2092,8 +2089,7 @@
                 async function playPlaylist() {
                     if (!currentPlaylist.value || !currentPlaylist.value.tracks?.length) return;
                     const trackIds = currentPlaylist.value.tracks.map(t => t.id);
-                    sendControl('set_queue', { track_ids: trackIds, start_index: 0 });
-                    sendControl('play');
+                    sendControl('play_queue', { track_ids: trackIds, start_index: 0 });
                 }
                 
                 async function deletePlaylist() {
@@ -2173,8 +2169,7 @@
                     const queueIds = playbackState.value.queue || [];
                     if (queueIds.length === 0) return;
                     
-                    sendControl('set_queue', { track_ids: queueIds, start_index: index });
-                    sendControl('play');
+                    sendControl('play_queue', { track_ids: queueIds, start_index: index });
                     showMobileQueue.value = false;
                 }
                 

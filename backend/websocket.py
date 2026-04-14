@@ -152,7 +152,14 @@ async def websocket_endpoint(websocket: WebSocket):
                     track_ids = payload.get('track_ids', [])
                     start_index = payload.get('start_index', 0)
                     playback.set_queue(db, track_ids, start_index, session_id=session_id)
-                    playback.play(db)
+                    playback.broadcast_playback_state()
+                
+                elif event == 'play_queue':
+                    track_ids = payload.get('track_ids', [])
+                    start_index = payload.get('start_index', 0)
+                    if playback.shuffle_mode:
+                        playback.toggle_shuffle(db)
+                    playback.set_queue(db, track_ids, start_index, session_id=session_id)
                     playback.broadcast_playback_state()
                 
                 elif event == "command_executed":
