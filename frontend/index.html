@@ -246,7 +246,6 @@
         .track-row:hover { background: var(--bg-hover); }
         .track-row.playing { background: var(--accent-muted); }
         .track-row.playing .title { color: var(--accent); }
-        .track-row .num { width: 36px; color: var(--text-muted); font-size: 14px; text-align: center; }
         .track-row .title { flex: 1; font-size: 15px; padding-right: 16px; font-weight: 500; }
         .track-row .duration { color: var(--text-muted); font-size: 13px; min-width: 48px; text-align: right; }
         .track-row .menu-btn { opacity: 0; margin-left: 12px; color: var(--text-secondary); transition: opacity var(--transition-fast); }
@@ -909,10 +908,6 @@
                 font-size: 15px;
                 font-weight: 500;
             }
-            .track-row .num {
-                font-size: 13px;
-                width: 28px;
-            }
             .track-row .duration {
                 font-size: 13px;
             }
@@ -1361,7 +1356,6 @@
                         <h3>Tracks</h3>
                         <div class="track-list">
                             <div class="track-row" v-for="t in searchResults.tracks" :key="t.id" @click="playTrack(t)" @contextmenu.prevent="showContextMenu($event, t)">
-                                <span class="num">{{ t.track_number || '-' }}</span>
                                 <span class="title">{{ t.title }}</span>
                                 <span class="duration">{{ formatDuration(t.duration) }}</span>
                             </div>
@@ -1446,17 +1440,6 @@
                                 </div>
                             </div>
                         </div>
-                        <h2>Recent Tracks</h2>
-                        <div class="track-list">
-                            <div class="track-row" :class="{ playing: playbackState.track?.id === t.id }" v-for="t in tracks.slice(0,10)" :key="t.id" @click="playTrack(t)" @contextmenu.prevent="showContextMenu($event, t)">
-                                <span class="num">
-                                    <span v-if="playbackState.track?.id === t.id" class="playing-icon"><i class="fas fa-volume-up"></i></span>
-                                    <span v-else>{{ t.track_number || '-' }}</span>
-                                </span>
-                                <span class="title">{{ t.title }}</span>
-                                <span class="duration">{{ formatDuration(t.duration) }}</span>
-                            </div>
-                        </div>
                     </div>
                 </div>
                 
@@ -1474,14 +1457,12 @@
                     
                     <div v-if="loading.tracks" class="track-list">
                         <div v-for="n in tracksLimit" :key="n" class="skeleton-track">
-                            <div class="num skeleton"></div>
                             <div class="title skeleton"></div>
                             <div class="duration skeleton"></div>
                         </div>
                     </div>
                     <div v-else class="track-list">
                         <div class="track-row" v-for="t in tracks" :key="t.id" @click="playTrack(t)" @contextmenu.prevent="showContextMenu($event, t)">
-                            <span class="num">{{ t.track_number || '-' }}</span>
                             <span class="title">{{ t.title }}</span>
                             <span class="duration">{{ formatDuration(t.duration) }}</span>
                             <button class="menu-btn" @click.stop="showContextMenu($event, t)"><i class="fas fa-ellipsis-h"></i></button>
