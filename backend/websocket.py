@@ -117,22 +117,43 @@ async def websocket_endpoint(websocket: WebSocket):
                         logger.info(f" No player session available")
                         continue
                     
-                    # Route command to player session via WebSocket
-                    if action in ["play", "pause", "stop", "next", "previous"]:
+# Route command to player session via WebSocket
+                    if action in ['play', 'pause', 'stop', 'next', 'previous']:
                         result = playback.route_command(player_session, action)
-                        logger.info(f" Routed {action} to {player_session}: {result}")
-                    elif action == "seek" and position is not None:
-                        result = playback.route_command(player_session, "seek", {"position": position})
-                        logger.info(f" Routed seek to {player_session}: {result}")
+                        logger.info(f' Routed {action} to {player_session}: {result}')
+                    elif action == 'seek' and position is not None:
+                        result = playback.route_command(player_session, 'seek', {'position': position})
+                        logger.info(f' Routed seek to {player_session}: {result}')
+                    elif action == 'toggle_shuffle':
+                        playback.toggle_shuffle(db)
+                    elif action == 'toggle_repeat':
+                        playback.toggle_repeat(db)
+                    elif action == 'shuffle_play':
+                        count = payload.get('count', 50)
+                        playback.play_random(db, count)
+                    elif action == 'play_next':
+                        track_id = payload.get('track_id')
+                        if track_id:
+                            playback.play_next(db, track_id)
+                    elif action == 'add_to_queue':
+                        track_id = payload.get('track_id')
+                        if track_id:
+                            playback.add_to_queue(db, track_id)
+                    elif action == 'remove_from_queue':
+                        index = payload.get('index')
+                        if index is not None:
+                            playback.remove_from_queue(db, index)
                 
-                elif event == "set_volume":
-                    volume = payload.get("volume", 1.0)
+                elif event == 'set_volume':
+                    volume = payload.get('volume', 1.0)
                     playback.set_volume(db, volume, session_id=session_id)
                 
-                elif event == "set_queue":
-                    track_ids = payload.get("track_ids", [])
-                    start_index = payload.get("start_index", 0)
+                elif event == 'set_queue':
+                    track_ids = payload.get('track_ids', [])
+                    start_index = payload.get('start_index', 0)
                     playback.set_queue(db, track_ids, start_index, session_id=session_id)
+                    playback.play(db)
+                    playback.broadcast_playback_state()
                 
                 elif event == "command_executed":
                     # Client reports that command was executed - broadcast updated state
