@@ -9,6 +9,7 @@ from fastapi.responses import FileResponse
 from sqlalchemy.orm import Session
 from database import get_db, Track
 from playback import playback
+from auth import verify_token
 
 router = APIRouter(prefix='/api/playback', tags=['playback'])
 
@@ -36,7 +37,9 @@ def get_state(session: str = Query(None), db: Session = Depends(get_db)):
 
 
 @router.get('/stream/{track_id}')
-def stream_track(track_id: int, db: Session = Depends(get_db)):
+def stream_track(track_id: int, token: str = Query(None), db: Session = Depends(get_db)):
+    # Token can be passed as query param for direct stream URLs
+    # If not provided, middleware will require Bearer token in header
     track = db.query(Track).filter(Track.id == track_id).first()
     if not track:
         raise HTTPException(status_code=404, detail='Track not found')

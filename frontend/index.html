@@ -1363,7 +1363,7 @@
                         <div class="album-grid">
                             <div class="album-card" v-for="a in searchResults.albums" :key="a.id" @click="viewAlbum(a.id)" @contextmenu.prevent="showAlbumContextMenu($event, a)">
                                 <div class="album-cover">
-                                    <img v-if="a.artwork" :src="'/api/library/artwork/' + a.id">
+                                    <img v-if="a.artwork" :src="getMediaUrl('/api/library/artwork/' + a.id)">
                                     <div v-else class="album-placeholder">
                                         <i class="fas fa-compact-disc" style="font-size:48px;color:#555;"></i>
                                     </div>
@@ -1427,7 +1427,7 @@
                             <div class="album-grid" style="margin-bottom:32px;">
                                 <div class="album-card" v-for="a in recentAlbums" :key="a.id" @click="viewAlbum(a.id)" @contextmenu.prevent="showAlbumContextMenu($event, a)">
                                     <div class="album-cover">
-                                        <img v-if="a.artwork" :src="'/api/library/artwork/' + a.id">
+                                        <img v-if="a.artwork" :src="getMediaUrl('/api/library/artwork/' + a.id)">
                                         <div v-else class="album-placeholder">
                                             <i class="fas fa-compact-disc" style="font-size:48px;color:#555;"></i>
                                         </div>
@@ -1522,7 +1522,7 @@
                         <div style="margin-bottom: 16px;">
                             <label style="display:block; margin-bottom: 8px; color: var(--text-secondary);">Artwork</label>
                             <div style="display: flex; align-items: center; gap: 12px;">
-                                <img v-if="albumEditDialog.artwork" :src="'/api/library/artwork/' + albumEditDialog.id" style="width: 64px; height: 64px; border-radius: 4px; object-fit: cover;">
+                                <img v-if="albumEditDialog.artwork" :src="getMediaUrl('/api/library/artwork/' + albumEditDialog.id)" style="width: 64px; height: 64px; border-radius: 4px; object-fit: cover;">
                                 <div v-else style="width: 64px; height: 64px; background: #333; border-radius: 4px; display: flex; align-items: center; justify-content: center;">
                                     <i class="fas fa-image" style="color: #555;"></i>
                                 </div>
@@ -1555,7 +1555,7 @@
                         <div class="album-grid">
                             <div class="album-card" v-for="a in filteredAlbums" :key="a.id" @click="viewAlbum(a.id)" @contextmenu.prevent="showAlbumContextMenu($event, a)">
                                 <div class="album-cover">
-                                    <img v-if="a.artwork" :src="'/api/library/artwork/' + a.id">
+                                    <img v-if="a.artwork" :src="getMediaUrl('/api/library/artwork/' + a.id)">
                                     <div v-else class="album-placeholder">
                                         <i class="fas fa-compact-disc" style="font-size:48px;color:#555;"></i>
                                     </div>
@@ -1587,7 +1587,7 @@
                         <div class="album-grid">
                             <div class="album-card" v-for="a in filteredArtists" :key="a.id" :id="'artist-' + a.id" @click="viewArtist(a.id)">
                                 <div class="album-cover" style="border-radius: 50%; overflow: hidden;">
-                                    <img v-if="a.artwork" :src="'/api/library/artwork/artist/' + a.id" style="width:100%;height:100%;object-fit:cover;">
+                                    <img v-if="a.artwork" :src="getMediaUrl('/api/library/artwork/artist/' + a.id)" style="width:100%;height:100%;object-fit:cover;">
                                     <div v-else style="width:100%;height:100%;background:linear-gradient(135deg, var(--bg-elevated) 0%, var(--bg-surface) 100%);display:flex;align-items:center;justify-content:center;">
                                         <i class="fas fa-user" style="font-size:48px;color:var(--text-muted);"></i>
                                     </div>
@@ -1610,7 +1610,7 @@
                     </div>
                     <div style="display:flex;align-items:flex-start;gap:24px;margin-bottom:16px;">
                         <div style="width:200px;height:200px;flex-shrink:0;border-radius:8px;overflow:hidden;box-shadow:var(--shadow-lg);">
-                            <img v-if="currentAlbum.artwork" :src="'/api/library/artwork/' + currentAlbum.id" style="width:100%;height:100%;object-fit:cover;">
+                            <img v-if="currentAlbum.artwork" :src="getMediaUrl('/api/library/artwork/' + currentAlbum.id)" style="width:100%;height:100%;object-fit:cover;">
                             <div v-else style="width:100%;height:100%;background:#333;display:flex;align-items:center;justify-content:center;">
                                 <i class="fas fa-compact-disc" style="font-size:64px;color:#555;"></i>
                             </div>
@@ -1638,7 +1638,7 @@
                     </button>
                     <div style="display:flex;align-items:center;gap:24px;margin-bottom:16px;">
                         <div style="width:120px;height:120px;border-radius:50%;overflow:hidden;flex-shrink:0;box-shadow:var(--shadow-lg);">
-                            <img v-if="currentArtist.artwork" :src="'/api/library/artwork/artist/' + currentArtist.id" style="width:100%;height:100%;object-fit:cover;">
+                            <img v-if="currentArtist.artwork" :src="getMediaUrl('/api/library/artwork/artist/' + currentArtist.id)" style="width:100%;height:100%;object-fit:cover;">
                             <div v-else style="width:100%;height:100%;background:linear-gradient(135deg, var(--bg-elevated) 0%, var(--bg-surface) 100%);display:flex;align-items:center;justify-content:center;">
                                 <i class="fas fa-user" style="font-size:40px;color:var(--text-muted);"></i>
                             </div>
@@ -1654,7 +1654,7 @@
                     <div class="album-grid">
                         <div class="album-card" v-for="a in currentArtist.albums" :key="a.id" @click="viewAlbum(a.id)" @contextmenu.prevent="showAlbumContextMenu($event, a)">
                             <div class="album-cover">
-                                <img v-if="a.artwork" :src="'/api/library/artwork/' + a.id">
+                                <img v-if="a.artwork" :src="getMediaUrl('/api/library/artwork/' + a.id)">
                                 <div v-else class="album-placeholder">
                                     <i class="fas fa-compact-disc" style="font-size:48px;color:#555;"></i>
                                 </div>
@@ -1748,7 +1748,7 @@
                     <div v-else class="album-grid">
                         <div class="album-card" v-for="a in genreAlbums" :key="a.id" @click="viewAlbum(a.id)">
                             <div class="album-cover">
-                                <img v-if="a.artwork" :src="'/api/library/artwork/' + a.id">
+                                <img v-if="a.artwork" :src="getMediaUrl('/api/library/artwork/' + a.id)">
                                 <div v-else class="album-placeholder">
                                     <i class="fas fa-compact-disc" style="font-size:48px;color:#555;"></i>
                                 </div>
@@ -1966,7 +1966,7 @@
             </button>
             <div class="modal-left">
                 <div class="modal-artwork">
-                    <img v-if="playbackState.track?.album_id" :src="'/api/library/artwork/' + playbackState.track.album_id" @error="$event.target.parentElement.querySelector('.placeholder')?.style?.display !== 'none'">
+                    <img v-if="playbackState.track?.album_id" :src="getMediaUrl('/api/library/artwork/' + playbackState.track.album_id)" @error="$event.target.parentElement.querySelector('.placeholder')?.style?.display !== 'none'">
                     <div v-else class="placeholder">
                         <i class="fas fa-music"></i>
                     </div>
@@ -2033,7 +2033,7 @@
             </div>
             <div class="mobile-queue-list" style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:40px 20px;">
                 <div style="width:280px;height:280px;border-radius:12px;overflow:hidden;margin-bottom:32px;box-shadow:0 8px 32px rgba(0,0,0,0.5);">
-                    <img v-if="playbackState.track?.album_id" :src="'/api/library/artwork/' + playbackState.track.album_id" style="width:100%;height:100%;object-fit:cover;" @error="$event.target.style.display='none'">
+                    <img v-if="playbackState.track?.album_id" :src="getMediaUrl('/api/library/artwork/' + playbackState.track.album_id)" style="width:100%;height:100%;object-fit:cover;" @error="$event.target.style.display='none'">
                     <div v-else style="width:100%;height:100%;background:#333;display:flex;align-items:center;justify-content:center;">
                         <i class="fas fa-music" style="font-size:80px;color:#555;"></i>
                     </div>
@@ -2090,7 +2090,7 @@
         <div class="player-bar-desktop" v-if="!isMobile && playbackState.track">
             <div class="track-info">
                 <div class="track-artwork" @click="showPlayerModal = true" style="cursor:pointer;">
-                    <img v-if="playbackState.track?.album_id" :src="'/api/library/artwork/' + playbackState.track.album_id" @error="$event.target.style.display='none'">
+                    <img v-if="playbackState.track?.album_id" :src="getMediaUrl('/api/library/artwork/' + playbackState.track.album_id)" @error="$event.target.style.display='none'">
                 </div>
                 <div>
                     <div class="title">{{ playbackState.track?.title }}</div>
@@ -2144,7 +2144,7 @@
         <div class="player-bar-mobile" v-if="isMobile && playbackState.track" @touchstart="onTouchStart" @touchend="onTouchEnd">
             <div class="track-info">
                 <div class="track-artwork" @click="showPlayerModal = true" style="cursor:pointer;">
-                    <img v-if="playbackState.track?.album_id" :src="'/api/library/artwork/' + playbackState.track.album_id" @error="$event.target.style.display='none'">
+                    <img v-if="playbackState.track?.album_id" :src="getMediaUrl('/api/library/artwork/' + playbackState.track.album_id)" @error="$event.target.style.display='none'">
                 </div>
                 <div>
                     <div class="title">{{ playbackState.track?.title }}</div>
@@ -2710,6 +2710,12 @@ const playbackState = ref({ track: null, position: 0, is_playing: false, volume:
                     return token ? { 'Authorization': 'Bearer ' + token } : {};
                 }
                 
+                function getMediaUrl(path) {
+                    const token = localStorage.getItem('access_token');
+                    const sep = path.includes('?') ? '&' : '?';
+                    return API + path + (token ? sep + 'token=' + token : '');
+                }
+                
                 async function apiCall(url, opts = {}) {
                     const token = localStorage.getItem('access_token');
                     const headers = {
@@ -2815,7 +2821,7 @@ const playbackState = ref({ track: null, position: 0, is_playing: false, volume:
                 
                 function playStream(trackId) {
                     if (audioPlayer.value) {
-                        const streamUrl = API + '/api/playback/stream/' + trackId;
+                        const streamUrl = getMediaUrl('/api/playback/stream/' + trackId);
                         audioPlayer.value.src = streamUrl;
                         if (playbackState.value.position > 0) {
                             audioPlayer.value.currentTime = playbackState.value.position;
@@ -3307,7 +3313,7 @@ const playbackState = ref({ track: null, position: 0, is_playing: false, volume:
                     toggleShuffle, toggleRepeat, shufflePlay, playFromQueue,
                     openPlaylistDialog, addToPlaylist, createAndAddToPlaylist, newPlaylistName,
                     showAlbumContextMenu, closeAlbumContextMenu, openAlbumPlaylistDialog,
-                    openAlbumEditDialog, saveAlbumMetadata, removeAlbumArtwork, albumEditDialog, saveServerConfig, testServerConfig,
+                    openAlbumEditDialog, saveAlbumMetadata, removeAlbumArtwork, albumEditDialog, saveServerConfig, testServerConfig, getMediaUrl,
                     letters, scrollToLetter, selectedLetter, filteredArtists, selectedAlbumLetter, filteredAlbums, selectedGenreLetter, filteredGenres, playRandomAlbum, playRandomArtist, albumContextMenu,
                     sessions, selectedSessionId, currentSessionId, deviceName, updateDeviceName, focusSearch, setPlayerSession,
                     users, showUserForm, newUser, isAdmin, isMobile, showMobileQueue, showDeviceModal, showPlayerModal, showMoreMenu, loadUsers, createUser, deleteUser, logout,
