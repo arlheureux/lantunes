@@ -2455,6 +2455,12 @@ const playbackState = ref({ track: null, position: 0, is_playing: false, volume:
                     selectServerUrl();
                 };
                 
+                // Bluetooth headset controls from Android MediaSession
+                window.onPlay = function() { sendControl('play'); };
+                window.onPause = function() { sendControl('pause'); };
+                window.onNext = function() { sendControl('next'); };
+                window.onPrevious = function() { sendControl('previous'); };
+                
                 async function scanLibrary() {
                     isScanning.value = true;
                     scanProgress.value = { current: 0, total: 0, percent: 0, message: 'Connecting...', stage: 'preparing' };

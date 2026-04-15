@@ -11,6 +11,8 @@ import android.net.Uri
 import android.net.wifi.WifiManager
 import android.os.Build
 import android.os.Bundle
+import android.support.v4.media.session.MediaSessionCompat
+import android.support.v4.media.session.PlaybackStateCompat
 import android.webkit.JavascriptInterface
 import android.webkit.WebChromeClient
 import android.webkit.WebResourceError
@@ -28,6 +30,8 @@ import androidx.core.content.ContextCompat
 import androidx.core.view.isVisible
 
 class MainActivity : AppCompatActivity() {
+
+    private var mediaSession: MediaSessionCompat? = null
 
     companion object {
         const val PREFS_NAME = "lantunes_prefs"
@@ -53,8 +57,8 @@ class MainActivity : AppCompatActivity() {
         setupWebView()
         setupClickListeners()
         setupBackNavigation()
+        setupMediaSession()
 
-        // Check if we should open settings
         val url = getServerUrl()
         if (url.isEmpty()) {
             openSettings()
@@ -226,6 +230,7 @@ webViewClient = LanTunesWebViewClient()
     }
 
     override fun onDestroy() {
+        mediaSession?.release()
         webView.destroy()
         super.onDestroy()
     }
@@ -323,8 +328,38 @@ webViewClient = LanTunesWebViewClient()
     override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
         if (requestCode == PERMISSION_REQUEST_CODE) {
-            // Permission granted, can now get SSID
             webView.evaluateJavascript("if (window.LanTunes) window.LanTunes.onPermissionGranted();", null)
+        }
+    }
+
+    private fun setupMediaSession() {
+        try {
+            mediaSession = MediaSessionCompat(this, "LanTunes").apply {
+                setCallback(object : MediaSessionCompat.Callback() {
+                    override fun onPlay() {
+                        webView.evaluateJavascript("if (window.LanTunes) window.LanTunes.onPlay();", null)
+                    }
+
+                    override fun onPause() {
+                        webView.evaluateJavascript("if (window.LanTunes) window.LanTunes.onPause();", null)
+                    }
+
+                    override fun onSkipToNext() {
+                        webView.evaluateJavascript("if (window.LanTunes) window.LanTunes.onNext();", null)
+                    }
+
+                    override fun onSkipToPrevious() {
+                        webView.evaluateJavascript("if (window.LanTunes) window.LanTunes.onPrevious();", null)
+                    }
+
+                    override fun onStop() {
+                        webView.evaluateJavascript("if (window.LanTunes) window.LanTunes.onPause();", null)
+                    }
+                })
+                isActive = true
+            }
+        } catch (e: Exception) {
+            // MediaSession not available
         }
     }
 }
