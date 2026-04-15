@@ -8,6 +8,7 @@ PUBLIC_ENDPOINTS = [
     "/api/auth/login",
     "/api/auth/setup",
     "/api/auth/status",
+    "/api/config",
     "/api/playback/stream/",
     "/api/library/artwork/",
     "/api/library/tracks/batch",
@@ -25,6 +26,10 @@ PUBLIC_PATHS = ["/", "/index.html", "/login.html", "/favicon.ico", "/health", "/
 class AuthMiddleware(BaseHTTPMiddleware):
     async def dispatch(self, request: Request, call_next):
         path = request.url.path
+        
+        # Handle OPTIONS preflight requests (CORS)
+        if request.method == "OPTIONS" and path.startswith("/api/"):
+            return JSONResponse(status_code=200, content={})
         
         # Always allow public paths
         if path in PUBLIC_PATHS:
