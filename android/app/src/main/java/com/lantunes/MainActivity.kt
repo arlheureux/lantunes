@@ -46,17 +46,29 @@ class MainActivity : AppCompatActivity() {
     private var isPageLoaded = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_main)
+        try {
+            super.onCreate(savedInstanceState)
+            setContentView(R.layout.activity_main)
 
-        initViews()
-        setupWebView()
-        setupClickListeners()
-        setupBackNavigation()
+            initViews()
+            
+            // Setup WebView in try-catch to prevent crash
+            try {
+                setupWebView()
+            } catch (e: Exception) {
+                // Continue even if WebView setup fails
+            }
+            
+            setupClickListeners()
+            setupBackNavigation()
 
-        val url = getServerUrl()
-        if (url.isEmpty()) {
-            openSettings()
+            val url = getServerUrl()
+            if (url.isEmpty()) {
+                openSettings()
+            }
+        } catch (e: Exception) {
+            // Catch any crash
+            e.printStackTrace()
         }
     }
 
