@@ -2423,28 +2423,37 @@ const playbackState = ref({ track: null, position: 0, is_playing: false, volume:
                 }
                 
                 function selectServerUrl() {
-                    // Auto-select local or remote URL based on network
                     const ssid = serverConfig.value.localSsid;
                     if (!ssid || !serverConfig.value.local) {
-                        // No SSID configured, use local by default
                         if (serverConfig.value.local) {
                             localStorage.setItem('server_url', serverConfig.value.local);
                         }
                         return;
                     }
                     
-                    // Try to get current network SSID (requires permissions)
-                    if (navigator.connection && navigator.connection.type === 'wifi') {
-                        // On mobile, could check connection type
-                        // Default to local for wifi
+                    // Try native Android method first
+                    if (window.LanTunesAndroid && window.LanTunesAndroid.getCurrentSsid) {
+                        const currentSsid = window.LanTunesAndroid.getCurrentSsid();
+                        if (currentSsid && currentSsid === ssid) {
+                            localStorage.setItem('server_url', serverConfig.value.local);
+                            return;
+                        }
+                    }
+                    
+                    // Fallback: use local on wifi
+                    if (window.LanTunesAndroid && window.LanTunesAndroid.isOnWifi && window.LanTunesAndroid.isOnWifi()) {
                         if (serverConfig.value.local) {
                             localStorage.setItem('server_url', serverConfig.value.local);
                         }
                     } else if (serverConfig.value.remote) {
-                        // Not on local wifi, use remote
                         localStorage.setItem('server_url', serverConfig.value.remote);
                     }
                 }
+                
+                // Called from Android when permission granted
+                window.onPermissionGranted = function() {
+                    selectServerUrl();
+                };
                 
                 async function scanLibrary() {
                     isScanning.value = true;

@@ -1,12 +1,17 @@
 package com.lantunes
 
+import android.Manifest
 import android.content.Context
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.graphics.Bitmap
 import android.net.ConnectivityManager
 import android.net.NetworkCapabilities
 import android.net.Uri
+import android.net.wifi.WifiManager
+import android.os.Build
 import android.os.Bundle
+import android.webkit.JavascriptInterface
 import android.webkit.WebChromeClient
 import android.webkit.WebResourceError
 import android.webkit.WebResourceRequest
@@ -18,6 +23,8 @@ import android.widget.ProgressBar
 import android.widget.Toast
 import androidx.activity.OnBackPressedCallback
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.app.ActivityCompat
+import androidx.core.content.ContextCompat
 import androidx.core.view.isVisible
 
 class MainActivity : AppCompatActivity() {
@@ -25,6 +32,7 @@ class MainActivity : AppCompatActivity() {
     companion object {
         const val PREFS_NAME = "lantunes_prefs"
         const val KEY_SERVER_URL = "server_url"
+        const val PERMISSION_REQUEST_CODE = 1001
     }
 
     private lateinit var webView: WebView
@@ -93,11 +101,20 @@ class MainActivity : AppCompatActivity() {
                 allowFileAccess = true
             }
 
-            webViewClient = LanTunesWebViewClient()
+webViewClient = LanTunesWebViewClient()
             webChromeClient = LanTunesChromeClient()
+            setupJavaScriptInterface()
         }
     }
-
+    
+    private fun setupJavaScriptInterface() {
+        try {
+            webView.addJavascriptInterface(this, "LanTunesAndroid")
+        } catch (e: Exception) {
+            // Ignore
+        }
+    }
+    
     private fun setupClickListeners() {
         retryButton.setOnClickListener { retryLoad() }
         errorRetryButton.setOnClickListener { retryLoad() }
@@ -267,6 +284,47 @@ class MainActivity : AppCompatActivity() {
             if (newProgress == 100) {
                 progressBar.isVisible = false
             }
+        }
+    }
+
+    @JavascriptInterface
+    fun getCurrentSsid(): String {
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+            requestPermissions(arrayOf(Manifest.permission.ACCESS_FINE_LOCATION), PERMISSION_REQUEST_CODE)
+            return ""
+        }
+        
+        return try {
+            val wifiManager = applicationContext.getSystemService(Context.WIFI_SERVICE) as WifiManager
+            val connectionInfo = wifiManager.connectionInfo
+            if (connectionInfo != null) {
+                val ssid = connectionInfo.ssid
+                if (ssid != null && ssid != "<unknown ssid>") {
+                    ssid.removeSurrounding("\"")
+                } else {
+                    ""
+                }
+            } else {
+                ""
+            }
+        } catch (e: Exception) {
+            ""
+        }
+    }
+
+    @JavascriptInterface
+    fun isOnWifi(): Boolean {
+        val connectivityManager = getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
+        val network = connectivityManager.activeNetwork ?: return false
+        val capabilities = connectivityManager.getNetworkCapabilities(network) ?: return false
+        return capabilities.hasTransport(NetworkCapabilities.TRANSPORT_WIFI)
+    }
+
+    override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+        if (requestCode == PERMISSION_REQUEST_CODE) {
+            // Permission granted, can now get SSID
+            webView.evaluateJavascript("if (window.LanTunes) window.LanTunes.onPermissionGranted();", null)
         }
     }
 }
