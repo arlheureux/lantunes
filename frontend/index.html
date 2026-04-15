@@ -2452,6 +2452,8 @@ const playbackState = ref({ track: null, position: 0, is_playing: false, volume:
                     
                     serverConfig.value.testing = true;
                     
+                    const token = localStorage.getItem('access_token');
+                    
                     // Test URL with 5 second timeout
                     const controller = new AbortController();
                     const timeoutId = setTimeout(() => controller.abort(), 5000);
@@ -2459,7 +2461,8 @@ const playbackState = ref({ track: null, position: 0, is_playing: false, volume:
                     try {
                         const res = await fetch(url + '/api/config', { 
                             method: 'GET',
-                            signal: controller.signal
+                            signal: controller.signal,
+                            headers: token ? { 'Authorization': 'Bearer ' + token } : {}
                         });
                         clearTimeout(timeoutId);
                         
