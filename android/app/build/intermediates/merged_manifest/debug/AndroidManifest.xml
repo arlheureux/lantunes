@@ -11,6 +11,7 @@
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK" />
     <uses-permission android:name="android.permission.WAKE_LOCK" />
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
 
@@ -33,7 +34,9 @@
         android:usesCleartextTraffic="true" >
         <activity
             android:name="com.lantunes.MainActivity"
+            android:configChanges="orientation|screenSize|keyboardHidden"
             android:exported="true"
+            android:launchMode="singleTask"
             android:theme="@style/Theme.LanTunes" >
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
@@ -49,7 +52,12 @@
 
         <service
             android:name="com.lantunes.PlaybackService"
-            android:exported="false" />
+            android:exported="false"
+            android:foregroundServiceType="mediaPlayback" >
+            <intent-filter>
+                <action android:name="android.intent.action.MEDIA_BUTTON" />
+            </intent-filter>
+        </service>
 
         <provider
             android:name="androidx.startup.InitializationProvider"
