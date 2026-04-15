@@ -34,11 +34,6 @@ class MainActivity : AppCompatActivity() {
     companion object {
         const val PREFS_NAME = "lantunes_prefs"
         const val KEY_SERVER_URL = "server_url"
-        const val KEY_LOCAL_URL = "local_url"
-        const val KEY_REMOTE_URL = "remote_url"
-        const val KEY_MODE = "server_mode"
-        const val MODE_LOCAL = "local"
-        const val MODE_REMOTE = "remote"
         const val EXTRA_SELECTED_MODE = "selected_mode"
         const val PERMISSION_REQUEST_CODE = 1001
     }
@@ -52,9 +47,6 @@ class MainActivity : AppCompatActivity() {
     private lateinit var settingsButton: Button
 
     private var isPageLoaded = false
-    private val autoSwitchHandler = Handler(Looper.getMainLooper())
-    private var autoSwitchRunnable: Runnable? = null
-    private var loadingTimeoutRunnable: Runnable? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         try {
@@ -154,44 +146,12 @@ webViewClient = LanTunesWebViewClient()
         })
     }
 
-    private fun getServerUrl(overrideMode: String? = null): String {
+    private fun getServerUrl(): String {
         val prefs = getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
-        val mode = overrideMode ?: (prefs.getString(KEY_MODE, MODE_LOCAL) ?: MODE_LOCAL)
-        return if (mode == MODE_LOCAL) {
-            prefs.getString(KEY_LOCAL_URL, "") ?: ""
-        } else {
-            prefs.getString(KEY_REMOTE_URL, "") ?: ""
-        }
+        return prefs.getString(KEY_SERVER_URL, "") ?: ""
     }
 
-    private fun getCurrentMode(): String {
-        val prefs = getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
-        return prefs.getString(KEY_MODE, MODE_LOCAL) ?: MODE_LOCAL
-    }
-
-    private fun autoSwitchToRemote() {
-        if (getCurrentMode() != MODE_LOCAL) return
-
-        cancelAutoSwitch()
-
-        autoSwitchRunnable = Runnable {
-            val prefs = getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
-            prefs.edit().putString(KEY_MODE, MODE_REMOTE).apply()
-
-            Toast.makeText(this, "Cannot reach local server, switching to Remote...", Toast.LENGTH_SHORT).show()
-
-            runOnUiThread {
-                loadUrl()
-            }
-        }
-
-        autoSwitchHandler.postDelayed(autoSwitchRunnable!!, 5000)
-    }
-
-    private fun cancelAutoSwitch() {
-        autoSwitchRunnable?.let { autoSwitchHandler.removeCallbacks(it) }
-        autoSwitchRunnable = null
-    }
+    
 
     private fun loadUrl() {
         val url = getServerUrl()
@@ -219,7 +179,6 @@ webViewClient = LanTunesWebViewClient()
     }
 
     private fun openSettings() {
-        cancelAutoSwitch()
         val intent = Intent(this, SettingsActivity::class.java)
         startActivityForResult(intent, 1)
     }
@@ -228,11 +187,7 @@ webViewClient = LanTunesWebViewClient()
         super.onActivityResult(requestCode, resultCode, data)
         if (requestCode == 1) {
             isPageLoaded = false
-            val selectedMode = data?.getStringExtra(EXTRA_SELECTED_MODE)
-            val url = getServerUrl(selectedMode)
-            if (url.isNotEmpty()) {
-                loadUrl()
-            }
+            loadUrl()
         }
     }
 
@@ -311,19 +266,9 @@ webViewClient = LanTunesWebViewClient()
             showLoading()
             isPageLoaded = false
             Toast.makeText(this@MainActivity, "Starting to load: $url", Toast.LENGTH_SHORT).show()
-
-            loadingTimeoutRunnable = Runnable {
-                if (!isPageLoaded && getCurrentMode() == MODE_LOCAL) {
-                    Toast.makeText(this@MainActivity, "Loading timed out, switching to Remote...", Toast.LENGTH_SHORT).show()
-                    autoSwitchToRemote()
-                }
-            }
-            autoSwitchHandler.postDelayed(loadingTimeoutRunnable!!, 5000)
         }
 
         override fun onPageFinished(view: WebView?, url: String?) {
-            loadingTimeoutRunnable?.let { autoSwitchHandler.removeCallbacks(it) }
-            loadingTimeoutRunnable = null
             super.onPageFinished(view, url)
             hideLoading()
             hideOverlays()
@@ -340,10 +285,6 @@ webViewClient = LanTunesWebViewClient()
                 
                 Toast.makeText(this@MainActivity, "WebView error: $errorDescription (code: $errorCode)", Toast.LENGTH_LONG).show()
                 showError(errorDescription)
-
-                if (getCurrentMode() == MODE_LOCAL) {
-                    autoSwitchToRemote()
-                }
             }
         }
     }

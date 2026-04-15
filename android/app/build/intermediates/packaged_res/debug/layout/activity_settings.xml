@@ -26,45 +26,16 @@
             android:textColor="@color/gray"
             android:textSize="16sp" />
 
-        <!-- Server Mode -->
-        <TextView
-            android:layout_width="wrap_content"
+        <!-- Device Name -->
+        <com.google.android.material.textfield.TextInputLayout
+            android:id="@+id/deviceNameInputLayout"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="24dp"
-            android:text="Server Mode"
-            android:textColor="@color/white"
-            android:textSize="16sp" />
-
-        <Spinner
-            android:id="@+id/modeSpinner"
-            android:layout_width="match_parent"
-            android:layout_height="48dp"
-            android:layout_marginTop="8dp"
-            android:background="@color/light_gray"
-            android:popupBackground="@color/light_gray" />
-
-        <!-- Active Server Badge -->
-        <TextView
-            android:id="@+id/activeServerBadge"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="16dp"
-            android:background="@color/surface"
-            android:padding="12dp"
-            android:text="Active: Not configured"
-            android:textColor="@color/accent"
-            android:textSize="14sp" />
-
-        <!-- WiFi Network Name -->
-        <com.google.android.material.textfield.TextInputLayout
-            android:id="@+id/wifiNameInputLayout"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="16dp"
-            android:hint="WiFi Network Name (e.g., MyHomeWiFi)">
+            android:hint="Device Name">
 
             <com.google.android.material.textfield.TextInputEditText
-                android:id="@+id/wifiNameEditText"
+                android:id="@+id/deviceNameEditText"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:inputType="text"
@@ -72,33 +43,16 @@
 
         </com.google.android.material.textfield.TextInputLayout>
 
-        <!-- Local Server URL -->
+        <!-- Music Path -->
         <com.google.android.material.textfield.TextInputLayout
-            android:id="@+id/localUrlInputLayout"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="24dp"
-            android:hint="Local Server (http://192.168.x.x:8080)">
-
-            <com.google.android.material.textfield.TextInputEditText
-                android:id="@+id/localUrlEditText"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:inputType="textUri"
-                android:textColor="@color/white" />
-
-        </com.google.android.material.textfield.TextInputLayout>
-
-        <!-- Remote Server URL -->
-        <com.google.android.material.textfield.TextInputLayout
-            android:id="@+id/remoteUrlInputLayout"
+            android:id="@+id/musicPathInputLayout"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="16dp"
-            android:hint="Remote Server (https://domain.com)">
+            android:hint="Music Path (e.g., /storage/music)">
 
             <com.google.android.material.textfield.TextInputEditText
-                android:id="@+id/remoteUrlEditText"
+                android:id="@+id/musicPathEditText"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:inputType="textUri"

@@ -3,12 +3,7 @@ package com.lantunes
 import android.content.Context
 import android.content.Intent
 import android.os.Bundle
-import android.view.View
-import android.widget.AdapterView
-import android.widget.ArrayAdapter
 import android.widget.Button
-import android.widget.Spinner
-import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import com.google.android.material.textfield.TextInputEditText
@@ -18,74 +13,35 @@ class SettingsActivity : AppCompatActivity() {
 
     companion object {
         const val PREFS_NAME = "lantunes_prefs"
-        const val KEY_SERVER_URL = "server_url"
-        const val KEY_LOCAL_URL = "local_url"
-        const val KEY_REMOTE_URL = "remote_url"
-        const val KEY_WIFI_NAME = "wifi_name"
-        const val KEY_MODE = "server_mode"
-        const val MODE_LOCAL = "local"
-        const val MODE_REMOTE = "remote"
-        const val EXTRA_SELECTED_MODE = "selected_mode"
-        const val REQUEST_RELOAD = 1
+        const val KEY_DEVICE_NAME = "device_name"
+        const val KEY_MUSIC_PATH = "music_path"
     }
 
-    private lateinit var modeSpinner: Spinner
-    private lateinit var wifiNameEditText: TextInputEditText
-    private lateinit var localUrlEditText: TextInputEditText
-    private lateinit var localUrlInputLayout: TextInputLayout
-    private lateinit var remoteUrlEditText: TextInputEditText
-    private lateinit var remoteUrlInputLayout: TextInputLayout
+    private lateinit var deviceNameEditText: TextInputEditText
+    private lateinit var musicPathEditText: TextInputEditText
     private lateinit var saveButton: Button
     private lateinit var cancelButton: Button
-    private lateinit var activeServerBadge: TextView
-
-    private var currentMode = MODE_LOCAL
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_settings)
 
         initViews()
-        setupModeSpinner()
         loadSettings()
         setupClickListeners()
     }
 
     private fun initViews() {
-        modeSpinner = findViewById(R.id.modeSpinner)
-        wifiNameEditText = findViewById(R.id.wifiNameEditText)
-        localUrlEditText = findViewById(R.id.localUrlEditText)
-        localUrlInputLayout = findViewById(R.id.localUrlInputLayout)
-        remoteUrlEditText = findViewById(R.id.remoteUrlEditText)
-        remoteUrlInputLayout = findViewById(R.id.remoteUrlInputLayout)
+        deviceNameEditText = findViewById(R.id.deviceNameEditText)
+        musicPathEditText = findViewById(R.id.musicPathEditText)
         saveButton = findViewById(R.id.saveButton)
         cancelButton = findViewById(R.id.cancelButton)
-        activeServerBadge = findViewById(R.id.activeServerBadge)
-    }
-
-    private fun setupModeSpinner() {
-        val modes = arrayOf("Local (http)", "Remote (https)")
-        val adapter = ArrayAdapter(this, android.R.layout.simple_spinner_item, modes)
-        adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
-        modeSpinner.adapter = adapter
     }
 
     private fun loadSettings() {
         val prefs = getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
-        
-        val localUrl = prefs.getString(KEY_LOCAL_URL, "") ?: ""
-        val remoteUrl = prefs.getString(KEY_REMOTE_URL, "") ?: ""
-        val wifiName = prefs.getString(KEY_WIFI_NAME, "") ?: ""
-        currentMode = prefs.getString(KEY_MODE, MODE_LOCAL) ?: MODE_LOCAL
-
-        localUrlEditText.setText(localUrl)
-        remoteUrlEditText.setText(remoteUrl)
-        wifiNameEditText.setText(wifiName)
-        modeSpinner.setSelection(if (currentMode == MODE_REMOTE) 1 else 0)
-        
-        // Update active server badge
-        val activeUrl = if (currentMode == MODE_LOCAL) localUrl else remoteUrl
-        activeServerBadge.text = if (activeUrl.isNotEmpty()) "Active: $activeUrl" else "Active: Not configured"
+        deviceNameEditText.setText(prefs.getString(KEY_DEVICE_NAME, "") ?: "")
+        musicPathEditText.setText(prefs.getString(KEY_MUSIC_PATH, "") ?: "")
     }
 
     private fun setupClickListeners() {
@@ -99,73 +55,17 @@ class SettingsActivity : AppCompatActivity() {
     }
 
     private fun saveSettings() {
-        val localUrl = localUrlEditText.text?.toString()?.trim() ?: ""
-        val remoteUrl = remoteUrlEditText.text?.toString()?.trim() ?: ""
-
-        var hasError = false
-
-        // Validate and format local URL
-        var formattedLocalUrl = localUrl
-        if (localUrl.isNotEmpty()) {
-            formattedLocalUrl = formatUrl(localUrl, "http://")
-            if (!isValidUrl(formattedLocalUrl)) {
-                localUrlInputLayout.error = getString(R.string.url_invalid)
-                hasError = true
-            }
-        }
-
-        // Validate and format remote URL
-        var formattedRemoteUrl = remoteUrl
-        if (remoteUrl.isNotEmpty()) {
-            formattedRemoteUrl = formatUrl(remoteUrl, "https://")
-            if (!isValidUrl(formattedRemoteUrl)) {
-                remoteUrlInputLayout.error = getString(R.string.url_invalid)
-                hasError = true
-            }
-        }
-
-        if (hasError) return
-
-        // Determine mode from selected spinner position
-        val selectedMode = if (modeSpinner.selectedItemPosition == 1) MODE_REMOTE else MODE_LOCAL
-
-        // Auto-detect mode based on URL if not manually set
-        val finalMode = selectedMode
-
-        // Save all settings
         val prefs = getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
-        val wifiName = wifiNameEditText.text?.toString()?.trim() ?: ""
         prefs.edit()
-            .putString(KEY_LOCAL_URL, formattedLocalUrl)
-            .putString(KEY_REMOTE_URL, formattedRemoteUrl)
-            .putString(KEY_WIFI_NAME, wifiName)
-            .putString(KEY_MODE, finalMode)
-            .putString(KEY_SERVER_URL, if (finalMode == MODE_LOCAL) formattedLocalUrl else formattedRemoteUrl)
+            .putString(KEY_DEVICE_NAME, deviceNameEditText.text?.toString()?.trim() ?: "")
+            .putString(KEY_MUSIC_PATH, musicPathEditText.text?.toString()?.trim() ?: "")
             .apply()
 
         Toast.makeText(this, R.string.settings_saved, Toast.LENGTH_SHORT).show()
-
-        // Return to main activity
+        
         val intent = Intent(this, MainActivity::class.java)
         intent.flags = Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_NEW_TASK
         startActivity(intent)
         finish()
-    }
-
-    private fun formatUrl(url: String, defaultProtocol: String): String {
-        return if (!url.startsWith("http://") && !url.startsWith("https://")) {
-            "$defaultProtocol$url"
-        } else {
-            url
-        }
-    }
-
-    private fun isValidUrl(url: String): Boolean {
-        return try {
-            val uri = java.net.URI(url)
-            uri.host != null && uri.host!!.isNotEmpty()
-        } catch (e: Exception) {
-            false
-        }
     }
 }

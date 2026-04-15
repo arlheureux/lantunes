@@ -1763,34 +1763,7 @@
                 <div v-if="view === 'settings'">
                     <h1>Settings</h1>
                     
-                    <div class="settings-section">
-                        <h3>Server</h3>
-                        
-                        <div style="background:var(--bg-surface);padding:12px;border-radius:4px;margin-bottom:16px;">
-                            <span style="color:var(--text-muted);font-size:12px;">Active:</span>
-                            <span style="color:var(--accent);font-size:14px;margin-left:8px;">{{ activeServerUrl }}</span>
-                        </div>
-                        
-                        <label style="display:block;margin-bottom:8px;font-size:14px;">WiFi Network Name</label>
-                        <input type="text" v-model="serverConfig.wifiName" placeholder="e.g., MyHomeWiFi">
-                        
-                        <label style="display:block;margin-bottom:8px;font-size:14px;margin-top:16px;">Mode</label>
-                        <select v-model="serverConfig.mode" style="width:100%;padding:10px;background:var(--bg-surface);border:1px solid #444;border-radius:4px;color:var(--text-primary);margin-bottom:16px;">
-                            <option value="local">Local (Home Network)</option>
-                            <option value="remote">Remote (Away from Home)</option>
-                        </select>
-                        
-                        <label style="display:block;margin-bottom:8px;font-size:14px;">Local Server URL (e.g., http://192.168.1.100:8080)</label>
-                        <input type="text" v-model="serverConfig.local" placeholder="Local server URL">
-                        
-                        <label style="display:block;margin-bottom:8px;font-size:14px;margin-top:16px;">Remote Server URL (e.g., https://mydomain.com)</label>
-                        <input type="text" v-model="serverConfig.remote" placeholder="Remote server URL">
-                        
-                        <button class="btn" @click="testServerConfig" style="margin-top:16px;">Reload</button>
-                        <button class="btn" @click="saveServerConfig" style="margin-top:16px;margin-left:10px;">Save</button>
-                        <p v-if="serverConfig.saved" style="margin-top:8px;color:var(--accent);font-size:12px;">Saved!</p>
-                        <p v-if="serverConfig.testing" style="margin-top:8px;color:var(--accent-secondary);font-size:12px;">Testing {{ serverConfig.mode }} server...</p>
-                    </div>
+                    
                     
                     <div class="settings-section">
                         <h3>Device Name</h3>
@@ -2211,18 +2184,6 @@
                     library: false
                 });
                 const config = ref({ library: { music_path: '' } });
-                const serverConfig = ref({
-                    local: localStorage.getItem('server_local') || '',
-                    remote: localStorage.getItem('server_remote') || '',
-                    mode: localStorage.getItem('server_mode') || 'local',
-                    wifiName: localStorage.getItem('server_wifi_name') || '',
-                    saved: false,
-                    testing: false,
-                });
-                const activeServerUrl = computed(() => {
-                    const mode = serverConfig.value.mode || 'local';
-                    return mode === 'local' ? serverConfig.value.local : serverConfig.value.remote;
-                });
                 const scanResult = ref('');
                 const isScanning = ref(false);
                 const scanProgress = ref({ current: 0, total: 0, percent: 0, message: '', stage: '' });
@@ -2425,96 +2386,7 @@ const playbackState = ref({ track: null, position: 0, is_playing: false, volume:
                         body: JSON.stringify(config.value)
                     });
                     alert('Config saved! Restart server to apply changes.');
-                }
-                
-                async function saveServerConfig() {
-                    localStorage.setItem('server_local', serverConfig.value.local);
-                    localStorage.setItem('server_remote', serverConfig.value.remote);
-                    localStorage.setItem('server_wifi_name', serverConfig.value.wifiName || '');
-                    
-                    // Auto-detect mode from URL if not set
-                    const localUrl = serverConfig.value.local || '';
-                    const remoteUrl = serverConfig.value.remote || '';
-                    
-                    if (!serverConfig.value.mode || serverConfig.value.mode === 'local') {
-                        if (localUrl.startsWith('https://')) {
-                            serverConfig.value.mode = 'remote';
-                        } else if (localUrl.startsWith('http://')) {
-                            serverConfig.value.mode = 'local';
-                        }
-                    }
-                    
-                    localStorage.setItem('server_mode', serverConfig.value.mode);
-                    
-                    // Set active URL based on mode
-                    const activeUrl = serverConfig.value.mode === 'local' ? localUrl : remoteUrl;
-                    if (activeUrl) {
-                        localStorage.setItem('server_url', activeUrl);
-                    }
-                    
-                    serverConfig.value.saved = true;
-                    setTimeout(() => { serverConfig.value.saved = false; }, 2000);
-                }
-
-                async function testServerConfig() {
-                    const mode = serverConfig.value.mode || 'local';
-                    const url = mode === 'local' ? serverConfig.value.local : serverConfig.value.remote;
-                    
-                    if (!url) {
-                        alert('Please enter a ' + mode + ' server URL first');
-                        return;
-                    }
-                    
-                    serverConfig.value.testing = true;
-                    const token = localStorage.getItem('access_token');
-                    
-                    try {
-                        const res = await fetch(API + '/api/config/test', { 
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
-                            body: JSON.stringify({ url: url })
-                        });
-                        
-                        const data = await res.json();
-                        
-                        if (data.success) {
-                            localStorage.setItem('server_url', url);
-                            localStorage.setItem('server_mode', mode);
-                            serverConfig.value.saved = true;
-                            setTimeout(() => { serverConfig.value.saved = false; }, 2000);
-                            alert(mode + ' server connected!');
-                        } else {
-                            // Failed - try switching to remote if on local
-                            if (mode === 'local' && serverConfig.value.remote) {
-                                alert('Cannot reach local server: ' + data.error + '. Switching to Remote...');
-                                serverConfig.value.mode = 'remote';
-                                localStorage.setItem('server_url', serverConfig.value.remote);
-                                localStorage.setItem('server_mode', 'remote');
-                                serverConfig.value.saved = true;
-                                setTimeout(() => { serverConfig.value.saved = false; }, 2000);
-                            } else {
-                                alert('Cannot connect to server: ' + data.error);
-                            }
-                        }
-                    } catch (e) {
-                        alert('Error: ' + e.message);
-                    } finally {
-                        serverConfig.value.testing = false;
-                    }
-                }
-                
-                function selectServerUrl() {
-                    const mode = serverConfig.value.mode || 'local';
-                    const url = mode === 'local' ? serverConfig.value.local : serverConfig.value.remote;
-                    if (url) {
-                        localStorage.setItem('server_url', url);
-                    }
-                }
-                
-                // Called from Android when permission granted
-                window.onPermissionGranted = function() {
-                    selectServerUrl();
-                };
+}
                 
                 // Bluetooth headset controls from Android MediaSession
                 window.onPlay = function() { sendControl('play'); };
@@ -3316,7 +3188,7 @@ const playbackState = ref({ track: null, position: 0, is_playing: false, volume:
                 });
                 
                 return {
-                    view, searchQuery, searchResults, albums, recentAlbums, artists, playlists, genres, currentGenre, genreAlbums, config, serverConfig, scanResult, activeServerUrl,
+                    view, searchQuery, searchResults, albums, recentAlbums, artists, playlists, genres, currentGenre, genreAlbums, config, scanResult,
                     isScanning, scanProgress,
                     currentAlbum, currentArtist, currentPlaylist, playbackState, volume, audioPlayer, progressPercent,
                     isLoading,
@@ -3328,7 +3200,7 @@ const playbackState = ref({ track: null, position: 0, is_playing: false, volume:
                     toggleShuffle, toggleRepeat, shufflePlay, playFromQueue,
                     openPlaylistDialog, addToPlaylist, createAndAddToPlaylist, newPlaylistName,
                     showAlbumContextMenu, closeAlbumContextMenu, openAlbumPlaylistDialog,
-                    openAlbumEditDialog, saveAlbumMetadata, removeAlbumArtwork, albumEditDialog, saveServerConfig, testServerConfig, getMediaUrl,
+                    openAlbumEditDialog, saveAlbumMetadata, removeAlbumArtwork, albumEditDialog, getMediaUrl,
                     letters, scrollToLetter, selectedLetter, filteredArtists, selectedAlbumLetter, filteredAlbums, selectedGenreLetter, filteredGenres, playRandomAlbum, playRandomArtist, albumContextMenu,
                     sessions, selectedSessionId, currentSessionId, deviceName, updateDeviceName, focusSearch, setPlayerSession,
                     users, showUserForm, newUser, isAdmin, isMobile, showMobileQueue, showDeviceModal, showPlayerModal, showMoreMenu, loadUsers, createUser, deleteUser, logout,
