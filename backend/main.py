@@ -40,18 +40,12 @@ limiter = Limiter(key_func=get_remote_address)
 
 app = FastAPI(title="LanTunes", docs_url="/docs" if not production_mode else None, redoc_url="/redoc" if not production_mode else None)
 
-# CORS middleware - allow local network and known origins
+# CORS middleware - read origins from config.yaml
 from fastapi.middleware.cors import CORSMiddleware
+cors_origins = server_config.get("cors", {}).get("origins", ["*"])
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        "http://localhost",
-        "http://127.0.0.1",
-        "http://192.168.0.85:8080",  # local network
-        "http://192.168.*.*:8080",  # local network wildcard
-        "http://192.168.1.*:8080",  # alternate local
-        "https://",  # remote domain
-    ],
+    allow_origins=cors_origins,
     allow_credentials=True,
     allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allow_headers=["*"],

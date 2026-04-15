@@ -3,6 +3,9 @@ server:
   port: 8080
   production: true
 
+cors:
+  origins: []
+
 library:
   music_path: ""
   scan_on_startup: false
