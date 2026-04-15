@@ -9,72 +9,57 @@ import android.content.Context
 import android.content.Intent
 import android.os.Build
 import android.os.IBinder
-import androidx.core.app.NotificationCompat
 
 class PlaybackService : Service() {
 
     companion object {
         const val CHANNEL_ID = "lantunes_playback"
         const val NOTIFICATION_ID = 1
-        const val ACTION_PLAY = "com.lantunes.PLAY"
-        const val ACTION_STOP = "com.lantunes.STOP"
 
-        fun startService(context: Context) {
+        fun start(context: Context) {
             try {
-                val intent = Intent(context, PlaybackService::class.java).apply {
-                    action = ACTION_PLAY
-                }
+                val intent = Intent(context, PlaybackService::class.java)
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
                     context.startForegroundService(intent)
                 } else {
                     context.startService(intent)
                 }
             } catch (e: Exception) {
-                // Ignore if fails
+                // Ignore
             }
         }
 
-        fun stopService(context: Context) {
+        fun stop(context: Context) {
             try {
-                val intent = Intent(context, PlaybackService::class.java).apply {
-                    action = ACTION_STOP
-                }
-                context.startService(intent)
+                val intent = Intent(context, PlaybackService::class.java)
+                context.stopService(intent)
             } catch (e: Exception) {
-                // Ignore if fails
+                // Ignore
             }
         }
+    }
+
+    override fun onCreate() {
+        super.onCreate()
+        createChannel()
+        startForeground(NOTIFICATION_ID, createNotification())
+    }
+
+    override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+        return START_STICKY
     }
 
     override fun onBind(intent: Intent?): IBinder? = null
 
-    override fun onCreate() {
-        super.onCreate()
-        createNotificationChannel()
+    override fun onDestroy() {
+        super.onDestroy()
     }
 
-    override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-        when (intent?.action) {
-            ACTION_PLAY -> startForeground(NOTIFICATION_ID, createNotification("Playing", "LanTunes"))
-            ACTION_STOP -> {
-                stopForeground(STOP_FOREGROUND_REMOVE)
-                stopSelf()
-            }
-        }
-        return START_STICKY
-    }
-
-    private fun createNotificationChannel() {
+    private fun createChannel() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             try {
-                val channel = NotificationChannel(
-                    CHANNEL_ID,
-                    "Playback",
-                    NotificationManager.IMPORTANCE_LOW
-                ).apply {
-                    description = "LanTunes playback"
-                    setShowBadge(false)
-                }
+                val channel = NotificationChannel(CHANNEL_ID, "Playback", NotificationManager.IMPORTANCE_LOW)
+                channel.description = "LanTunes"
                 val manager = getSystemService(NotificationManager::class.java)
                 manager.createNotificationChannel(channel)
             } catch (e: Exception) {
@@ -83,23 +68,17 @@ class PlaybackService : Service() {
         }
     }
 
-    private fun createNotification(title: String, text: String): Notification {
+    private fun createNotification(): Notification {
         return try {
-            val pendingIntent = PendingIntent.getActivity(
-                this,
-                0,
-                Intent(this, MainActivity::class.java),
-                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
-            )
-
-            NotificationCompat.Builder(this, CHANNEL_ID)
+            val intent = Intent(this, MainActivity::class.java)
+            val pending = PendingIntent.getActivity(this, 0, intent, PendingIntent.FLAG_IMMUTABLE)
+            
+            Notification.Builder(this, CHANNEL_ID)
                 .setContentTitle("LanTunes")
-                .setContentText(title)
+                .setContentText("Playing")
                 .setSmallIcon(android.R.drawable.ic_media_play)
-                .setContentIntent(pendingIntent)
+                .setContentIntent(pending)
                 .setOngoing(true)
-                .setPriority(NotificationCompat.PRIORITY_LOW)
-                .setCategory(NotificationCompat.CATEGORY_SERVICE)
                 .build()
         } catch (e: Exception) {
             Notification()
