@@ -7,11 +7,16 @@ from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 import yaml
 from pathlib import Path
+import requests
+from dependencies import get_current_user
 
 router = APIRouter(prefix="/api/config", tags=["config"])
 
 class ConfigUpdate(BaseModel):
     music_path: str
+
+class TestServerRequest(BaseModel):
+    url: str
 
 @router.get("")
 def get_config():
@@ -39,6 +44,31 @@ def update_config(data: ConfigUpdate):
         yaml.dump(config, f)
     
     return {"saved": True}
+
+@router.post("/test")
+async def test_server(data: TestServerRequest, current_user = Depends(get_current_user)):
+    """Test server URL - runs server-side to avoid CORS and keep auth"""
+    test_url = data.url.strip()
+    
+    if not test_url:
+        raise HTTPException(status_code=400, detail="URL required")
+    
+    # Add protocol if missing
+    if not test_url.startswith("http://") and not test_url.startswith("https://"):
+        test_url = "http://" + test_url
+    
+    try:
+        response = requests.get(test_url + "/api/config", timeout=5)
+        if response.ok:
+            return {"success": True, "url": test_url}
+        else:
+            return {"success": False, "error": f"Server returned {response.status_code}"}
+    except requests.exceptions.Timeout:
+        return {"success": False, "error": "Connection timed out"}
+    except requests.exceptions.ConnectionError:
+        return {"success": False, "error": "Could not connect to server"}
+    except Exception as e:
+        return {"success": False, "error": str(e)}
 
 def run_migration():
     """Add missing columns to playback_state and download_jobs tables"""

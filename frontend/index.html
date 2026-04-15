@@ -2451,62 +2451,38 @@ const playbackState = ref({ track: null, position: 0, is_playing: false, volume:
                     }
                     
                     serverConfig.value.testing = true;
-                    
                     const token = localStorage.getItem('access_token');
                     
-                    // Test URL with 5 second timeout
-                    const controller = new AbortController();
-                    const timeoutId = setTimeout(() => controller.abort(), 5000);
-                    
                     try {
-                        const res = await fetch(url + '/api/config', { 
-                            method: 'GET',
-                            signal: controller.signal,
-                            headers: token ? { 'Authorization': 'Bearer ' + token } : {}
+                        const res = await fetch(API + '/api/config/test', { 
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+                            body: JSON.stringify({ url: url })
                         });
-                        clearTimeout(timeoutId);
                         
-                        if (res.ok) {
+                        const data = await res.json();
+                        
+                        if (data.success) {
                             localStorage.setItem('server_url', url);
                             localStorage.setItem('server_mode', mode);
                             serverConfig.value.saved = true;
                             setTimeout(() => { serverConfig.value.saved = false; }, 2000);
                             alert(mode + ' server connected!');
                         } else {
-                            alert('Server responded with error: ' + res.status);
+                            // Failed - try switching to remote if on local
+                            if (mode === 'local' && serverConfig.value.remote) {
+                                alert('Cannot reach local server: ' + data.error + '. Switching to Remote...');
+                                serverConfig.value.mode = 'remote';
+                                localStorage.setItem('server_url', serverConfig.value.remote);
+                                localStorage.setItem('server_mode', 'remote');
+                                serverConfig.value.saved = true;
+                                setTimeout(() => { serverConfig.value.saved = false; }, 2000);
+                            } else {
+                                alert('Cannot connect to server: ' + data.error);
+                            }
                         }
                     } catch (e) {
-                        clearTimeout(timeoutId);
-                        if (e.name === 'AbortError') {
-                            // Timeout - try switching
-                            if (mode === 'local') {
-                                alert('Connection timed out. Switching to Remote...');
-                                serverConfig.value.mode = 'remote';
-                                const remoteUrl = serverConfig.value.remote;
-                                if (remoteUrl) {
-                                    localStorage.setItem('server_url', remoteUrl);
-                                    localStorage.setItem('server_mode', 'remote');
-                                    serverConfig.value.saved = true;
-                                    setTimeout(() => { serverConfig.value.saved = false; }, 2000);
-                                }
-                            } else {
-                                alert('Cannot connect to remote server');
-                            }
-                        } else {
-                            if (mode === 'local') {
-                                alert('Cannot reach local server: ' + e.message + '. Switching to Remote...');
-                                serverConfig.value.mode = 'remote';
-                                const remoteUrl = serverConfig.value.remote;
-                                if (remoteUrl) {
-                                    localStorage.setItem('server_url', remoteUrl);
-                                    localStorage.setItem('server_mode', 'remote');
-                                    serverConfig.value.saved = true;
-                                    setTimeout(() => { serverConfig.value.saved = false; }, 2000);
-                                }
-                            } else {
-                                alert('Cannot connect to remote server: ' + e.message);
-                            }
-                        }
+                        alert('Error: ' + e.message);
                     } finally {
                         serverConfig.value.testing = false;
                     }
