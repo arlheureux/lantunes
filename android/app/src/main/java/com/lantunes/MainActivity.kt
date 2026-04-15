@@ -76,6 +76,12 @@ class MainActivity : AppCompatActivity() {
         super.onResume()
         webView.onResume()
         
+        try {
+            PlaybackService.stopService(this)
+        } catch (e: Exception) {
+            // Ignore if fails
+        }
+        
         // Check if URL changed or needs to be loaded
         val url = getServerUrl()
         if (url.isNotEmpty() && !isPageLoaded) {
@@ -230,6 +236,11 @@ webViewClient = LanTunesWebViewClient()
     override fun onPause() {
         super.onPause()
         webView.onPause()
+        try {
+            PlaybackService.startService(this)
+        } catch (e: Exception) {
+            // Ignore if fails
+        }
     }
 
     override fun onDestroy() {
