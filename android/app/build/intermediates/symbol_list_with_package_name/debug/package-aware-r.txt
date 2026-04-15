@@ -2002,6 +2002,7 @@ color secondary_text_default_material_dark
 color secondary_text_default_material_light
 color secondary_text_disabled_material_dark
 color secondary_text_disabled_material_light
+color surface
 color switch_thumb_disabled_material_dark
 color switch_thumb_disabled_material_light
 color switch_thumb_material_dark
@@ -3063,6 +3064,7 @@ id action_mode_bar_stub
 id action_mode_close_button
 id action_text
 id actions
+id activeServerBadge
 id activity_chooser_view_content
 id add
 id alertTitle
@@ -3455,6 +3457,8 @@ id view_tree_view_model_store_owner
 id visible
 id visible_removing_fragment_view_tag
 id webView
+id wifiNameEditText
+id wifiNameInputLayout
 id withText
 id with_icon
 id withinBounds

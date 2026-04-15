@@ -8,6 +8,7 @@ import android.widget.AdapterView
 import android.widget.ArrayAdapter
 import android.widget.Button
 import android.widget.Spinner
+import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import com.google.android.material.textfield.TextInputEditText
@@ -20,6 +21,7 @@ class SettingsActivity : AppCompatActivity() {
         const val KEY_SERVER_URL = "server_url"
         const val KEY_LOCAL_URL = "local_url"
         const val KEY_REMOTE_URL = "remote_url"
+        const val KEY_WIFI_NAME = "wifi_name"
         const val KEY_MODE = "server_mode"
         const val MODE_LOCAL = "local"
         const val MODE_REMOTE = "remote"
@@ -28,12 +30,14 @@ class SettingsActivity : AppCompatActivity() {
     }
 
     private lateinit var modeSpinner: Spinner
+    private lateinit var wifiNameEditText: TextInputEditText
     private lateinit var localUrlEditText: TextInputEditText
     private lateinit var localUrlInputLayout: TextInputLayout
     private lateinit var remoteUrlEditText: TextInputEditText
     private lateinit var remoteUrlInputLayout: TextInputLayout
     private lateinit var saveButton: Button
     private lateinit var cancelButton: Button
+    private lateinit var activeServerBadge: TextView
 
     private var currentMode = MODE_LOCAL
 
@@ -49,12 +53,14 @@ class SettingsActivity : AppCompatActivity() {
 
     private fun initViews() {
         modeSpinner = findViewById(R.id.modeSpinner)
+        wifiNameEditText = findViewById(R.id.wifiNameEditText)
         localUrlEditText = findViewById(R.id.localUrlEditText)
         localUrlInputLayout = findViewById(R.id.localUrlInputLayout)
         remoteUrlEditText = findViewById(R.id.remoteUrlEditText)
         remoteUrlInputLayout = findViewById(R.id.remoteUrlInputLayout)
         saveButton = findViewById(R.id.saveButton)
         cancelButton = findViewById(R.id.cancelButton)
+        activeServerBadge = findViewById(R.id.activeServerBadge)
     }
 
     private fun setupModeSpinner() {
@@ -69,12 +75,17 @@ class SettingsActivity : AppCompatActivity() {
         
         val localUrl = prefs.getString(KEY_LOCAL_URL, "") ?: ""
         val remoteUrl = prefs.getString(KEY_REMOTE_URL, "") ?: ""
+        val wifiName = prefs.getString(KEY_WIFI_NAME, "") ?: ""
         currentMode = prefs.getString(KEY_MODE, MODE_LOCAL) ?: MODE_LOCAL
 
         localUrlEditText.setText(localUrl)
         remoteUrlEditText.setText(remoteUrl)
-
+        wifiNameEditText.setText(wifiName)
         modeSpinner.setSelection(if (currentMode == MODE_REMOTE) 1 else 0)
+        
+        // Update active server badge
+        val activeUrl = if (currentMode == MODE_LOCAL) localUrl else remoteUrl
+        activeServerBadge.text = if (activeUrl.isNotEmpty()) "Active: $activeUrl" else "Active: Not configured"
     }
 
     private fun setupClickListeners() {
@@ -123,9 +134,11 @@ class SettingsActivity : AppCompatActivity() {
 
         // Save all settings
         val prefs = getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+        val wifiName = wifiNameEditText.text?.toString()?.trim() ?: ""
         prefs.edit()
             .putString(KEY_LOCAL_URL, formattedLocalUrl)
             .putString(KEY_REMOTE_URL, formattedRemoteUrl)
+            .putString(KEY_WIFI_NAME, wifiName)
             .putString(KEY_MODE, finalMode)
             .putString(KEY_SERVER_URL, if (finalMode == MODE_LOCAL) formattedLocalUrl else formattedRemoteUrl)
             .apply()

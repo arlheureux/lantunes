@@ -6,10 +6,12 @@ color gray
 color light_gray
 color primary
 color primary_dark
+color surface
 color white
 drawable ic_error
 drawable ic_launcher
 drawable ic_wifi_off
+id activeServerBadge
 id cancelButton
 id errorOverlay
 id errorRetryButton
@@ -24,6 +26,8 @@ id retryButton
 id saveButton
 id settingsButton
 id webView
+id wifiNameEditText
+id wifiNameInputLayout
 layout activity_main
 layout activity_settings
 string app_name
