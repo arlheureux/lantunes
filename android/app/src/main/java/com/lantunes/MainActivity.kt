@@ -81,9 +81,6 @@ class MainActivity : AppCompatActivity() {
         if (url.isNotEmpty() && !isPageLoaded) {
             loadUrl()
         }
-        
-        // Stop service when app is in foreground
-        PlaybackService.stopService(this)
     }
 
     private fun initViews() {
@@ -233,8 +230,6 @@ webViewClient = LanTunesWebViewClient()
     override fun onPause() {
         super.onPause()
         webView.onPause()
-        // Keep service running when app in background
-        PlaybackService.startService(this)
     }
 
     override fun onDestroy() {
