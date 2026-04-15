@@ -30,6 +30,16 @@ limiter = Limiter(key_func=get_remote_address)
 app = FastAPI(title="LanTunes")
 app.state.limiter = limiter
 
+# CORS middleware - allow all origins
+from fastapi.middleware.cors import CORSMiddleware
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
 @app.exception_handler(RateLimitExceeded)
 async def rate_limit_handler(request: Request, exc: RateLimitExceeded):
     return JSONResponse(
