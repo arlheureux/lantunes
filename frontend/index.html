@@ -998,6 +998,10 @@
                 font-size: 17px;
                 border-radius: 12px;
                 text-align: center;
+                min-height: 48px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
             }
             
             /* Empty states */
@@ -1469,13 +1473,13 @@
                     </div>
                 </div>
                 
-                <div v-if="contextMenu.show" class="context-menu" :style="{ top: contextMenu.y + 'px', left: contextMenu.x + 'px' }">
+                <div v-if="contextMenu.show" class="context-menu" :style="isMobile ? {} : { top: contextMenu.y + 'px', left: contextMenu.x + 'px' }">
                     <div class="context-menu-item" @click="playTrackNext(contextMenu.track); closeContextMenu()">Play Next</div>
                     <div class="context-menu-item" @click="addToQueue(contextMenu.track); closeContextMenu()">Add to Queue</div>
                     <div class="context-menu-item" @click="openPlaylistDialog(contextMenu.track); closeContextMenu()">Add to Playlist</div>
                 </div>
                 
-                <div v-if="albumContextMenu.show" class="context-menu" :style="{ top: albumContextMenu.y + 'px', left: albumContextMenu.x + 'px' }">
+                <div v-if="albumContextMenu.show" class="context-menu" :style="isMobile ? {} : { top: albumContextMenu.y + 'px', left: albumContextMenu.x + 'px' }">
                     <div class="context-menu-item" @click="playAlbum(albumContextMenu.album); closeAlbumContextMenu()">Play</div>
                     <div class="context-menu-item" @click="openAlbumPlaylistDialog(albumContextMenu.album); closeAlbumContextMenu()">Add to Playlist</div>
                     <div class="context-menu-item" @click="openAlbumEditDialog(albumContextMenu.album); closeAlbumContextMenu()">Edit Metadata</div>
@@ -2253,7 +2257,12 @@ const playbackState = ref({ track: null, position: 0, is_playing: false, volume:
                 }
                 
                 function showContextMenu(e, track) {
-                    contextMenu.value = { show: true, x: e.clientX, y: e.clientY, track: track };
+                    // Always show as bottom sheet on mobile
+                    if (isMobile.value) {
+                        contextMenu.value = { show: true, x: 0, y: 0, track: track };
+                    } else {
+                        contextMenu.value = { show: true, x: e.clientX, y: e.clientY, track: track };
+                    }
                 }
                 
                 function closeContextMenu() {
@@ -2261,7 +2270,12 @@ const playbackState = ref({ track: null, position: 0, is_playing: false, volume:
                 }
                 
                 function showAlbumContextMenu(e, album) {
-                    albumContextMenu.value = { show: true, x: e.clientX, y: e.clientY, album: album };
+                    // Always show as bottom sheet on mobile
+                    if (isMobile.value) {
+                        albumContextMenu.value = { show: true, x: 0, y: 0, album: album };
+                    } else {
+                        albumContextMenu.value = { show: true, x: e.clientX, y: e.clientY, album: album };
+                    }
                 }
                 
                 function closeAlbumContextMenu() {
