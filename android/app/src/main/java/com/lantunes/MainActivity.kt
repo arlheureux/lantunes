@@ -49,19 +49,10 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
-        // Request location permission early (needed for WiFi SSID)
-        if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) 
-            != PackageManager.PERMISSION_GRANTED) {
-            ActivityCompat.requestPermissions(this, 
-                arrayOf(Manifest.permission.ACCESS_FINE_LOCATION), 
-                PERMISSION_REQUEST_CODE)
-        }
-
         initViews()
         setupWebView()
         setupClickListeners()
         setupBackNavigation()
-        setupMediaSession()
 
         val url = getServerUrl()
         if (url.isEmpty()) {
@@ -116,11 +107,12 @@ webViewClient = LanTunesWebViewClient()
     }
     
     private fun setupJavaScriptInterface() {
-        try {
-            webView.addJavascriptInterface(this, "LanTunesAndroid")
-        } catch (e: Exception) {
-            // Ignore
-        }
+        // JavaScript interface disabled for now - causes crash
+        // try {
+        //     webView.addJavascriptInterface(this, "LanTunesAndroid")
+        // } catch (e: Exception) {
+        //     // Ignore
+        // }
     }
     
     private fun setupClickListeners() {
