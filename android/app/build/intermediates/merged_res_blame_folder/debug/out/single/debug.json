@@ -1,22 +1,22 @@
 [
     {
-        "merged": "com.lantunes.app-merged_res-36:/layout_activity_settings.xml.flat",
-        "source": "com.lantunes.app-main-38:/layout/activity_settings.xml"
+        "merged": "com.lantunes.app-merged_res-35:/drawable_ic_launcher.xml.flat",
+        "source": "com.lantunes.app-main-37:/drawable/ic_launcher.xml"
     },
     {
-        "merged": "com.lantunes.app-merged_res-36:/drawable_ic_wifi_off.xml.flat",
-        "source": "com.lantunes.app-main-38:/drawable/ic_wifi_off.xml"
+        "merged": "com.lantunes.app-merged_res-35:/layout_activity_main.xml.flat",
+        "source": "com.lantunes.app-main-37:/layout/activity_main.xml"
     },
     {
-        "merged": "com.lantunes.app-merged_res-36:/layout_activity_main.xml.flat",
-        "source": "com.lantunes.app-main-38:/layout/activity_main.xml"
+        "merged": "com.lantunes.app-merged_res-35:/layout_activity_settings.xml.flat",
+        "source": "com.lantunes.app-main-37:/layout/activity_settings.xml"
     },
     {
-        "merged": "com.lantunes.app-merged_res-36:/drawable_ic_error.xml.flat",
-        "source": "com.lantunes.app-main-38:/drawable/ic_error.xml"
+        "merged": "com.lantunes.app-merged_res-35:/drawable_ic_error.xml.flat",
+        "source": "com.lantunes.app-main-37:/drawable/ic_error.xml"
     },
     {
-        "merged": "com.lantunes.app-merged_res-36:/drawable_ic_launcher.xml.flat",
-        "source": "com.lantunes.app-main-38:/drawable/ic_launcher.xml"
+        "merged": "com.lantunes.app-merged_res-35:/drawable_ic_wifi_off.xml.flat",
+        "source": "com.lantunes.app-main-37:/drawable/ic_wifi_off.xml"
     }
 ]

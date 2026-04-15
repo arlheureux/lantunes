@@ -11,8 +11,6 @@ import android.net.Uri
 import android.net.wifi.WifiManager
 import android.os.Build
 import android.os.Bundle
-import android.support.v4.media.session.MediaSessionCompat
-import android.support.v4.media.session.PlaybackStateCompat
 import android.webkit.JavascriptInterface
 import android.webkit.WebChromeClient
 import android.webkit.WebResourceError
@@ -30,8 +28,6 @@ import androidx.core.content.ContextCompat
 import androidx.core.view.isVisible
 
 class MainActivity : AppCompatActivity() {
-
-    private var mediaSession: MediaSessionCompat? = null
 
     companion object {
         const val PREFS_NAME = "lantunes_prefs"
@@ -52,6 +48,14 @@ class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
+
+        // Request location permission early (needed for WiFi SSID)
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) 
+            != PackageManager.PERMISSION_GRANTED) {
+            ActivityCompat.requestPermissions(this, 
+                arrayOf(Manifest.permission.ACCESS_FINE_LOCATION), 
+                PERMISSION_REQUEST_CODE)
+        }
 
         initViews()
         setupWebView()
@@ -230,7 +234,6 @@ webViewClient = LanTunesWebViewClient()
     }
 
     override fun onDestroy() {
-        mediaSession?.release()
         webView.destroy()
         super.onDestroy()
     }
@@ -333,33 +336,6 @@ webViewClient = LanTunesWebViewClient()
     }
 
     private fun setupMediaSession() {
-        try {
-            mediaSession = MediaSessionCompat(this, "LanTunes").apply {
-                setCallback(object : MediaSessionCompat.Callback() {
-                    override fun onPlay() {
-                        webView.evaluateJavascript("if (window.LanTunes) window.LanTunes.onPlay();", null)
-                    }
-
-                    override fun onPause() {
-                        webView.evaluateJavascript("if (window.LanTunes) window.LanTunes.onPause();", null)
-                    }
-
-                    override fun onSkipToNext() {
-                        webView.evaluateJavascript("if (window.LanTunes) window.LanTunes.onNext();", null)
-                    }
-
-                    override fun onSkipToPrevious() {
-                        webView.evaluateJavascript("if (window.LanTunes) window.LanTunes.onPrevious();", null)
-                    }
-
-                    override fun onStop() {
-                        webView.evaluateJavascript("if (window.LanTunes) window.LanTunes.onPause();", null)
-                    }
-                })
-                isActive = true
-            }
-        } catch (e: Exception) {
-            // MediaSession not available
-        }
+        // Bluetooth controls temporarily disabled - needs proper MediaSession setup
     }
 }
