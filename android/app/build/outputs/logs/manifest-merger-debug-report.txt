@@ -1,9 +1,9 @@
 -- Merging decision tree log ---
 manifest
-ADDED from /home/arnaud/lantunes/android/app/src/main/AndroidManifest.xml:2:1-28:12
-INJECTED from /home/arnaud/lantunes/android/app/src/main/AndroidManifest.xml:2:1-28:12
-INJECTED from /home/arnaud/lantunes/android/app/src/main/AndroidManifest.xml:2:1-28:12
-INJECTED from /home/arnaud/lantunes/android/app/src/main/AndroidManifest.xml:2:1-28:12
+ADDED from /home/arnaud/lantunes/android/app/src/main/AndroidManifest.xml:2:1-34:12
+INJECTED from /home/arnaud/lantunes/android/app/src/main/AndroidManifest.xml:2:1-34:12
+INJECTED from /home/arnaud/lantunes/android/app/src/main/AndroidManifest.xml:2:1-34:12
+INJECTED from /home/arnaud/lantunes/android/app/src/main/AndroidManifest.xml:2:1-34:12
 MERGED from [com.google.android.material:material:1.11.0] /home/arnaud/.gradle/caches/8.10.2/transforms/f5643fa18e798e5f9913177891c73389/transformed/material-1.11.0/AndroidManifest.xml:17:1-24:12
 MERGED from [androidx.appcompat:appcompat-resources:1.6.1] /home/arnaud/.gradle/caches/8.10.2/transforms/531a61f1c76d5ab61ce7bf1e4fd59f13/transformed/appcompat-resources-1.6.1/AndroidManifest.xml:17:1-22:12
 MERGED from [androidx.constraintlayout:constraintlayout:2.0.1] /home/arnaud/.gradle/caches/8.10.2/transforms/78be17cafa0d06ecb5aa0d2cb841b40c/transformed/constraintlayout-2.0.1/AndroidManifest.xml:2:1-11:12
@@ -64,8 +64,8 @@ ADDED from /home/arnaud/lantunes/android/app/src/main/AndroidManifest.xml:5:5-67
 	android:name
 		ADDED from /home/arnaud/lantunes/android/app/src/main/AndroidManifest.xml:5:22-64
 application
-ADDED from /home/arnaud/lantunes/android/app/src/main/AndroidManifest.xml:7:5-26:19
-INJECTED from /home/arnaud/lantunes/android/app/src/main/AndroidManifest.xml:7:5-26:19
+ADDED from /home/arnaud/lantunes/android/app/src/main/AndroidManifest.xml:7:5-32:19
+INJECTED from /home/arnaud/lantunes/android/app/src/main/AndroidManifest.xml:7:5-32:19
 MERGED from [com.google.android.material:material:1.11.0] /home/arnaud/.gradle/caches/8.10.2/transforms/f5643fa18e798e5f9913177891c73389/transformed/material-1.11.0/AndroidManifest.xml:22:5-20
 MERGED from [com.google.android.material:material:1.11.0] /home/arnaud/.gradle/caches/8.10.2/transforms/f5643fa18e798e5f9913177891c73389/transformed/material-1.11.0/AndroidManifest.xml:22:5-20
 MERGED from [androidx.constraintlayout:constraintlayout:2.0.1] /home/arnaud/.gradle/caches/8.10.2/transforms/78be17cafa0d06ecb5aa0d2cb841b40c/transformed/constraintlayout-2.0.1/AndroidManifest.xml:9:5-20
@@ -118,6 +118,16 @@ category#android.intent.category.LAUNCHER
 ADDED from /home/arnaud/lantunes/android/app/src/main/AndroidManifest.xml:22:17-77
 	android:name
 		ADDED from /home/arnaud/lantunes/android/app/src/main/AndroidManifest.xml:22:27-74
+activity#com.lantunes.SettingsActivity
+ADDED from /home/arnaud/lantunes/android/app/src/main/AndroidManifest.xml:26:9-30:53
+	android:parentActivityName
+		ADDED from /home/arnaud/lantunes/android/app/src/main/AndroidManifest.xml:29:13-55
+	android:exported
+		ADDED from /home/arnaud/lantunes/android/app/src/main/AndroidManifest.xml:28:13-37
+	android:theme
+		ADDED from /home/arnaud/lantunes/android/app/src/main/AndroidManifest.xml:30:13-50
+	android:name
+		ADDED from /home/arnaud/lantunes/android/app/src/main/AndroidManifest.xml:27:13-45
 uses-sdk
 INJECTED from /home/arnaud/lantunes/android/app/src/main/AndroidManifest.xml reason: use-sdk injection requested
 INJECTED from /home/arnaud/lantunes/android/app/src/main/AndroidManifest.xml

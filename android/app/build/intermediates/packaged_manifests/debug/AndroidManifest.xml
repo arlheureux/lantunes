@@ -36,6 +36,11 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+        <activity
+            android:name="com.lantunes.SettingsActivity"
+            android:exported="false"
+            android:parentActivityName="com.lantunes.MainActivity"
+            android:theme="@style/Theme.LanTunes" />
 
         <provider
             android:name="androidx.startup.InitializationProvider"
