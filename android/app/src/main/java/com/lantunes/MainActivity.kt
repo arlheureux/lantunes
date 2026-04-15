@@ -201,6 +201,13 @@ class MainActivity : AppCompatActivity() {
     override fun onPause() {
         super.onPause()
         webView.onPause()
+        // Keep service running when app in background
+        PlaybackService.startService(this)
+    }
+
+    override fun onResume() {
+        super.onResume()
+        PlaybackService.stopService(this)
     }
 
     override fun onDestroy() {
