@@ -1,6 +1,8 @@
 import sys
 import os
 import logging
+from pathlib import Path
+import yaml
 
 backend_dir = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, backend_dir)
@@ -21,14 +23,22 @@ from slowapi.errors import RateLimitExceeded
 from api import library, playback, playlists, config
 from api import auth, users
 from websocket import websocket_endpoint
-from middleware import AuthMiddleware
+from middleware import AuthMiddleware, PUBLIC_ENDPOINTS
+import yaml
 
 logger.info("Starting LanTunes backend")
 
+# Load config
+config_path = Path(__file__).parent.parent / "config.yaml"
+production_mode = False
+if config_path.exists():
+    with open(config_path) as f:
+        server_config = yaml.safe_load(f)
+    production_mode = server_config.get("server", {}).get("production", False)
+
 limiter = Limiter(key_func=get_remote_address)
 
-app = FastAPI(title="LanTunes")
-app.state.limiter = limiter
+app = FastAPI(title="LanTunes", docs_url="/docs" if not production_mode else None, redoc_url="/redoc" if not production_mode else None)
 
 # CORS middleware - allow local network and known origins
 from fastapi.middleware.cors import CORSMiddleware

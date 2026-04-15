@@ -3,20 +3,10 @@ from fastapi.responses import JSONResponse
 from starlette.middleware.base import BaseHTTPMiddleware
 from auth import verify_token
 
-# Public endpoints that don't require auth
+# Public endpoints that don't require auth (keep minimal!)
 PUBLIC_ENDPOINTS = [
-    "/api/auth/login",
-    "/api/auth/setup",
-    "/api/auth/status",
-    "/api/playback/stream/",
-    "/api/library/artwork/",
-    "/api/library/tracks/batch",
-    "/api/library/scan/stream",
-    "/api/library/fetch-artwork/stream",
-    "/api/config/migrate",
-    "/docs",
-    "/openapi.json",
-    "/redoc"
+    "/api/auth/login",       # REQUIRED: users must login
+    "/api/auth/setup",      # REQUIRED: first-time setup
 ]
 
 # Paths that are always public (non-API)
