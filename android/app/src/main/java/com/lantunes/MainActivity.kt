@@ -39,6 +39,7 @@ class MainActivity : AppCompatActivity() {
         const val KEY_MODE = "server_mode"
         const val MODE_LOCAL = "local"
         const val MODE_REMOTE = "remote"
+        const val EXTRA_SELECTED_MODE = "selected_mode"
         const val PERMISSION_REQUEST_CODE = 1001
     }
 
@@ -53,6 +54,7 @@ class MainActivity : AppCompatActivity() {
     private var isPageLoaded = false
     private val autoSwitchHandler = Handler(Looper.getMainLooper())
     private var autoSwitchRunnable: Runnable? = null
+    private var loadingTimeoutRunnable: Runnable? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         try {
@@ -152,9 +154,9 @@ webViewClient = LanTunesWebViewClient()
         })
     }
 
-    private fun getServerUrl(): String {
+    private fun getServerUrl(overrideMode: String? = null): String {
         val prefs = getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
-        val mode = prefs.getString(KEY_MODE, MODE_LOCAL) ?: MODE_LOCAL
+        val mode = overrideMode ?: (prefs.getString(KEY_MODE, MODE_LOCAL) ?: MODE_LOCAL)
         return if (mode == MODE_LOCAL) {
             prefs.getString(KEY_LOCAL_URL, "") ?: ""
         } else {
@@ -225,9 +227,9 @@ webViewClient = LanTunesWebViewClient()
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
         if (requestCode == 1) {
-            // Reload URL after returning from settings
             isPageLoaded = false
-            val url = getServerUrl()
+            val selectedMode = data?.getStringExtra(EXTRA_SELECTED_MODE)
+            val url = getServerUrl(selectedMode)
             if (url.isNotEmpty()) {
                 loadUrl()
             }
@@ -309,9 +311,19 @@ webViewClient = LanTunesWebViewClient()
             showLoading()
             isPageLoaded = false
             Toast.makeText(this@MainActivity, "Starting to load: $url", Toast.LENGTH_SHORT).show()
+
+            loadingTimeoutRunnable = Runnable {
+                if (!isPageLoaded && getCurrentMode() == MODE_LOCAL) {
+                    Toast.makeText(this@MainActivity, "Loading timed out, switching to Remote...", Toast.LENGTH_SHORT).show()
+                    autoSwitchToRemote()
+                }
+            }
+            autoSwitchHandler.postDelayed(loadingTimeoutRunnable!!, 5000)
         }
 
         override fun onPageFinished(view: WebView?, url: String?) {
+            loadingTimeoutRunnable?.let { autoSwitchHandler.removeCallbacks(it) }
+            loadingTimeoutRunnable = null
             super.onPageFinished(view, url)
             hideLoading()
             hideOverlays()
