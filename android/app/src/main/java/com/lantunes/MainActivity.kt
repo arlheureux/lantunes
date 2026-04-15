@@ -62,6 +62,9 @@ class MainActivity : AppCompatActivity() {
         if (url.isNotEmpty() && !isPageLoaded) {
             loadUrl()
         }
+        
+        // Stop service when app is in foreground
+        PlaybackService.stopService(this)
     }
 
     private fun initViews() {
@@ -203,11 +206,6 @@ class MainActivity : AppCompatActivity() {
         webView.onPause()
         // Keep service running when app in background
         PlaybackService.startService(this)
-    }
-
-    override fun onResume() {
-        super.onResume()
-        PlaybackService.stopService(this)
     }
 
     override fun onDestroy() {
