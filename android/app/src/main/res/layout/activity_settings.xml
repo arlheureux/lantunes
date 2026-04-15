@@ -43,15 +43,6 @@
             android:background="@color/light_gray"
             android:popupBackground="@color/light_gray" />
 
-        <Button
-            android:id="@+id/reloadButton"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="16dp"
-            android:text="Reload"
-            android:backgroundTint="@color/accent"
-            android:textColor="@color/black" />
-
         <!-- Local Server URL -->
         <com.google.android.material.textfield.TextInputLayout
             android:id="@+id/localUrlInputLayout"
