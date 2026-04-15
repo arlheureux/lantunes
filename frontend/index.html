@@ -1765,7 +1765,16 @@
                     
                     <div class="settings-section">
                         <h3>Server</h3>
-                        <label style="display:block;margin-bottom:8px;font-size:14px;">Mode</label>
+                        
+                        <div style="background:var(--bg-surface);padding:12px;border-radius:4px;margin-bottom:16px;">
+                            <span style="color:var(--text-muted);font-size:12px;">Active:</span>
+                            <span style="color:var(--accent);font-size:14px;margin-left:8px;">{{ activeServerUrl }}</span>
+                        </div>
+                        
+                        <label style="display:block;margin-bottom:8px;font-size:14px;">WiFi Network Name</label>
+                        <input type="text" v-model="serverConfig.wifiName" placeholder="e.g., MyHomeWiFi">
+                        
+                        <label style="display:block;margin-bottom:8px;font-size:14px;margin-top:16px;">Mode</label>
                         <select v-model="serverConfig.mode" style="width:100%;padding:10px;background:var(--bg-surface);border:1px solid #444;border-radius:4px;color:var(--text-primary);margin-bottom:16px;">
                             <option value="local">Local (Home Network)</option>
                             <option value="remote">Remote (Away from Home)</option>
@@ -2206,8 +2215,13 @@
                     local: localStorage.getItem('server_local') || '',
                     remote: localStorage.getItem('server_remote') || '',
                     mode: localStorage.getItem('server_mode') || 'local',
+                    wifiName: localStorage.getItem('server_wifi_name') || '',
                     saved: false,
                     testing: false,
+                });
+                const activeServerUrl = computed(() => {
+                    const mode = serverConfig.value.mode || 'local';
+                    return mode === 'local' ? serverConfig.value.local : serverConfig.value.remote;
                 });
                 const scanResult = ref('');
                 const isScanning = ref(false);
@@ -2416,6 +2430,7 @@ const playbackState = ref({ track: null, position: 0, is_playing: false, volume:
                 async function saveServerConfig() {
                     localStorage.setItem('server_local', serverConfig.value.local);
                     localStorage.setItem('server_remote', serverConfig.value.remote);
+                    localStorage.setItem('server_wifi_name', serverConfig.value.wifiName || '');
                     
                     // Auto-detect mode from URL if not set
                     const localUrl = serverConfig.value.local || '';
@@ -3301,7 +3316,7 @@ const playbackState = ref({ track: null, position: 0, is_playing: false, volume:
                 });
                 
                 return {
-                    view, searchQuery, searchResults, albums, recentAlbums, artists, playlists, genres, currentGenre, genreAlbums, config, serverConfig, scanResult,
+                    view, searchQuery, searchResults, albums, recentAlbums, artists, playlists, genres, currentGenre, genreAlbums, config, serverConfig, scanResult, activeServerUrl,
                     isScanning, scanProgress,
                     currentAlbum, currentArtist, currentPlaylist, playbackState, volume, audioPlayer, progressPercent,
                     isLoading,
