@@ -83,20 +83,7 @@
             android:layout_height="wrap_content"
             android:layout_marginTop="32dp"
             android:orientation="horizontal"
-            android:gravity="start">
-
-            <Button
-                android:id="@+id/reloadButton"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="@string/reload"
-                style="?android:attr/borderlessButtonStyle"
-                android:textColor="@color/accent" />
-
-            <View
-                android:layout_width="0dp"
-                android:layout_height="0dp"
-                android:layout_weight="1" />
+            android:gravity="end">
 
             <Button
                 android:id="@+id/cancelButton"

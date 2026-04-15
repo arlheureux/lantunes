@@ -34,7 +34,6 @@ class SettingsActivity : AppCompatActivity() {
     private lateinit var remoteUrlInputLayout: TextInputLayout
     private lateinit var saveButton: Button
     private lateinit var cancelButton: Button
-    private lateinit var reloadButton: Button
 
     private var currentMode = MODE_LOCAL
 
@@ -56,7 +55,6 @@ class SettingsActivity : AppCompatActivity() {
         remoteUrlInputLayout = findViewById(R.id.remoteUrlInputLayout)
         saveButton = findViewById(R.id.saveButton)
         cancelButton = findViewById(R.id.cancelButton)
-        reloadButton = findViewById(R.id.reloadButton)
     }
 
     private fun setupModeSpinner() {
@@ -87,34 +85,6 @@ class SettingsActivity : AppCompatActivity() {
         cancelButton.setOnClickListener {
             finish()
         }
-
-        reloadButton.setOnClickListener {
-            reloadWithSelectedMode()
-        }
-    }
-
-    private fun reloadWithSelectedMode() {
-        val localUrl = localUrlEditText.text?.toString()?.trim() ?: ""
-        val remoteUrl = remoteUrlEditText.text?.toString()?.trim() ?: ""
-
-        val selectedMode = if (modeSpinner.selectedItemPosition == 1) MODE_REMOTE else MODE_LOCAL
-        val url = if (selectedMode == MODE_LOCAL) localUrl else remoteUrl
-
-        if (url.isEmpty()) {
-            Toast.makeText(this, "Please enter a " + selectedMode + " server URL first", Toast.LENGTH_SHORT).show()
-            return
-        }
-
-        val formattedUrl = if (selectedMode == MODE_LOCAL) {
-            if (localUrl.isNotEmpty()) formatUrl(localUrl, "http://") else ""
-        } else {
-            if (remoteUrl.isNotEmpty()) formatUrl(remoteUrl, "https://") else ""
-        }
-
-        val resultIntent = Intent()
-        resultIntent.putExtra(EXTRA_SELECTED_MODE, selectedMode)
-        setResult(RESULT_OK, resultIntent)
-        finish()
     }
 
     private fun saveSettings() {

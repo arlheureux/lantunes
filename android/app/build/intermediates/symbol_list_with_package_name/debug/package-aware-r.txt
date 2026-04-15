@@ -3212,6 +3212,8 @@ id line3
 id linear
 id listMode
 id list_item
+id localUrlEditText
+id localUrlInputLayout
 id m3_side_sheet
 id marquee
 id masked
@@ -3240,6 +3242,7 @@ id matrix
 id message
 id middle
 id mini
+id modeSpinner
 id month_grid
 id month_navigation_bar
 id month_navigation_fragment_toggle
@@ -3325,6 +3328,8 @@ id progress_horizontal
 id radio
 id ratio
 id rectangles
+id remoteUrlEditText
+id remoteUrlInputLayout
 id report_drawn
 id retryButton
 id reverseSawtooth
@@ -3441,8 +3446,6 @@ id unchecked
 id uniform
 id unlabeled
 id up
-id urlEditText
-id urlInputLayout
 id useLogo
 id view_offset_helper
 id view_tree_lifecycle_owner
@@ -3820,6 +3823,7 @@ string path_password_eye
 string path_password_eye_mask_strike_through
 string path_password_eye_mask_visible
 string path_password_strike_through
+string reload
 string retry
 string save
 string search_menu_title

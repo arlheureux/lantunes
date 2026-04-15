@@ -13,13 +13,16 @@ drawable ic_wifi_off
 id cancelButton
 id errorOverlay
 id errorRetryButton
+id localUrlEditText
+id localUrlInputLayout
+id modeSpinner
 id offlineOverlay
 id progressBar
+id remoteUrlEditText
+id remoteUrlInputLayout
 id retryButton
 id saveButton
 id settingsButton
-id urlEditText
-id urlInputLayout
 id webView
 layout activity_main
 layout activity_settings
@@ -31,6 +34,7 @@ string loading
 string no_internet
 string no_internet_message
 string open_settings
+string reload
 string retry
 string save
 string server_url
