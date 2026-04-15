@@ -11,6 +11,8 @@ import android.net.Uri
 import android.net.wifi.WifiManager
 import android.os.Build
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
 import android.webkit.JavascriptInterface
 import android.webkit.WebChromeClient
 import android.webkit.WebResourceError
@@ -49,6 +51,8 @@ class MainActivity : AppCompatActivity() {
     private lateinit var settingsButton: Button
 
     private var isPageLoaded = false
+    private val autoSwitchHandler = Handler(Looper.getMainLooper())
+    private var autoSwitchRunnable: Runnable? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         try {
@@ -158,6 +162,35 @@ webViewClient = LanTunesWebViewClient()
         }
     }
 
+    private fun getCurrentMode(): String {
+        val prefs = getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+        return prefs.getString(KEY_MODE, MODE_LOCAL) ?: MODE_LOCAL
+    }
+
+    private fun autoSwitchToRemote() {
+        if (getCurrentMode() != MODE_LOCAL) return
+
+        cancelAutoSwitch()
+
+        autoSwitchRunnable = Runnable {
+            val prefs = getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+            prefs.edit().putString(KEY_MODE, MODE_REMOTE).apply()
+
+            Toast.makeText(this, "Cannot reach local server, switching to Remote...", Toast.LENGTH_SHORT).show()
+
+            runOnUiThread {
+                loadUrl()
+            }
+        }
+
+        autoSwitchHandler.postDelayed(autoSwitchRunnable!!, 5000)
+    }
+
+    private fun cancelAutoSwitch() {
+        autoSwitchRunnable?.let { autoSwitchHandler.removeCallbacks(it) }
+        autoSwitchRunnable = null
+    }
+
     private fun loadUrl() {
         val url = getServerUrl()
         if (url.isNotEmpty()) {
@@ -184,6 +217,7 @@ webViewClient = LanTunesWebViewClient()
     }
 
     private fun openSettings() {
+        cancelAutoSwitch()
         val intent = Intent(this, SettingsActivity::class.java)
         startActivityForResult(intent, 1)
     }
@@ -273,6 +307,7 @@ webViewClient = LanTunesWebViewClient()
         override fun onPageStarted(view: WebView?, url: String?, favicon: Bitmap?) {
             super.onPageStarted(view, url, favicon)
             showLoading()
+            isPageLoaded = false
             Toast.makeText(this@MainActivity, "Starting to load: $url", Toast.LENGTH_SHORT).show()
         }
 
@@ -293,6 +328,10 @@ webViewClient = LanTunesWebViewClient()
                 
                 Toast.makeText(this@MainActivity, "WebView error: $errorDescription (code: $errorCode)", Toast.LENGTH_LONG).show()
                 showError(errorDescription)
+
+                if (getCurrentMode() == MODE_LOCAL) {
+                    autoSwitchToRemote()
+                }
             }
         }
     }
