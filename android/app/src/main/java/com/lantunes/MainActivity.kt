@@ -32,6 +32,11 @@ class MainActivity : AppCompatActivity() {
     companion object {
         const val PREFS_NAME = "lantunes_prefs"
         const val KEY_SERVER_URL = "server_url"
+        const val KEY_LOCAL_URL = "local_url"
+        const val KEY_REMOTE_URL = "remote_url"
+        const val KEY_MODE = "server_mode"
+        const val MODE_LOCAL = "local"
+        const val MODE_REMOTE = "remote"
         const val PERMISSION_REQUEST_CODE = 1001
     }
 
@@ -145,7 +150,12 @@ webViewClient = LanTunesWebViewClient()
 
     private fun getServerUrl(): String {
         val prefs = getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
-        return prefs.getString(KEY_SERVER_URL, "") ?: ""
+        val mode = prefs.getString(KEY_MODE, MODE_LOCAL) ?: MODE_LOCAL
+        return if (mode == MODE_LOCAL) {
+            prefs.getString(KEY_LOCAL_URL, "") ?: ""
+        } else {
+            prefs.getString(KEY_REMOTE_URL, "") ?: ""
+        }
     }
 
     private fun loadUrl() {

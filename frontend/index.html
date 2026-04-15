@@ -1764,18 +1764,20 @@
                     <h1>Settings</h1>
                     
                     <div class="settings-section">
-                        <h3>Server Address</h3>
-                        <label style="display:block;margin-bottom:8px;font-size:14px;">Local Server (e.g., http://192.168.1.100:8080)</label>
+                        <h3>Server</h3>
+                        <label style="display:block;margin-bottom:8px;font-size:14px;">Mode</label>
+                        <select v-model="serverConfig.mode" style="width:100%;padding:10px;background:var(--bg-surface);border:1px solid #444;border-radius:4px;color:var(--text-primary);margin-bottom:16px;">
+                            <option value="local">Local (Home Network)</option>
+                            <option value="remote">Remote (Away from Home)</option>
+                        </select>
+                        
+                        <label style="display:block;margin-bottom:8px;font-size:14px;">Local Server URL (e.g., http://192.168.1.100:8080)</label>
                         <input type="text" v-model="serverConfig.local" placeholder="Local server URL">
                         
-                        <label style="display:block;margin-bottom:8px;font-size:14px;margin-top:16px;">Remote Server (e.g., https://mydomain.com)</label>
+                        <label style="display:block;margin-bottom:8px;font-size:14px;margin-top:16px;">Remote Server URL (e.g., https://mydomain.com)</label>
                         <input type="text" v-model="serverConfig.remote" placeholder="Remote server URL">
                         
-                        <label style="display:block;margin-bottom:8px;font-size:14px;margin-top:16px;">Use Local on WiFi SSID</label>
-                        <input type="text" v-model="serverConfig.localSsid" placeholder="e.g., MyHomeWiFi">
-                        <p style="margin-top:8px;color:var(--text-muted);font-size:12px;">Leave empty to always use local when on this network</p>
-                        
-                        <button class="btn" @click="saveServerConfig" style="margin-top:16px;">Save Server Settings</button>
+                        <button class="btn" @click="saveServerConfig" style="margin-top:16px;">Save</button>
                         <p v-if="serverConfig.saved" style="margin-top:8px;color:var(--accent);font-size:12px;">Saved!</p>
                     </div>
                     
@@ -2201,7 +2203,7 @@
                 const serverConfig = ref({
                     local: localStorage.getItem('server_local') || '',
                     remote: localStorage.getItem('server_remote') || '',
-                    localSsid: localStorage.getItem('server_local_ssid') || '',
+                    mode: localStorage.getItem('server_mode') || 'local',
                     saved: false
                 });
                 const scanResult = ref('');
@@ -2411,42 +2413,36 @@ const playbackState = ref({ track: null, position: 0, is_playing: false, volume:
                 async function saveServerConfig() {
                     localStorage.setItem('server_local', serverConfig.value.local);
                     localStorage.setItem('server_remote', serverConfig.value.remote);
-                    localStorage.setItem('server_local_ssid', serverConfig.value.localSsid);
+                    
+                    // Auto-detect mode from URL if not set
+                    const localUrl = serverConfig.value.local || '';
+                    const remoteUrl = serverConfig.value.remote || '';
+                    
+                    if (!serverConfig.value.mode || serverConfig.value.mode === 'local') {
+                        if (localUrl.startsWith('https://')) {
+                            serverConfig.value.mode = 'remote';
+                        } else if (localUrl.startsWith('http://')) {
+                            serverConfig.value.mode = 'local';
+                        }
+                    }
+                    
+                    localStorage.setItem('server_mode', serverConfig.value.mode);
+                    
+                    // Set active URL based on mode
+                    const activeUrl = serverConfig.value.mode === 'local' ? localUrl : remoteUrl;
+                    if (activeUrl) {
+                        localStorage.setItem('server_url', activeUrl);
+                    }
+                    
                     serverConfig.value.saved = true;
                     setTimeout(() => { serverConfig.value.saved = false; }, 2000);
                 }
                 
-                async function getCurrentSsid() {
-                    // Note: Getting SSID requires location permissions on Android
-                    // This is a placeholder - actual implementation would need native code
-                    return '';
-                }
-                
                 function selectServerUrl() {
-                    const ssid = serverConfig.value.localSsid;
-                    if (!ssid || !serverConfig.value.local) {
-                        if (serverConfig.value.local) {
-                            localStorage.setItem('server_url', serverConfig.value.local);
-                        }
-                        return;
-                    }
-                    
-                    // Try native Android method first
-                    if (window.LanTunesAndroid && window.LanTunesAndroid.getCurrentSsid) {
-                        const currentSsid = window.LanTunesAndroid.getCurrentSsid();
-                        if (currentSsid && currentSsid === ssid) {
-                            localStorage.setItem('server_url', serverConfig.value.local);
-                            return;
-                        }
-                    }
-                    
-                    // Fallback: use local on wifi
-                    if (window.LanTunesAndroid && window.LanTunesAndroid.isOnWifi && window.LanTunesAndroid.isOnWifi()) {
-                        if (serverConfig.value.local) {
-                            localStorage.setItem('server_url', serverConfig.value.local);
-                        }
-                    } else if (serverConfig.value.remote) {
-                        localStorage.setItem('server_url', serverConfig.value.remote);
+                    const mode = serverConfig.value.mode || 'local';
+                    const url = mode === 'local' ? serverConfig.value.local : serverConfig.value.remote;
+                    if (url) {
+                        localStorage.setItem('server_url', url);
                     }
                 }
                 
