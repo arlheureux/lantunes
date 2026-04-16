@@ -5,19 +5,17 @@ import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.PendingIntent
 import android.app.Service
-import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
-import android.content.IntentFilter
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.os.Build
 import android.os.IBinder
 import android.os.StrictMode
-import android.view.KeyEvent
 import android.support.v4.media.session.MediaSessionCompat
 import androidx.core.app.NotificationCompat
 import androidx.media.app.NotificationCompat.MediaStyle
+import androidx.media.session.MediaButtonReceiver
 import java.net.URL
 
 class PlaybackService : Service() {
@@ -70,47 +68,11 @@ class PlaybackService : Service() {
         super.onCreate()
         createNotificationChannel()
         setupMediaSession()
-        registerMediaButtonReceiver()
-    }
-
-    private fun registerMediaButtonReceiver() {
-        val receiver = object : BroadcastReceiver() {
-            override fun onReceive(context: Context?, intent: Intent?) {
-                if (Intent.ACTION_MEDIA_BUTTON == intent?.action) {
-                    val keyEvent: KeyEvent? = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                        intent.getParcelableExtra(Intent.EXTRA_KEY_EVENT, KeyEvent::class.java)
-                    } else {
-                        @Suppress("DEPRECATION")
-                        intent.getParcelableExtra(Intent.EXTRA_KEY_EVENT)
-                    }
-                    
-                    if (keyEvent != null && keyEvent.action == KeyEvent.ACTION_DOWN) {
-                        when (keyEvent.keyCode) {
-                            KeyEvent.KEYCODE_MEDIA_PLAY,
-                            KeyEvent.KEYCODE_MEDIA_PAUSE,
-                            KeyEvent.KEYCODE_HEADSETHOOK -> {
-                                val isPlaying = playbackState?.isPlaying ?: false
-                                if (isPlaying) {
-                                    callJs("onPause")
-                                } else {
-                                    callJs("onPlay")
-                                }
-                            }
-                            KeyEvent.KEYCODE_MEDIA_NEXT -> callJs("onNext")
-                            KeyEvent.KEYCODE_MEDIA_PREVIOUS -> callJs("onPrevious")
-                        }
-                    }
-                }
-            }
-        }
-
-        val filter = IntentFilter(Intent.ACTION_MEDIA_BUTTON)
-        filter.priority = IntentFilter.SYSTEM_HIGH_PRIORITY
-        registerReceiver(receiver, filter)
     }
 
     private fun setupMediaSession() {
         mediaSession = MediaSessionCompat(this, "LanTunesMediaSession").apply {
+            setFlags(MediaSessionCompat.FLAG_HANDLES_MEDIA_BUTTONS)
             setCallback(mediaSessionCallback)
             isActive = true
         }
@@ -187,6 +149,9 @@ class PlaybackService : Service() {
     override fun onBind(intent: Intent?): IBinder? = null
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+        // Handle media button intents from Bluetooth headset
+        MediaButtonReceiver.handleIntent(mediaSession, intent)
+        
         when (intent?.action) {
             ACTION_PLAY -> {
                 callJs("onPlay")
