@@ -664,7 +664,9 @@
                     left: 0;
                     right: 0;
                     bottom: 0;
-                    background: #121212;
+                    background: rgba(0, 0, 0, 0.85);
+                    backdrop-filter: blur(20px);
+                    -webkit-backdrop-filter: blur(20px);
                     z-index: 2000;
                     display: flex;
                     flex-direction: column;
@@ -1097,7 +1099,9 @@
             left: 0;
             right: 0;
             bottom: 0;
-            background: #121212;
+            background: rgba(0, 0, 0, 0.85);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
             z-index: 2500;
             display: flex;
             flex-direction: row;
@@ -1235,20 +1239,22 @@
             overflow-y: auto;
             background: #1e1e1e;
             border-radius: 12px;
-            padding: 16px;
+            padding: 12px;
             box-shadow: 0 4px 12px rgba(0,0,0,0.3);
         }
         .player-modal .modal-queue-section .queue-header {
             color: var(--text-secondary);
             font-size: 13px;
             font-weight: 600;
-            margin-bottom: 16px;
+            margin-bottom: 12px;
             text-transform: uppercase;
             letter-spacing: 1px;
+            display: flex;
+            align-items: center;
         }
         .player-modal .modal-queue-section .queue-item {
-            padding: 10px 12px;
-            border-radius: 8px;
+            padding: 8px 10px;
+            border-radius: 6px;
             cursor: pointer;
             display: flex;
             align-items: center;
@@ -2008,6 +2014,9 @@
                         <span v-if="playbackState.track?.file_format">{{ playbackState.track.file_format }}</span>
                         <span v-if="playbackState.track?.bitrate"> · {{ playbackState.track.bitrate }}kbps</span>
                         <span v-if="playbackState.track?.sample_rate"> · {{ playbackState.track.sample_rate }}Hz</span>
+                        <button @click="toggleLike" :style="{ color: isLiked ? 'var(--accent)' : 'var(--text-muted)', background:'none',border:'none',cursor:'pointer',marginLeft:'8px' }" title="Like">
+                            <i :class="isLiked ? 'fas fa-heart' : 'far fa-heart'"></i>
+                        </button>
                     </div>
                 </div>
                 <div class="modal-controls">
@@ -2038,17 +2047,28 @@
                         <span>{{ formatDuration(playbackState.track?.duration || 0) }}</span>
                     </div>
                 </div>
+                <div class="modal-volume" style="display:flex;align-items:center;gap:8px;margin-top:12px;">
+                    <button @click="setVolume(0)" style="background:none;border:none;color:var(--text-muted);cursor:pointer;"><i class="fas fa-volume-off"></i></button>
+                    <input type="range" min="0" max="1" step="0.01" :value="playbackState.volume" @input="setVolume(parseFloat($event.target.value))" style="flex:1;cursor:pointer;">
+                    <button @click="setVolume(1)" style="background:none;border:none;color:var(--text-muted);cursor:pointer;"><i class="fas fa-volume-up"></i></button>
+                </div>
             </div>
             <div class="modal-right">
                 <div v-if="playbackState.queue && playbackState.queue.length > 0" class="modal-queue-section">
-                    <div class="queue-header">Queue ({{ playbackState.queue.length }})</div>
+                    <div class="queue-header">
+                        <span>Queue ({{ playbackState.queue.length }})</span>
+                        <button @click="clearQueue" style="background:none;border:none;color:var(--text-muted);cursor:pointer;font-size:12px;margin-left:auto;" title="Clear queue">Clear</button>
+                    </div>
                     <div class="queue-item" :class="{ playing: playbackState.queue_index === i }" v-for="(id, i) in playbackState.queue" :key="i" @click="playFromQueue(i)">
                         <span class="title">{{ getTrackTitle(id) }}</span>
+                        <span class="artist" style="font-size:11px;color:var(--text-muted);">{{ getTrackArtist(id) }}</span>
                         <span class="duration">{{ getTrackDuration(id) }}</span>
                     </div>
                 </div>
                 <div v-else class="modal-queue-section">
-                    <div class="queue-header">Queue</div>
+                    <div class="queue-header">
+                        <span>Queue</span>
+                    </div>
                     <div class="queue-empty">Queue is empty</div>
                 </div>
             </div>
@@ -2074,6 +2094,9 @@
                         <span v-if="playbackState.track?.file_format">{{ playbackState.track.file_format }}</span>
                         <span v-if="playbackState.track?.bitrate"> · {{ playbackState.track.bitrate }}kbps</span>
                         <span v-if="playbackState.track?.sample_rate"> · {{ playbackState.track.sample_rate }}Hz</span>
+                        <button @click="toggleLike" :style="{ color: isLiked ? 'var(--accent)' : 'var(--text-muted)', background:'none',border:'none',cursor:'pointer',marginLeft:'8px' }" title="Like">
+                            <i :class="isLiked ? 'fas fa-heart' : 'far fa-heart'"></i>
+                        </button>
                     </div>
                 </div>
                 <div style="width:100%;max-width:300px;margin-bottom:24px;">
@@ -2105,7 +2128,11 @@
                     </button>
                 </div>
                 <div style="display:flex;justify-content:center;gap:16px;margin-top:16px;">
-                    <button @click="showDeviceModal = true" style="background:none;border:none;color:var(--text-secondary);font-size:20px;" title="Device">
+                    <button @click="setVolume(0)" style="background:none;border:none;color:var(--text-secondary);font-size:20px;" title="Mute">
+                        <i class="fas fa-volume-off"></i>
+                    </button>
+                    <input type="range" min="0" max="1" step="0.01" :value="playbackState.volume" @input="setVolume(parseFloat($event.target.value))" style="width:80px;cursor:pointer;">
+                    <button @click="setVolume(1)" style="background:none;border:none;color:var(--text-secondary);font-size:20px;" title="Max volume">
                         <i class="fas fa-volume-up"></i>
                     </button>
                     <button @click="showMobileQueue = true" style="background:none;border:none;color:var(--text-secondary);font-size:20px;" title="Queue">
@@ -2238,6 +2265,7 @@
                 const currentArtist = ref(null);
                 const currentPlaylist = ref(null);
 const playbackState = ref({ track: null, position: 0, is_playing: false, volume: 1.0, queue: [], queue_index: 0 });
+const isLiked = ref(false);
                 const volume = ref(1.0);
                 const isLoading = ref(false);
                 const audioPlayer = ref(null);
@@ -2538,6 +2566,15 @@ async function saveConfig() {
                 
                 async function removeFromQueue(index) {
                     sendControl('remove_from_queue', { index });
+                }
+                
+                async function clearQueue() {
+                    sendControl('clear_queue');
+                }
+                
+                function getTrackArtist(trackId) {
+                    const track = tracks.value?.find(t => t.id === trackId);
+                    return track?.artist || '';
                 }
                 
                 async function saveQueueAsPlaylist() {
@@ -3020,12 +3057,21 @@ async function saveConfig() {
                     showMobileQueue.value = false;
                 }
                 
+                function toggleLike() {
+                    isLiked.value = !isLiked.value;
+                }
+                
                 async function toggleShuffle() {
                     sendControl('toggle_shuffle');
                 }
                 
                 async function toggleRepeat() {
                     sendControl('toggle_repeat');
+                }
+                
+                function setVolume(value) {
+                    playbackState.value.volume = value;
+                    sendControl('set_volume', { volume: value });
                 }
                 
                 async function shufflePlay() {
@@ -3284,14 +3330,14 @@ async function saveConfig() {
                     search, viewAlbum, viewArtist, viewGenre, playTrack, playAlbum, playArtist, togglePlay, next, previous, seek, setVolume,
                     onTimeUpdate, onEnded, createPlaylist, saveConfig, scanLibrary, fetchMissingArtwork, formatDuration, getTrackTitle, getTrackDuration,
                     loadTracks, prevPage, nextPage, showContextMenu, closeContextMenu, playTrackNext, addToQueue,
-                    removeFromQueue, saveQueueAsPlaylist,
-                    toggleShuffle, toggleRepeat, shufflePlay, playFromQueue,
+                    removeFromQueue, clearQueue, getTrackArtist, saveQueueAsPlaylist,
+                    toggleShuffle, toggleRepeat, setVolume, shufflePlay, playFromQueue,
                     openPlaylistDialog, addToPlaylist, createAndAddToPlaylist, newPlaylistName,
                     showAlbumContextMenu, closeAlbumContextMenu, openAlbumPlaylistDialog,
                     openAlbumEditDialog, saveAlbumMetadata, removeAlbumArtwork, albumEditDialog, getMediaUrl,
                     letters, scrollToLetter, selectedLetter, filteredArtists, selectedAlbumLetter, filteredAlbums, selectedGenreLetter, filteredGenres, playRandomAlbum, playRandomArtist, albumContextMenu,
                     sessions, selectedSessionId, currentSessionId, deviceName, updateDeviceName, focusSearch, setPlayerSession,
-                    users, showUserForm, newUser, isAdmin, isMobile, showMobileQueue, showDeviceModal, showPlayerModal, showMoreMenu, loadUsers, createUser, deleteUser, logout,
+                    users, showUserForm, newUser, isAdmin, isMobile, showMobileQueue, showDeviceModal, showPlayerModal, showMoreMenu, isLiked, toggleLike, loadUsers, createUser, deleteUser, logout,
                     viewPlaylist, playPlaylist, deletePlaylist, downloadPlaylist, shufflePlaylist, shuffleCount, loading, loadQueueTracks
                 };
             }

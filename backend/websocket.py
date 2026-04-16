@@ -174,6 +174,8 @@ async def websocket_endpoint(websocket: WebSocket):
                             position = payload.get('position')
                             if position is not None:
                                 playback.update_position(db, position)
+                        elif action == 'clear_queue':
+                            playback.set_queue(db, [], 0, session_id=session_id)
                         
                         # Broadcast state to all clients immediately after command
                         playback.broadcast_playback_state()
