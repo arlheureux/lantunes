@@ -3024,9 +3024,9 @@ async function saveConfig() {
                                     msg.data.track.title || 'Unknown',
                                     msg.data.track.artist || 'Unknown'
                                 );
-                                // Pass artwork URL if available
+                                // Pass artwork path if available
                                 if (msg.data.track.album_id) {
-                                    window.LanTunesAndroid.setArtwork(getMediaUrl('/api/library/artwork/' + msg.data.track.album_id));
+                                    window.LanTunesAndroid.setArtwork('/api/library/artwork/' + msg.data.track.album_id);
                                 }
                             }
                             

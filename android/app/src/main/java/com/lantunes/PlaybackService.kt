@@ -15,6 +15,7 @@ import android.os.StrictMode
 import android.support.v4.media.session.MediaSessionCompat
 import androidx.core.app.NotificationCompat
 import androidx.media.app.NotificationCompat.MediaStyle
+import androidx.media.session.MediaButtonReceiver
 import java.net.URL
 
 class PlaybackService : Service() {
@@ -71,6 +72,7 @@ class PlaybackService : Service() {
 
     private fun setupMediaSession() {
         mediaSession = MediaSessionCompat(this, "LanTunesMediaSession").apply {
+            setFlags(MediaSessionCompat.FLAG_HANDLES_MEDIA_BUTTONS)
             setCallback(mediaSessionCallback)
             isActive = true
         }
@@ -147,6 +149,9 @@ class PlaybackService : Service() {
     override fun onBind(intent: Intent?): IBinder? = null
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+        // Handle media button intents from Bluetooth headset
+        MediaButtonReceiver.handleIntent(mediaSession, intent)
+        
         when (intent?.action) {
             ACTION_PLAY -> {
                 callJs("onPlay")
