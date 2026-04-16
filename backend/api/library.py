@@ -5,7 +5,7 @@ import asyncio
 backend_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, backend_dir)
 
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query, StreamingResponse
 from fastapi.responses import StreamingResponse
 from sqlalchemy.orm import Session, joinedload
 from database import get_db, Track, Album, Artist, Playlist, PlaylistTrack, Client
@@ -165,8 +165,10 @@ async def scan_stream():
     
     music_path = config.get("library", {}).get("music_path", "")
     if not music_path:
-        yield f"data: {json.dumps({'error': 'Music path not configured'})}\n\n"
-        return
+        return StreamingResponse(
+            iter([f"data: {json.dumps({'error': 'Music path not configured'})}\n\n"]),
+            media_type="text/event-stream"
+        )
     
     async def event_generator():
         progress_data = {"current": 0, "total": 0, "message": "Starting...", "stage": "preparing", "percent": 0}
