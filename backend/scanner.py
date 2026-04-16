@@ -85,7 +85,7 @@ def scan_library(music_path: str, progress_callback=None):
                         db.flush()
                     
                     album_title = meta.get('album') or 'Unknown Album'
-                    album = db.query(Album).filter(Album.title == album_title, Album.artist_id == artist.id).first()
+                    album = db.query(Album).filter(Album.title == album_title).first()
                     artwork_path = None
                     
                     # Get artist name for cover lookup

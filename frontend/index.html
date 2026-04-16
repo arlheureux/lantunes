@@ -2414,6 +2414,7 @@ async function saveConfig() {
                                     if (data.result) {
                                         scanResult.value = `Scan complete! Added ${data.result.added} tracks, ${data.result.errors} errors`;
                                     }
+                                    loadLibrary();
                                 }
                             } catch (e) {
                                 console.error('Failed to parse progress:', e);
@@ -2453,6 +2454,7 @@ async function saveConfig() {
                                     } else if (data.result?.error) {
                                         scanResult.value = 'Error: ' + data.result.error;
                                     }
+                                    loadLibrary();
                                 }
                             } catch (e) {
                                 console.error('Failed to parse progress:', e);
