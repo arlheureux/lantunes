@@ -2578,17 +2578,23 @@ async function saveConfig() {
                 }
                 
                 async function addToPlaylist(playlistId) {
-                    if (playlistDialog.value.track) {
-                        await apiCall('/api/playlists/' + playlistId + '/tracks?track_id=' + playlistDialog.value.track.id, { method: 'POST' });
-                    } else if (playlistDialog.value.album) {
-                        const albumDetails = await apiCall('/api/library/albums/' + playlistDialog.value.album.id);
+                    // Store in local variables FIRST before clearing
+                    const trackToAdd = playlistDialog.value.track;
+                    const albumToAdd = playlistDialog.value.album;
+                    
+                    // Clear dialog state immediately
+                    playlistDialog.value = { show: false, track: null, album: null };
+                    
+                    if (trackToAdd) {
+                        await apiCall('/api/playlists/' + playlistId + '/tracks?track_id=' + trackToAdd.id, { method: 'POST' });
+                    } else if (albumToAdd) {
+                        const albumDetails = await apiCall('/api/library/albums/' + albumToAdd.id);
                         if (albumDetails && albumDetails.tracks) {
                             for (const track of albumDetails.tracks) {
                                 await apiCall('/api/playlists/' + playlistId + '/tracks?track_id=' + track.id, { method: 'POST' });
                             }
                         }
                     }
-                    playlistDialog.value.show = false;
                 }
                 
                 async function createAndAddToPlaylist() {
