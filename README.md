@@ -29,6 +29,7 @@ A self-hosted LAN music streaming server with multi-client sync and device casti
 ```bash
 git clone https://github.com/arlheureux/lantunes.git
 cd lantunes
+cp config.yaml.example config.yaml
 python3 run.py
 ```
 
@@ -43,66 +44,9 @@ The server will:
 2. Go to Settings and set your music path
 3. Click "Scan Library" to index your music
 
-### For Other Devices on Your Network
+### Configuration
 
-Access from any device on your LAN:
-```
-http://<your-server-ip>:8080
-```
-
-## Usage
-
-### Playing Music
-
-- Click any track to play it
-- Use shuffle buttons to play random tracks
-- Use "Play Random" button on Albums or Artists page to play a random selection
-- Swipe left/right on mobile player to skip tracks
-
-### Library Navigation
-
-- **Home** - Stats dashboard and recently added content
-- **All Tracks** - Browse all tracks in your library
-- **Albums** - Browse by album with letter filtering
-- **Artists** - Browse by artist with letter filtering
-- **Genres** - Browse by genre with letter filtering
-- **Playlists** - Create and manage playlists
-
-### Device Casting
-
-When multiple devices are connected:
-1. Select which device should play audio from the dropdown in the player bar
-2. Click play on any device - audio will stream to the selected device
-3. The other devices act as remote controls
-
-## API Endpoints
-
-### Health
-- `GET /health` - Health check
-- `GET /health/ready` - Readiness check
-
-### Library
-- `GET /api/library/tracks` - List tracks
-- `GET /api/library/albums` - List albums
-- `GET /api/library/artists` - List artists
-- `GET /api/library/search?q=` - Search
-- `POST /api/library/scan` - Scan library
-
-### Playback
-- `GET /api/playback/state` - Get playback state
-- `POST /api/playback/play` - Play track
-- `POST /api/playback/pause` - Pause
-- `POST /api/playback/next` - Next track
-- `POST /api/playback/previous` - Previous track
-- `POST /api/playback/seek?position=` - Seek
-- `GET /api/playback/stream/{id}` - Stream audio
-
-### WebSocket
-- `WS /ws` - Real-time sync for playback state and device management
-
-## Configuration
-
-Edit `config.yaml` to customize settings:
+The `config.yaml` file is gitignored to preserve your local settings. Edit it to customize settings:
 
 ```yaml
 library:

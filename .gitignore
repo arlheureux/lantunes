@@ -5,3 +5,4 @@ lantunes.db
 *.pyc
 .DS_Store
 *.tar.gz
+config.yaml
