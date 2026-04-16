@@ -340,15 +340,17 @@ webViewClient = LanTunesWebViewClient()
     }
 
     @JavascriptInterface
-    fun setArtwork(relativePath: String) {
+    fun setArtwork(relativePath: String, token: String) {
         val serverUrl = getServerUrl()
         if (serverUrl.isNotEmpty() && relativePath.isNotEmpty()) {
-            val fullUrl = if (relativePath.startsWith("http")) {
+            val artworkPath = if (relativePath.startsWith("http")) {
                 relativePath
             } else {
-                "$serverUrl$relativePath"
+                val sep = if (relativePath.contains("?")) "&" else "?"
+                val tokenPart = if (token.isNotEmpty()) "${sep}token=$token" else ""
+                "$serverUrl$relativePath$tokenPart"
             }
-            PlaybackService.setArtworkUrl(fullUrl)
+            PlaybackService.setArtworkUrl(artworkPath)
         }
     }
 

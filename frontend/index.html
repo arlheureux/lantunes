@@ -3026,7 +3026,8 @@ async function saveConfig() {
                                 );
                                 // Pass artwork path if available
                                 if (msg.data.track.album_id) {
-                                    window.LanTunesAndroid.setArtwork('/api/library/artwork/' + msg.data.track.album_id);
+                                    const token = localStorage.getItem('access_token');
+                                    window.LanTunesAndroid.setArtwork('/api/library/artwork/' + msg.data.track.album_id, token || '');
                                 }
                             }
                             
