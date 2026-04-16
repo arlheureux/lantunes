@@ -531,6 +531,25 @@
             
             .stats-grid { grid-template-columns: repeat(2, 1fr) !important; }
             
+            /* Smaller cards on mobile */
+            .album-card { max-width: 100%; }
+            .album-cover { height: auto !important; aspect-ratio: 1; }
+            .album-card .name { font-size: 13px; }
+            .album-card .artist { font-size: 11px; }
+            
+            /* Adjust padding and margins for mobile */
+            .content { padding: 12px !important; }
+            h1 { font-size: 20px !important; }
+            h2 { font-size: 16px !important; }
+            
+            /* Stats cards smaller padding */
+            .stats-grid > div { padding: 12px !important; }
+            .stats-grid .fa-music, .stats-grid .fa-compact-disc, .stats-grid .fa-user, .stats-grid .fa-heart { font-size: 18px !important; }
+            .stats-grid > div > div:first-of-type { font-size: 20px !important; }
+            
+            /* Hide letter index on mobile */
+            .letter-index { display: none !important; }
+            
             body {
                 -webkit-overflow-scrolling: touch;
                 overscroll-behavior-y: contain;
@@ -858,9 +877,9 @@
                 font-size: 16px;
             }
             
-            /* Album Grid - 3 columns, smaller covers */
+            /* Album Grid - responsive on mobile */
             .album-grid { 
-                grid-template-columns: repeat(3, 1fr); 
+                grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); 
                 gap: 12px;
             }
             .album-card {
@@ -1399,7 +1418,7 @@
                                 <i v-if="isMobile" class="fas fa-chevron-right" style="font-size:12px;color:var(--text-muted);"></i>
                             </button>
                         </div>
-                        <div class="stats-grid" style="display:grid;grid-template-columns:repeat(4, 1fr);gap:12px;margin-bottom:32px;">
+                        <div class="stats-grid" style="gap:12px;margin-bottom:32px;">
                             <div @click="view = 'tracks'" style="background:var(--bg-surface);border-radius:var(--radius-md);padding:20px;cursor:pointer;transition:all 0.2s;" onmouseover="this.style.background='var(--bg-hover)'" onmouseout="this.style.background='var(--bg-surface)'">
                                 <i class="fas fa-music" style="font-size:24px;color:var(--accent);margin-bottom:12px;"></i>
                                 <div style="font-size:28px;font-weight:700;">{{ tracksTotal }}</div>
