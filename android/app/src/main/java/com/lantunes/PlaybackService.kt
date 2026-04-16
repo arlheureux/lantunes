@@ -7,11 +7,15 @@ import android.app.PendingIntent
 import android.app.Service
 import android.content.Context
 import android.content.Intent
+import android.graphics.Bitmap
+import android.graphics.BitmapFactory
 import android.os.Build
 import android.os.IBinder
+import android.os.StrictMode
 import android.support.v4.media.session.MediaSessionCompat
 import androidx.core.app.NotificationCompat
 import androidx.media.app.NotificationCompat.MediaStyle
+import java.net.URL
 
 class PlaybackService : Service() {
 
@@ -46,8 +50,15 @@ class PlaybackService : Service() {
             playbackState = PlaybackState(isPlaying, trackTitle, artistName)
         }
 
+        fun setArtworkUrl(url: String) {
+            artworkUrl = url
+            artworkBitmap = null
+        }
+
         data class PlaybackState(val isPlaying: Boolean, val trackTitle: String?, val artistName: String?)
         private var playbackState: PlaybackState? = null
+        private var artworkUrl: String? = null
+        private var artworkBitmap: Bitmap? = null
     }
 
     private lateinit var mediaSession: MediaSessionCompat
@@ -109,6 +120,28 @@ class PlaybackService : Service() {
         val notification = createNotification(title, artist, isPlaying)
         val manager = getSystemService(NotificationManager::class.java)
         manager.notify(NOTIFICATION_ID, notification)
+    }
+
+    private fun getArtworkBitmap(): Bitmap? {
+        val url = artworkUrl ?: return null
+        
+        if (artworkBitmap != null) {
+            return artworkBitmap
+        }
+
+        return try {
+            val policy = StrictMode.ThreadPolicy.Builder().permitAll().build()
+            StrictMode.setThreadPolicy(policy)
+            
+            val inputStream = URL(url).openStream()
+            val bitmap = BitmapFactory.decodeStream(inputStream)
+            inputStream.close()
+            
+            artworkBitmap = bitmap
+            bitmap
+        } catch (e: Exception) {
+            null
+        }
     }
 
     override fun onBind(intent: Intent?): IBinder? = null
@@ -187,7 +220,7 @@ class PlaybackService : Service() {
             .setShowActionsInCompactView(0, 1, 2)
             .setMediaSession(mediaSession.sessionToken)
 
-        return NotificationCompat.Builder(this, CHANNEL_ID)
+        val builder = NotificationCompat.Builder(this, CHANNEL_ID)
             .setContentTitle(title)
             .setContentText(artist)
             .setSmallIcon(android.R.drawable.ic_media_play)
@@ -200,7 +233,13 @@ class PlaybackService : Service() {
             .addAction(playPauseAction)
             .addAction(nextAction)
             .setStyle(style)
-            .build()
+
+        val artwork = getArtworkBitmap()
+        if (artwork != null) {
+            builder.setLargeIcon(artwork)
+        }
+
+        return builder.build()
     }
 
     private fun createPendingIntent(action: String): PendingIntent {

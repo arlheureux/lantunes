@@ -338,4 +338,14 @@ webViewClient = LanTunesWebViewClient()
     private fun setupMediaSession() {
         // Bluetooth controls temporarily disabled - needs proper MediaSession setup
     }
+
+    @JavascriptInterface
+    fun setArtwork(url: String) {
+        PlaybackService.setArtworkUrl(url)
+    }
+
+    @JavascriptInterface
+    fun updatePlaybackState(isPlaying: Boolean, trackTitle: String?, artistName: String?) {
+        PlaybackService.updatePlaybackState(isPlaying, trackTitle, artistName)
+    }
 }

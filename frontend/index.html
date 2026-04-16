@@ -3016,6 +3016,20 @@ async function saveConfig() {
                             const oldTrackId = playbackState.value.track?.id;
                             const oldPosition = playbackState.value.position;
                             playbackState.value = msg.data;
+                            
+                            // Update Android notification with track info and artwork
+                            if (window.LanTunesAndroid && msg.data.track) {
+                                window.LanTunesAndroid.updatePlaybackState(
+                                    msg.data.is_playing,
+                                    msg.data.track.title || 'Unknown',
+                                    msg.data.track.artist || 'Unknown'
+                                );
+                                // Pass artwork URL if available
+                                if (msg.data.track.album_id) {
+                                    window.LanTunesAndroid.setArtwork(getMediaUrl('/api/library/artwork/' + msg.data.track.album_id));
+                                }
+                            }
+                            
                             loadQueueTracks();
                             
                             const trackChanged = oldTrackId !== msg.data.track?.id;

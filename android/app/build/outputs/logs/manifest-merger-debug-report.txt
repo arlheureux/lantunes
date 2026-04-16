@@ -1,9 +1,9 @@
 -- Merging decision tree log ---
 manifest
-ADDED from /home/arnaud/lantunes/android/app/src/main/AndroidManifest.xml:2:1-51:12
-INJECTED from /home/arnaud/lantunes/android/app/src/main/AndroidManifest.xml:2:1-51:12
-INJECTED from /home/arnaud/lantunes/android/app/src/main/AndroidManifest.xml:2:1-51:12
-INJECTED from /home/arnaud/lantunes/android/app/src/main/AndroidManifest.xml:2:1-51:12
+ADDED from /home/arnaud/lantunes/android/app/src/main/AndroidManifest.xml:2:1-60:12
+INJECTED from /home/arnaud/lantunes/android/app/src/main/AndroidManifest.xml:2:1-60:12
+INJECTED from /home/arnaud/lantunes/android/app/src/main/AndroidManifest.xml:2:1-60:12
+INJECTED from /home/arnaud/lantunes/android/app/src/main/AndroidManifest.xml:2:1-60:12
 MERGED from [com.google.android.material:material:1.11.0] /home/arnaud/.gradle/caches/8.10.2/transforms/f5643fa18e798e5f9913177891c73389/transformed/material-1.11.0/AndroidManifest.xml:17:1-24:12
 MERGED from [androidx.appcompat:appcompat-resources:1.6.1] /home/arnaud/.gradle/caches/8.10.2/transforms/531a61f1c76d5ab61ce7bf1e4fd59f13/transformed/appcompat-resources-1.6.1/AndroidManifest.xml:17:1-22:12
 MERGED from [androidx.constraintlayout:constraintlayout:2.0.1] /home/arnaud/.gradle/caches/8.10.2/transforms/78be17cafa0d06ecb5aa0d2cb841b40c/transformed/constraintlayout-2.0.1/AndroidManifest.xml:2:1-11:12
@@ -85,8 +85,8 @@ ADDED from /home/arnaud/lantunes/android/app/src/main/AndroidManifest.xml:10:5-7
 	android:name
 		ADDED from /home/arnaud/lantunes/android/app/src/main/AndroidManifest.xml:10:22-74
 application
-ADDED from /home/arnaud/lantunes/android/app/src/main/AndroidManifest.xml:12:5-49:19
-INJECTED from /home/arnaud/lantunes/android/app/src/main/AndroidManifest.xml:12:5-49:19
+ADDED from /home/arnaud/lantunes/android/app/src/main/AndroidManifest.xml:12:5-58:19
+INJECTED from /home/arnaud/lantunes/android/app/src/main/AndroidManifest.xml:12:5-58:19
 MERGED from [com.google.android.material:material:1.11.0] /home/arnaud/.gradle/caches/8.10.2/transforms/f5643fa18e798e5f9913177891c73389/transformed/material-1.11.0/AndroidManifest.xml:22:5-20
 MERGED from [com.google.android.material:material:1.11.0] /home/arnaud/.gradle/caches/8.10.2/transforms/f5643fa18e798e5f9913177891c73389/transformed/material-1.11.0/AndroidManifest.xml:22:5-20
 MERGED from [androidx.constraintlayout:constraintlayout:2.0.1] /home/arnaud/.gradle/caches/8.10.2/transforms/78be17cafa0d06ecb5aa0d2cb841b40c/transformed/constraintlayout-2.0.1/AndroidManifest.xml:9:5-20
@@ -156,19 +156,27 @@ ADDED from /home/arnaud/lantunes/android/app/src/main/AndroidManifest.xml:34:9-3
 	android:name
 		ADDED from /home/arnaud/lantunes/android/app/src/main/AndroidManifest.xml:35:13-45
 service#com.lantunes.PlaybackService
-ADDED from /home/arnaud/lantunes/android/app/src/main/AndroidManifest.xml:40:9-47:19
+ADDED from /home/arnaud/lantunes/android/app/src/main/AndroidManifest.xml:40:9-48:19
 	android:exported
-		ADDED from /home/arnaud/lantunes/android/app/src/main/AndroidManifest.xml:42:13-37
+		ADDED from /home/arnaud/lantunes/android/app/src/main/AndroidManifest.xml:42:13-36
+	tools:ignore
+		ADDED from /home/arnaud/lantunes/android/app/src/main/AndroidManifest.xml:44:13-43
 	android:foregroundServiceType
 		ADDED from /home/arnaud/lantunes/android/app/src/main/AndroidManifest.xml:43:13-58
 	android:name
 		ADDED from /home/arnaud/lantunes/android/app/src/main/AndroidManifest.xml:41:13-44
 intent-filter#action:name:android.intent.action.MEDIA_BUTTON
-ADDED from /home/arnaud/lantunes/android/app/src/main/AndroidManifest.xml:44:13-46:29
+ADDED from /home/arnaud/lantunes/android/app/src/main/AndroidManifest.xml:45:13-47:29
 action#android.intent.action.MEDIA_BUTTON
-ADDED from /home/arnaud/lantunes/android/app/src/main/AndroidManifest.xml:45:17-77
+ADDED from /home/arnaud/lantunes/android/app/src/main/AndroidManifest.xml:46:17-77
 	android:name
-		ADDED from /home/arnaud/lantunes/android/app/src/main/AndroidManifest.xml:45:25-74
+		ADDED from /home/arnaud/lantunes/android/app/src/main/AndroidManifest.xml:46:25-74
+receiver#androidx.media.MediaButtonReceiver
+ADDED from /home/arnaud/lantunes/android/app/src/main/AndroidManifest.xml:50:9-56:20
+	android:exported
+		ADDED from /home/arnaud/lantunes/android/app/src/main/AndroidManifest.xml:52:13-36
+	android:name
+		ADDED from /home/arnaud/lantunes/android/app/src/main/AndroidManifest.xml:51:13-62
 uses-sdk
 INJECTED from /home/arnaud/lantunes/android/app/src/main/AndroidManifest.xml reason: use-sdk injection requested
 INJECTED from /home/arnaud/lantunes/android/app/src/main/AndroidManifest.xml

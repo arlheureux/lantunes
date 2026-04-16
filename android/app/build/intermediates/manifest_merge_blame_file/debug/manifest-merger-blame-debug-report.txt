@@ -39,7 +39,7 @@
 22-->[androidx.core:core:1.12.0] /home/arnaud/.gradle/caches/8.10.2/transforms/b6b8a7af94ec2c77cc150e7ebc415ad1/transformed/core-1.12.0/AndroidManifest.xml:26:22-94
 23
 24    <application
-24-->/home/arnaud/lantunes/android/app/src/main/AndroidManifest.xml:12:5-49:19
+24-->/home/arnaud/lantunes/android/app/src/main/AndroidManifest.xml:12:5-58:19
 25        android:allowBackup="true"
 25-->/home/arnaud/lantunes/android/app/src/main/AndroidManifest.xml:13:9-35
 26        android:appComponentFactory="androidx.core.app.CoreComponentFactory"
@@ -93,86 +93,100 @@
 51-->/home/arnaud/lantunes/android/app/src/main/AndroidManifest.xml:38:13-50
 52
 53        <service
-53-->/home/arnaud/lantunes/android/app/src/main/AndroidManifest.xml:40:9-47:19
+53-->/home/arnaud/lantunes/android/app/src/main/AndroidManifest.xml:40:9-48:19
 54            android:name="com.lantunes.PlaybackService"
 54-->/home/arnaud/lantunes/android/app/src/main/AndroidManifest.xml:41:13-44
-55            android:exported="false"
-55-->/home/arnaud/lantunes/android/app/src/main/AndroidManifest.xml:42:13-37
+55            android:exported="true"
+55-->/home/arnaud/lantunes/android/app/src/main/AndroidManifest.xml:42:13-36
 56            android:foregroundServiceType="mediaPlayback" >
 56-->/home/arnaud/lantunes/android/app/src/main/AndroidManifest.xml:43:13-58
 57            <intent-filter>
-57-->/home/arnaud/lantunes/android/app/src/main/AndroidManifest.xml:44:13-46:29
+57-->/home/arnaud/lantunes/android/app/src/main/AndroidManifest.xml:45:13-47:29
 58                <action android:name="android.intent.action.MEDIA_BUTTON" />
-58-->/home/arnaud/lantunes/android/app/src/main/AndroidManifest.xml:45:17-77
-58-->/home/arnaud/lantunes/android/app/src/main/AndroidManifest.xml:45:25-74
+58-->/home/arnaud/lantunes/android/app/src/main/AndroidManifest.xml:46:17-77
+58-->/home/arnaud/lantunes/android/app/src/main/AndroidManifest.xml:46:25-74
 59            </intent-filter>
 60        </service>
 61
-62        <provider
-62-->[androidx.emoji2:emoji2:1.2.0] /home/arnaud/.gradle/caches/8.10.2/transforms/936f98fe38e5e359e48fd9646da7fe02/transformed/emoji2-1.2.0/AndroidManifest.xml:24:9-32:20
-63            android:name="androidx.startup.InitializationProvider"
-63-->[androidx.emoji2:emoji2:1.2.0] /home/arnaud/.gradle/caches/8.10.2/transforms/936f98fe38e5e359e48fd9646da7fe02/transformed/emoji2-1.2.0/AndroidManifest.xml:25:13-67
-64            android:authorities="com.lantunes.androidx-startup"
-64-->[androidx.emoji2:emoji2:1.2.0] /home/arnaud/.gradle/caches/8.10.2/transforms/936f98fe38e5e359e48fd9646da7fe02/transformed/emoji2-1.2.0/AndroidManifest.xml:26:13-68
-65            android:exported="false" >
-65-->[androidx.emoji2:emoji2:1.2.0] /home/arnaud/.gradle/caches/8.10.2/transforms/936f98fe38e5e359e48fd9646da7fe02/transformed/emoji2-1.2.0/AndroidManifest.xml:27:13-37
-66            <meta-data
-66-->[androidx.emoji2:emoji2:1.2.0] /home/arnaud/.gradle/caches/8.10.2/transforms/936f98fe38e5e359e48fd9646da7fe02/transformed/emoji2-1.2.0/AndroidManifest.xml:29:13-31:52
-67                android:name="androidx.emoji2.text.EmojiCompatInitializer"
-67-->[androidx.emoji2:emoji2:1.2.0] /home/arnaud/.gradle/caches/8.10.2/transforms/936f98fe38e5e359e48fd9646da7fe02/transformed/emoji2-1.2.0/AndroidManifest.xml:30:17-75
-68                android:value="androidx.startup" />
-68-->[androidx.emoji2:emoji2:1.2.0] /home/arnaud/.gradle/caches/8.10.2/transforms/936f98fe38e5e359e48fd9646da7fe02/transformed/emoji2-1.2.0/AndroidManifest.xml:31:17-49
-69            <meta-data
-69-->[androidx.lifecycle:lifecycle-process:2.6.1] /home/arnaud/.gradle/caches/8.10.2/transforms/f5c5082390eb1769769ea0aa8d313620/transformed/lifecycle-process-2.6.1/AndroidManifest.xml:29:13-31:52
-70                android:name="androidx.lifecycle.ProcessLifecycleInitializer"
-70-->[androidx.lifecycle:lifecycle-process:2.6.1] /home/arnaud/.gradle/caches/8.10.2/transforms/f5c5082390eb1769769ea0aa8d313620/transformed/lifecycle-process-2.6.1/AndroidManifest.xml:30:17-78
-71                android:value="androidx.startup" />
-71-->[androidx.lifecycle:lifecycle-process:2.6.1] /home/arnaud/.gradle/caches/8.10.2/transforms/f5c5082390eb1769769ea0aa8d313620/transformed/lifecycle-process-2.6.1/AndroidManifest.xml:31:17-49
-72            <meta-data
-72-->[androidx.profileinstaller:profileinstaller:1.3.0] /home/arnaud/.gradle/caches/8.10.2/transforms/9c86443c58b09d4b6f1d3540a9d71ce9/transformed/profileinstaller-1.3.0/AndroidManifest.xml:29:13-31:52
-73                android:name="androidx.profileinstaller.ProfileInstallerInitializer"
-73-->[androidx.profileinstaller:profileinstaller:1.3.0] /home/arnaud/.gradle/caches/8.10.2/transforms/9c86443c58b09d4b6f1d3540a9d71ce9/transformed/profileinstaller-1.3.0/AndroidManifest.xml:30:17-85
-74                android:value="androidx.startup" />
-74-->[androidx.profileinstaller:profileinstaller:1.3.0] /home/arnaud/.gradle/caches/8.10.2/transforms/9c86443c58b09d4b6f1d3540a9d71ce9/transformed/profileinstaller-1.3.0/AndroidManifest.xml:31:17-49
-75        </provider>
-76
-77        <receiver
-77-->[androidx.profileinstaller:profileinstaller:1.3.0] /home/arnaud/.gradle/caches/8.10.2/transforms/9c86443c58b09d4b6f1d3540a9d71ce9/transformed/profileinstaller-1.3.0/AndroidManifest.xml:34:9-52:20
-78            android:name="androidx.profileinstaller.ProfileInstallReceiver"
-78-->[androidx.profileinstaller:profileinstaller:1.3.0] /home/arnaud/.gradle/caches/8.10.2/transforms/9c86443c58b09d4b6f1d3540a9d71ce9/transformed/profileinstaller-1.3.0/AndroidManifest.xml:35:13-76
-79            android:directBootAware="false"
-79-->[androidx.profileinstaller:profileinstaller:1.3.0] /home/arnaud/.gradle/caches/8.10.2/transforms/9c86443c58b09d4b6f1d3540a9d71ce9/transformed/profileinstaller-1.3.0/AndroidManifest.xml:36:13-44
-80            android:enabled="true"
-80-->[androidx.profileinstaller:profileinstaller:1.3.0] /home/arnaud/.gradle/caches/8.10.2/transforms/9c86443c58b09d4b6f1d3540a9d71ce9/transformed/profileinstaller-1.3.0/AndroidManifest.xml:37:13-35
-81            android:exported="true"
-81-->[androidx.profileinstaller:profileinstaller:1.3.0] /home/arnaud/.gradle/caches/8.10.2/transforms/9c86443c58b09d4b6f1d3540a9d71ce9/transformed/profileinstaller-1.3.0/AndroidManifest.xml:38:13-36
-82            android:permission="android.permission.DUMP" >
-82-->[androidx.profileinstaller:profileinstaller:1.3.0] /home/arnaud/.gradle/caches/8.10.2/transforms/9c86443c58b09d4b6f1d3540a9d71ce9/transformed/profileinstaller-1.3.0/AndroidManifest.xml:39:13-57
-83            <intent-filter>
-83-->[androidx.profileinstaller:profileinstaller:1.3.0] /home/arnaud/.gradle/caches/8.10.2/transforms/9c86443c58b09d4b6f1d3540a9d71ce9/transformed/profileinstaller-1.3.0/AndroidManifest.xml:40:13-42:29
-84                <action android:name="androidx.profileinstaller.action.INSTALL_PROFILE" />
-84-->[androidx.profileinstaller:profileinstaller:1.3.0] /home/arnaud/.gradle/caches/8.10.2/transforms/9c86443c58b09d4b6f1d3540a9d71ce9/transformed/profileinstaller-1.3.0/AndroidManifest.xml:41:17-91
-84-->[androidx.profileinstaller:profileinstaller:1.3.0] /home/arnaud/.gradle/caches/8.10.2/transforms/9c86443c58b09d4b6f1d3540a9d71ce9/transformed/profileinstaller-1.3.0/AndroidManifest.xml:41:25-88
-85            </intent-filter>
-86            <intent-filter>
-86-->[androidx.profileinstaller:profileinstaller:1.3.0] /home/arnaud/.gradle/caches/8.10.2/transforms/9c86443c58b09d4b6f1d3540a9d71ce9/transformed/profileinstaller-1.3.0/AndroidManifest.xml:43:13-45:29
-87                <action android:name="androidx.profileinstaller.action.SKIP_FILE" />
-87-->[androidx.profileinstaller:profileinstaller:1.3.0] /home/arnaud/.gradle/caches/8.10.2/transforms/9c86443c58b09d4b6f1d3540a9d71ce9/transformed/profileinstaller-1.3.0/AndroidManifest.xml:44:17-85
-87-->[androidx.profileinstaller:profileinstaller:1.3.0] /home/arnaud/.gradle/caches/8.10.2/transforms/9c86443c58b09d4b6f1d3540a9d71ce9/transformed/profileinstaller-1.3.0/AndroidManifest.xml:44:25-82
-88            </intent-filter>
-89            <intent-filter>
-89-->[androidx.profileinstaller:profileinstaller:1.3.0] /home/arnaud/.gradle/caches/8.10.2/transforms/9c86443c58b09d4b6f1d3540a9d71ce9/transformed/profileinstaller-1.3.0/AndroidManifest.xml:46:13-48:29
-90                <action android:name="androidx.profileinstaller.action.SAVE_PROFILE" />
-90-->[androidx.profileinstaller:profileinstaller:1.3.0] /home/arnaud/.gradle/caches/8.10.2/transforms/9c86443c58b09d4b6f1d3540a9d71ce9/transformed/profileinstaller-1.3.0/AndroidManifest.xml:47:17-88
-90-->[androidx.profileinstaller:profileinstaller:1.3.0] /home/arnaud/.gradle/caches/8.10.2/transforms/9c86443c58b09d4b6f1d3540a9d71ce9/transformed/profileinstaller-1.3.0/AndroidManifest.xml:47:25-85
-91            </intent-filter>
-92            <intent-filter>
-92-->[androidx.profileinstaller:profileinstaller:1.3.0] /home/arnaud/.gradle/caches/8.10.2/transforms/9c86443c58b09d4b6f1d3540a9d71ce9/transformed/profileinstaller-1.3.0/AndroidManifest.xml:49:13-51:29
-93                <action android:name="androidx.profileinstaller.action.BENCHMARK_OPERATION" />
-93-->[androidx.profileinstaller:profileinstaller:1.3.0] /home/arnaud/.gradle/caches/8.10.2/transforms/9c86443c58b09d4b6f1d3540a9d71ce9/transformed/profileinstaller-1.3.0/AndroidManifest.xml:50:17-95
-93-->[androidx.profileinstaller:profileinstaller:1.3.0] /home/arnaud/.gradle/caches/8.10.2/transforms/9c86443c58b09d4b6f1d3540a9d71ce9/transformed/profileinstaller-1.3.0/AndroidManifest.xml:50:25-92
-94            </intent-filter>
-95        </receiver>
-96    </application>
-97
-98</manifest>
+62        <receiver
+62-->/home/arnaud/lantunes/android/app/src/main/AndroidManifest.xml:50:9-56:20
+63            android:name="androidx.media.MediaButtonReceiver"
+63-->/home/arnaud/lantunes/android/app/src/main/AndroidManifest.xml:51:13-62
+64            android:exported="true" >
+64-->/home/arnaud/lantunes/android/app/src/main/AndroidManifest.xml:52:13-36
+65            <intent-filter>
+65-->/home/arnaud/lantunes/android/app/src/main/AndroidManifest.xml:45:13-47:29
+66                <action android:name="android.intent.action.MEDIA_BUTTON" />
+66-->/home/arnaud/lantunes/android/app/src/main/AndroidManifest.xml:46:17-77
+66-->/home/arnaud/lantunes/android/app/src/main/AndroidManifest.xml:46:25-74
+67            </intent-filter>
+68        </receiver>
+69
+70        <provider
+70-->[androidx.emoji2:emoji2:1.2.0] /home/arnaud/.gradle/caches/8.10.2/transforms/936f98fe38e5e359e48fd9646da7fe02/transformed/emoji2-1.2.0/AndroidManifest.xml:24:9-32:20
+71            android:name="androidx.startup.InitializationProvider"
+71-->[androidx.emoji2:emoji2:1.2.0] /home/arnaud/.gradle/caches/8.10.2/transforms/936f98fe38e5e359e48fd9646da7fe02/transformed/emoji2-1.2.0/AndroidManifest.xml:25:13-67
+72            android:authorities="com.lantunes.androidx-startup"
+72-->[androidx.emoji2:emoji2:1.2.0] /home/arnaud/.gradle/caches/8.10.2/transforms/936f98fe38e5e359e48fd9646da7fe02/transformed/emoji2-1.2.0/AndroidManifest.xml:26:13-68
+73            android:exported="false" >
+73-->[androidx.emoji2:emoji2:1.2.0] /home/arnaud/.gradle/caches/8.10.2/transforms/936f98fe38e5e359e48fd9646da7fe02/transformed/emoji2-1.2.0/AndroidManifest.xml:27:13-37
+74            <meta-data
+74-->[androidx.emoji2:emoji2:1.2.0] /home/arnaud/.gradle/caches/8.10.2/transforms/936f98fe38e5e359e48fd9646da7fe02/transformed/emoji2-1.2.0/AndroidManifest.xml:29:13-31:52
+75                android:name="androidx.emoji2.text.EmojiCompatInitializer"
+75-->[androidx.emoji2:emoji2:1.2.0] /home/arnaud/.gradle/caches/8.10.2/transforms/936f98fe38e5e359e48fd9646da7fe02/transformed/emoji2-1.2.0/AndroidManifest.xml:30:17-75
+76                android:value="androidx.startup" />
+76-->[androidx.emoji2:emoji2:1.2.0] /home/arnaud/.gradle/caches/8.10.2/transforms/936f98fe38e5e359e48fd9646da7fe02/transformed/emoji2-1.2.0/AndroidManifest.xml:31:17-49
+77            <meta-data
+77-->[androidx.lifecycle:lifecycle-process:2.6.1] /home/arnaud/.gradle/caches/8.10.2/transforms/f5c5082390eb1769769ea0aa8d313620/transformed/lifecycle-process-2.6.1/AndroidManifest.xml:29:13-31:52
+78                android:name="androidx.lifecycle.ProcessLifecycleInitializer"
+78-->[androidx.lifecycle:lifecycle-process:2.6.1] /home/arnaud/.gradle/caches/8.10.2/transforms/f5c5082390eb1769769ea0aa8d313620/transformed/lifecycle-process-2.6.1/AndroidManifest.xml:30:17-78
+79                android:value="androidx.startup" />
+79-->[androidx.lifecycle:lifecycle-process:2.6.1] /home/arnaud/.gradle/caches/8.10.2/transforms/f5c5082390eb1769769ea0aa8d313620/transformed/lifecycle-process-2.6.1/AndroidManifest.xml:31:17-49
+80            <meta-data
+80-->[androidx.profileinstaller:profileinstaller:1.3.0] /home/arnaud/.gradle/caches/8.10.2/transforms/9c86443c58b09d4b6f1d3540a9d71ce9/transformed/profileinstaller-1.3.0/AndroidManifest.xml:29:13-31:52
+81                android:name="androidx.profileinstaller.ProfileInstallerInitializer"
+81-->[androidx.profileinstaller:profileinstaller:1.3.0] /home/arnaud/.gradle/caches/8.10.2/transforms/9c86443c58b09d4b6f1d3540a9d71ce9/transformed/profileinstaller-1.3.0/AndroidManifest.xml:30:17-85
+82                android:value="androidx.startup" />
+82-->[androidx.profileinstaller:profileinstaller:1.3.0] /home/arnaud/.gradle/caches/8.10.2/transforms/9c86443c58b09d4b6f1d3540a9d71ce9/transformed/profileinstaller-1.3.0/AndroidManifest.xml:31:17-49
+83        </provider>
+84
+85        <receiver
+85-->[androidx.profileinstaller:profileinstaller:1.3.0] /home/arnaud/.gradle/caches/8.10.2/transforms/9c86443c58b09d4b6f1d3540a9d71ce9/transformed/profileinstaller-1.3.0/AndroidManifest.xml:34:9-52:20
+86            android:name="androidx.profileinstaller.ProfileInstallReceiver"
+86-->[androidx.profileinstaller:profileinstaller:1.3.0] /home/arnaud/.gradle/caches/8.10.2/transforms/9c86443c58b09d4b6f1d3540a9d71ce9/transformed/profileinstaller-1.3.0/AndroidManifest.xml:35:13-76
+87            android:directBootAware="false"
+87-->[androidx.profileinstaller:profileinstaller:1.3.0] /home/arnaud/.gradle/caches/8.10.2/transforms/9c86443c58b09d4b6f1d3540a9d71ce9/transformed/profileinstaller-1.3.0/AndroidManifest.xml:36:13-44
+88            android:enabled="true"
+88-->[androidx.profileinstaller:profileinstaller:1.3.0] /home/arnaud/.gradle/caches/8.10.2/transforms/9c86443c58b09d4b6f1d3540a9d71ce9/transformed/profileinstaller-1.3.0/AndroidManifest.xml:37:13-35
+89            android:exported="true"
+89-->[androidx.profileinstaller:profileinstaller:1.3.0] /home/arnaud/.gradle/caches/8.10.2/transforms/9c86443c58b09d4b6f1d3540a9d71ce9/transformed/profileinstaller-1.3.0/AndroidManifest.xml:38:13-36
+90            android:permission="android.permission.DUMP" >
+90-->[androidx.profileinstaller:profileinstaller:1.3.0] /home/arnaud/.gradle/caches/8.10.2/transforms/9c86443c58b09d4b6f1d3540a9d71ce9/transformed/profileinstaller-1.3.0/AndroidManifest.xml:39:13-57
+91            <intent-filter>
+91-->[androidx.profileinstaller:profileinstaller:1.3.0] /home/arnaud/.gradle/caches/8.10.2/transforms/9c86443c58b09d4b6f1d3540a9d71ce9/transformed/profileinstaller-1.3.0/AndroidManifest.xml:40:13-42:29
+92                <action android:name="androidx.profileinstaller.action.INSTALL_PROFILE" />
+92-->[androidx.profileinstaller:profileinstaller:1.3.0] /home/arnaud/.gradle/caches/8.10.2/transforms/9c86443c58b09d4b6f1d3540a9d71ce9/transformed/profileinstaller-1.3.0/AndroidManifest.xml:41:17-91
+92-->[androidx.profileinstaller:profileinstaller:1.3.0] /home/arnaud/.gradle/caches/8.10.2/transforms/9c86443c58b09d4b6f1d3540a9d71ce9/transformed/profileinstaller-1.3.0/AndroidManifest.xml:41:25-88
+93            </intent-filter>
+94            <intent-filter>
+94-->[androidx.profileinstaller:profileinstaller:1.3.0] /home/arnaud/.gradle/caches/8.10.2/transforms/9c86443c58b09d4b6f1d3540a9d71ce9/transformed/profileinstaller-1.3.0/AndroidManifest.xml:43:13-45:29
+95                <action android:name="androidx.profileinstaller.action.SKIP_FILE" />
+95-->[androidx.profileinstaller:profileinstaller:1.3.0] /home/arnaud/.gradle/caches/8.10.2/transforms/9c86443c58b09d4b6f1d3540a9d71ce9/transformed/profileinstaller-1.3.0/AndroidManifest.xml:44:17-85
+95-->[androidx.profileinstaller:profileinstaller:1.3.0] /home/arnaud/.gradle/caches/8.10.2/transforms/9c86443c58b09d4b6f1d3540a9d71ce9/transformed/profileinstaller-1.3.0/AndroidManifest.xml:44:25-82
+96            </intent-filter>
+97            <intent-filter>
+97-->[androidx.profileinstaller:profileinstaller:1.3.0] /home/arnaud/.gradle/caches/8.10.2/transforms/9c86443c58b09d4b6f1d3540a9d71ce9/transformed/profileinstaller-1.3.0/AndroidManifest.xml:46:13-48:29
+98                <action android:name="androidx.profileinstaller.action.SAVE_PROFILE" />
+98-->[androidx.profileinstaller:profileinstaller:1.3.0] /home/arnaud/.gradle/caches/8.10.2/transforms/9c86443c58b09d4b6f1d3540a9d71ce9/transformed/profileinstaller-1.3.0/AndroidManifest.xml:47:17-88
+98-->[androidx.profileinstaller:profileinstaller:1.3.0] /home/arnaud/.gradle/caches/8.10.2/transforms/9c86443c58b09d4b6f1d3540a9d71ce9/transformed/profileinstaller-1.3.0/AndroidManifest.xml:47:25-85
+99            </intent-filter>
+100            <intent-filter>
+100-->[androidx.profileinstaller:profileinstaller:1.3.0] /home/arnaud/.gradle/caches/8.10.2/transforms/9c86443c58b09d4b6f1d3540a9d71ce9/transformed/profileinstaller-1.3.0/AndroidManifest.xml:49:13-51:29
+101                <action android:name="androidx.profileinstaller.action.BENCHMARK_OPERATION" />
+101-->[androidx.profileinstaller:profileinstaller:1.3.0] /home/arnaud/.gradle/caches/8.10.2/transforms/9c86443c58b09d4b6f1d3540a9d71ce9/transformed/profileinstaller-1.3.0/AndroidManifest.xml:50:17-95
+101-->[androidx.profileinstaller:profileinstaller:1.3.0] /home/arnaud/.gradle/caches/8.10.2/transforms/9c86443c58b09d4b6f1d3540a9d71ce9/transformed/profileinstaller-1.3.0/AndroidManifest.xml:50:25-92
+102            </intent-filter>
+103        </receiver>
+104    </application>
+105
+106</manifest>
