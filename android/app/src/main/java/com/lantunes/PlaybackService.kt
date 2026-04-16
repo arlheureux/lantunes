@@ -28,6 +28,7 @@ class PlaybackService : Service() {
         const val ACTION_NEXT = "com.lantunes.NEXT"
         const val ACTION_PREV = "com.lantunes.PREV"
         const val ACTION_STOP = "com.lantunes.STOP"
+        const val ACTION_KEEP_ALIVE = "com.lantunes.KEEP_ALIVE"
 
         fun startService(context: Context) {
             val intent = Intent(context, PlaybackService::class.java).apply {
@@ -45,6 +46,17 @@ class PlaybackService : Service() {
                 action = ACTION_STOP
             }
             context.startService(intent)
+        }
+
+        fun keepServiceAlive(context: Context) {
+            val intent = Intent(context, PlaybackService::class.java).apply {
+                action = ACTION_KEEP_ALIVE
+            }
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                context.startForegroundService(intent)
+            } else {
+                context.startService(intent)
+            }
         }
 
         fun updatePlaybackState(isPlaying: Boolean, trackTitle: String?, artistName: String?) {
@@ -155,7 +167,7 @@ class PlaybackService : Service() {
         when (intent?.action) {
             ACTION_PLAY -> {
                 callJs("onPlay")
-                startForeground(NOTIFICATION_ID, createNotification("Playing", "", true))
+                updateNotificationState(true)
             }
             ACTION_PAUSE -> {
                 callJs("onPause")
@@ -167,6 +179,10 @@ class PlaybackService : Service() {
                 callJs("onPause")
                 stopForeground(STOP_FOREGROUND_REMOVE)
                 stopSelf()
+            }
+            ACTION_KEEP_ALIVE -> {
+                // Just keep service alive, no playback action
+                startForeground(NOTIFICATION_ID, createNotification(playbackState?.trackTitle ?: "LanTunes", playbackState?.artistName ?: "", playbackState?.isPlaying ?: false))
             }
         }
         return START_STICKY

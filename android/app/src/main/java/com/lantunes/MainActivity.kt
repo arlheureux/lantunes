@@ -264,8 +264,6 @@ webViewClient = LanTunesWebViewClient()
     override fun onPause() {
         super.onPause()
         webView.onPause()
-        // Keep service running when app in background
-        PlaybackService.startService(this)
     }
 
     override fun onDestroy() {
@@ -355,5 +353,8 @@ webViewClient = LanTunesWebViewClient()
     @JavascriptInterface
     fun updatePlaybackState(isPlaying: Boolean, trackTitle: String?, artistName: String?) {
         PlaybackService.updatePlaybackState(isPlaying, trackTitle, artistName)
+        if (isPlaying && trackTitle != null) {
+            PlaybackService.keepServiceAlive(this)
+        }
     }
 }

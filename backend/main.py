@@ -20,7 +20,7 @@ from fastapi.responses import FileResponse, HTMLResponse, JSONResponse
 from slowapi import Limiter
 from slowapi.util import get_remote_address
 from slowapi.errors import RateLimitExceeded
-from api import library, playback, playlists, config
+from api import library, playback, playlists, config, favorites
 from api import auth, users
 from websocket import websocket_endpoint
 from middleware import AuthMiddleware, PUBLIC_ENDPOINTS
@@ -75,6 +75,7 @@ app.include_router(library.router)
 app.include_router(playback.router)
 app.include_router(playlists.router)
 app.include_router(config.router)
+app.include_router(favorites.router)
 
 @app.websocket("/ws")
 async def ws(websocket: WebSocket):

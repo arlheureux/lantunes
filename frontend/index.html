@@ -1099,13 +1099,26 @@
             left: 0;
             right: 0;
             bottom: 0;
-            background: rgba(0, 0, 0, 0.85);
-            backdrop-filter: blur(20px);
-            -webkit-backdrop-filter: blur(20px);
+            background-color: #121212;
             z-index: 2500;
             display: flex;
             flex-direction: row;
             overflow: hidden;
+        }
+        .player-modal-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.75);
+            backdrop-filter: blur(30px);
+            -webkit-backdrop-filter: blur(30px);
+            z-index: 0;
+        }
+        .player-modal > *:not(.player-modal-overlay) {
+            position: relative;
+            z-index: 1;
         }
         .player-modal .modal-close-btn {
             position: absolute;
@@ -1995,7 +2008,8 @@
         </div>
         
         <!-- Player Modal - Desktop -->
-        <div class="player-modal" v-if="showPlayerModal && !isMobile" @click.self="showPlayerModal = false">
+        <div class="player-modal" v-if="showPlayerModal && !isMobile" @click.self="showPlayerModal = false" :style="playbackState.track?.album_id ? { backgroundImage: 'url(' + getMediaUrl('/api/library/artwork/' + playbackState.track.album_id + '?size=500') + ')', backgroundSize: 'cover', backgroundPosition: 'center' } : {}">
+            <div class="player-modal-overlay"></div>
             <button class="modal-close-btn" @click="showPlayerModal = false">
                 <i class="fas fa-times"></i>
             </button>
@@ -2569,6 +2583,7 @@ async function saveConfig() {
                 }
                 
                 async function clearQueue() {
+                    console.log('Clearing queue...');
                     sendControl('clear_queue');
                 }
                 
@@ -3057,8 +3072,34 @@ async function saveConfig() {
                     showMobileQueue.value = false;
                 }
                 
-                function toggleLike() {
-                    isLiked.value = !isLiked.value;
+                async function checkFavorite(trackId) {
+                    if (!trackId) {
+                        isLiked.value = false;
+                        return;
+                    }
+                    try {
+                        const res = await apiCall(`/api/favorites/check/${trackId}`);
+                        isLiked.value = res.is_favorite;
+                    } catch (e) {
+                        isLiked.value = false;
+                    }
+                }
+                
+                async function toggleLike() {
+                    if (!playbackState.value.track?.id) return;
+                    const trackId = playbackState.value.track.id;
+                    const isFavorite = isLiked.value;
+                    
+                    try {
+                        if (isFavorite) {
+                            await apiCall(`/api/favorites/${trackId}`, { method: 'DELETE' });
+                        } else {
+                            await apiCall(`/api/favorites/${trackId}`, { method: 'POST' });
+                        }
+                        isLiked.value = !isLiked.value;
+                    } catch (e) {
+                        console.error('Failed to toggle favorite:', e);
+                    }
                 }
                 
                 async function toggleShuffle() {
@@ -3072,6 +3113,10 @@ async function saveConfig() {
                 function setVolume(value) {
                     playbackState.value.volume = value;
                     sendControl('set_volume', { volume: value });
+                    // Also set local audio immediately
+                    if (audioPlayer.value) {
+                        audioPlayer.value.volume = value;
+                    }
                 }
                 
                 async function shufflePlay() {
@@ -3133,6 +3178,11 @@ async function saveConfig() {
                             const oldPosition = playbackState.value.position;
                             playbackState.value = msg.data;
                             
+                            // Check if current track is favorited
+                            if (msg.data.track?.id) {
+                                checkFavorite(msg.data.track.id);
+                            }
+                            
                             // Update Android notification with track info and artwork
                             if (window.LanTunesAndroid && msg.data.track) {
                                 window.LanTunesAndroid.updatePlaybackState(
@@ -3142,7 +3192,8 @@ async function saveConfig() {
                                 );
                                 // Pass artwork path if available
                                 if (msg.data.track.album_id) {
-                                    window.LanTunesAndroid.setArtwork('/api/library/artwork/' + msg.data.track.album_id);
+                                    const token = localStorage.getItem('access_token') || '';
+                                    window.LanTunesAndroid.setArtwork('/api/library/artwork/' + msg.data.track.album_id + (token ? '?token=' + token : ''));
                                 }
                             }
                             
