@@ -5,7 +5,8 @@ import asyncio
 backend_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, backend_dir)
 
-from fastapi import APIRouter, Depends, HTTPException, Query, StreamingResponse
+from fastapi import APIRouter, Depends, HTTPException, Query
+from starlette.responses import StreamingResponse
 from fastapi.responses import StreamingResponse
 from sqlalchemy.orm import Session, joinedload
 from database import get_db, Track, Album, Artist, Playlist, PlaylistTrack, Client
