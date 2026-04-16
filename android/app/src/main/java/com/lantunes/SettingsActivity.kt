@@ -14,11 +14,9 @@ class SettingsActivity : AppCompatActivity() {
     companion object {
         const val PREFS_NAME = "lantunes_prefs"
         const val KEY_DEVICE_NAME = "device_name"
-        const val KEY_MUSIC_PATH = "music_path"
     }
 
     private lateinit var deviceNameEditText: TextInputEditText
-    private lateinit var musicPathEditText: TextInputEditText
     private lateinit var saveButton: Button
     private lateinit var cancelButton: Button
 
@@ -33,7 +31,6 @@ class SettingsActivity : AppCompatActivity() {
 
     private fun initViews() {
         deviceNameEditText = findViewById(R.id.deviceNameEditText)
-        musicPathEditText = findViewById(R.id.musicPathEditText)
         saveButton = findViewById(R.id.saveButton)
         cancelButton = findViewById(R.id.cancelButton)
     }
@@ -41,7 +38,6 @@ class SettingsActivity : AppCompatActivity() {
     private fun loadSettings() {
         val prefs = getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
         deviceNameEditText.setText(prefs.getString(KEY_DEVICE_NAME, "") ?: "")
-        musicPathEditText.setText(prefs.getString(KEY_MUSIC_PATH, "") ?: "")
     }
 
     private fun setupClickListeners() {
@@ -58,7 +54,6 @@ class SettingsActivity : AppCompatActivity() {
         val prefs = getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
         prefs.edit()
             .putString(KEY_DEVICE_NAME, deviceNameEditText.text?.toString()?.trim() ?: "")
-            .putString(KEY_MUSIC_PATH, musicPathEditText.text?.toString()?.trim() ?: "")
             .apply()
 
         Toast.makeText(this, R.string.settings_saved, Toast.LENGTH_SHORT).show()

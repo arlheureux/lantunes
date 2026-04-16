@@ -17,6 +17,8 @@ MEDIA_PATHS = [
     "/api/playback/stream/",
     "/api/library/artwork/",
     "/api/library/artwork/artist/",
+    "/api/library/scan/stream",
+    "/api/library/fetch-artwork/stream",
 ]
 
 class AuthMiddleware(BaseHTTPMiddleware):

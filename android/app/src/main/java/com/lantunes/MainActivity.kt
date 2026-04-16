@@ -20,9 +20,11 @@ import android.webkit.WebResourceRequest
 import android.webkit.WebView
 import android.webkit.WebViewClient
 import android.widget.Button
+import android.widget.EditText
 import android.widget.LinearLayout
 import android.widget.ProgressBar
 import android.widget.Toast
+import androidx.appcompat.app.AlertDialog
 import androidx.activity.OnBackPressedCallback
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
@@ -34,6 +36,7 @@ class MainActivity : AppCompatActivity() {
     companion object {
         const val PREFS_NAME = "lantunes_prefs"
         const val KEY_SERVER_URL = "server_url"
+        const val KEY_FIRST_LAUNCH = "first_launch"
         const val EXTRA_SELECTED_MODE = "selected_mode"
         const val PERMISSION_REQUEST_CODE = 1001
     }
@@ -67,7 +70,7 @@ class MainActivity : AppCompatActivity() {
 
             val url = getServerUrl()
             if (url.isEmpty()) {
-                openSettings()
+                showServerUrlDialog()
             }
         } catch (e: Exception) {
             // Catch any crash
@@ -151,6 +154,32 @@ webViewClient = LanTunesWebViewClient()
         return prefs.getString(KEY_SERVER_URL, "") ?: ""
     }
 
+    private fun showServerUrlDialog() {
+        val editText = EditText(this).apply {
+            hint = "http://192.168.1.100:8080"
+            setTextColor(getColor(R.color.white))
+            setHintTextColor(getColor(R.color.gray))
+        }
+
+        AlertDialog.Builder(this)
+            .setTitle("Server URL")
+            .setMessage("Enter your LanTunes server address")
+            .setView(editText)
+            .setPositiveButton("Save") { _, _ ->
+                val url = editText.text.toString().trim()
+                if (url.isNotEmpty()) {
+                    val prefs = getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+                    prefs.edit().putString(KEY_SERVER_URL, url).apply()
+                    loadUrl()
+                }
+            }
+            .setNegativeButton("Cancel") { _, _ ->
+                finish()
+            }
+            .setCancelable(false)
+            .show()
+    }
+
     
 
     private fun loadUrl() {
@@ -164,7 +193,7 @@ webViewClient = LanTunesWebViewClient()
             webView.loadUrl(url)
             Toast.makeText(this, "Loading: $url", Toast.LENGTH_SHORT).show()
         } else {
-            openSettings()
+            showServerUrlDialog()
         }
     }
 
