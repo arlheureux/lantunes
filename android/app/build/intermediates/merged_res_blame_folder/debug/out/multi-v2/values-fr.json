@@ -1,7 +1,7 @@
 {
     "logs": [
         {
-            "outputFile": "com.lantunes.app-mergeDebugResources-33:/values-fr/values-fr.xml",
+            "outputFile": "com.lantunes.app-mergeDebugResources-34:/values-fr/values-fr.xml",
             "map": [
                 {
                     "source": "/home/arnaud/.gradle/caches/8.10.2/transforms/b6b8a7af94ec2c77cc150e7ebc415ad1/transformed/core-1.12.0/res/values-fr/values-fr.xml",

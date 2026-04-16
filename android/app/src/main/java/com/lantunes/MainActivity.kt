@@ -39,6 +39,7 @@ class MainActivity : AppCompatActivity() {
         const val KEY_FIRST_LAUNCH = "first_launch"
         const val EXTRA_SELECTED_MODE = "selected_mode"
         const val PERMISSION_REQUEST_CODE = 1001
+        var webViewRef: WebView? = null
     }
 
     private lateinit var webView: WebView
@@ -65,8 +66,12 @@ class MainActivity : AppCompatActivity() {
                 // Continue even if WebView setup fails
             }
             
+            // Set static WebView reference for PlaybackService
+            webViewRef = webView
+            
             setupClickListeners()
             setupBackNavigation()
+            setupMediaSession()
 
             val url = getServerUrl()
             if (url.isEmpty()) {
@@ -122,12 +127,11 @@ webViewClient = LanTunesWebViewClient()
     }
     
     private fun setupJavaScriptInterface() {
-        // JavaScript interface disabled for now - causes crash
-        // try {
-        //     webView.addJavascriptInterface(this, "LanTunesAndroid")
-        // } catch (e: Exception) {
-        //     // Ignore
-        // }
+        try {
+            webView.addJavascriptInterface(this, "LanTunesAndroid")
+        } catch (e: Exception) {
+            // Ignore
+        }
     }
     
     private fun setupClickListeners() {
@@ -327,44 +331,8 @@ webViewClient = LanTunesWebViewClient()
         }
     }
 
-    @JavascriptInterface
-    fun getCurrentSsid(): String {
-        if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
-            requestPermissions(arrayOf(Manifest.permission.ACCESS_FINE_LOCATION), PERMISSION_REQUEST_CODE)
-            return ""
-        }
-        
-        return try {
-            val wifiManager = applicationContext.getSystemService(Context.WIFI_SERVICE) as WifiManager
-            val connectionInfo = wifiManager.connectionInfo
-            if (connectionInfo != null) {
-                val ssid = connectionInfo.ssid
-                if (ssid != null && ssid != "<unknown ssid>") {
-                    ssid.removeSurrounding("\"")
-                } else {
-                    ""
-                }
-            } else {
-                ""
-            }
-        } catch (e: Exception) {
-            ""
-        }
-    }
-
-    @JavascriptInterface
-    fun isOnWifi(): Boolean {
-        val connectivityManager = getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
-        val network = connectivityManager.activeNetwork ?: return false
-        val capabilities = connectivityManager.getNetworkCapabilities(network) ?: return false
-        return capabilities.hasTransport(NetworkCapabilities.TRANSPORT_WIFI)
-    }
-
     override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
-        if (requestCode == PERMISSION_REQUEST_CODE) {
-            webView.evaluateJavascript("if (window.LanTunes) window.LanTunes.onPermissionGranted();", null)
-        }
     }
 
     private fun setupMediaSession() {

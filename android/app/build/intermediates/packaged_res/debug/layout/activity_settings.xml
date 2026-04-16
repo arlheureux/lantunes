@@ -43,23 +43,6 @@
 
         </com.google.android.material.textfield.TextInputLayout>
 
-        <!-- Music Path -->
-        <com.google.android.material.textfield.TextInputLayout
-            android:id="@+id/musicPathInputLayout"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="16dp"
-            android:hint="Music Path (e.g., /storage/music)">
-
-            <com.google.android.material.textfield.TextInputEditText
-                android:id="@+id/musicPathEditText"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:inputType="textUri"
-                android:textColor="@color/white" />
-
-        </com.google.android.material.textfield.TextInputLayout>
-
         <!-- Buttons -->
         <LinearLayout
             android:layout_width="match_parent"
