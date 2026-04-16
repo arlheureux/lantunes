@@ -1743,6 +1743,13 @@
                         <p>Create your first playlist to organize your music.</p>
                     </div>
                     <div v-else-if="playlists.length > 0" class="album-grid">
+                        <div class="album-card" @click="viewFavorites">
+                            <div style="width:100%;aspect-ratio:1;background:linear-gradient(135deg, #e91e63 0%, #f48fb1 100%);border-radius:4px;margin-bottom:8px;display:flex;align-items:center;justify-content:center;">
+                                <i class="fas fa-heart" style="font-size:48px;color:#fff;"></i>
+                            </div>
+                            <div class="name">Liked Songs</div>
+                            <div class="artist">Your favorites</div>
+                        </div>
                         <div class="album-card" v-for="p in playlists" :key="p.id" @click="viewPlaylist(p.id)">
                             <div style="width:100%;aspect-ratio:1;background:#333;border-radius:4px;margin-bottom:8px;display:flex;align-items:center;justify-content:center;">
                                 <i class="fas fa-list" style="font-size:48px;color:#555;"></i>
@@ -2089,7 +2096,7 @@
         </div>
         
         <!-- Player Modal - Mobile (original) -->
-        <div class="mobile-queue-overlay" v-if="showPlayerModal && isMobile" @click.self="showPlayerModal = false">
+        <div class="mobile-queue-overlay" v-if="showPlayerModal && isMobile" @click.self="showPlayerModal = false" :style="playbackState.track?.album_id ? { backgroundImage: 'url(' + getMediaUrl('/api/library/artwork/' + playbackState.track.album_id + '?size=500') + ')', backgroundSize: 'cover', backgroundPosition: 'center' } : {}">
             <div class="mobile-queue-header">
                 <h3>Now Playing</h3>
                 <button @click="showPlayerModal = false"><i class="fas fa-times"></i></button>
@@ -2823,6 +2830,14 @@ async function saveConfig() {
                     if (p) { currentPlaylist.value = p; view.value = 'playlist-detail'; }
                 }
                 
+                async function viewFavorites() {
+                    const favs = await apiCall('/api/favorites');
+                    if (favs) {
+                        currentPlaylist.value = { id: 'favorites', name: 'Liked Songs', tracks: favs };
+                        view.value = 'playlist-detail';
+                    }
+                }
+                
                 async function viewAlbum(id) {
                     const a = await apiCall('/api/library/albums/' + id);
                     if (a) { currentAlbum.value = a; view.value = 'album-detail'; }
@@ -3178,28 +3193,32 @@ async function saveConfig() {
                             const oldPosition = playbackState.value.position;
                             playbackState.value = msg.data;
                             
-                            // Check if current track is favorited
-                            if (msg.data.track?.id) {
-                                checkFavorite(msg.data.track.id);
-                            }
-                            
-                            // Update Android notification with track info and artwork
-                            if (window.LanTunesAndroid && msg.data.track) {
-                                window.LanTunesAndroid.updatePlaybackState(
-                                    msg.data.is_playing,
-                                    msg.data.track.title || 'Unknown',
-                                    msg.data.track.artist || 'Unknown'
-                                );
-                                // Pass artwork path if available
-                                if (msg.data.track.album_id) {
-                                    const token = localStorage.getItem('access_token') || '';
-                                    window.LanTunesAndroid.setArtwork('/api/library/artwork/' + msg.data.track.album_id + (token ? '?token=' + token : ''));
-                                }
-                            }
-                            
                             loadQueueTracks();
                             
                             const trackChanged = oldTrackId !== msg.data.track?.id;
+                            
+                            // Only check favorite and update artwork when track changes
+                            if (trackChanged) {
+                                // Check if current track is favorited
+                                if (msg.data.track?.id) {
+                                    checkFavorite(msg.data.track.id);
+                                }
+                                
+                                // Update Android notification with track info and artwork
+                                if (window.LanTunesAndroid && msg.data.track) {
+                                    window.LanTunesAndroid.updatePlaybackState(
+                                        msg.data.is_playing,
+                                        msg.data.track.title || 'Unknown',
+                                        msg.data.track.artist || 'Unknown'
+                                    );
+                                    // Pass artwork path if available
+                                    if (msg.data.track.album_id) {
+                                        const token = localStorage.getItem('access_token') || '';
+                                        window.LanTunesAndroid.setArtwork('/api/library/artwork/' + msg.data.track.album_id + (token ? '?token=' + token : ''));
+                                    }
+                                }
+                            }
+                            
                             const justStartedPlaying = !prevPlaying && msg.data.is_playing;
                             const resumingSameTrack = !trackChanged && prevPlaying === false && msg.data.is_playing === true;
                             const amIPlayer = isThisDevicePlayer();
@@ -3304,6 +3323,7 @@ async function saveConfig() {
                                 if (amIPlayer && audioPlayer.value) {
                                     audioPlayer.value.volume = vol;
                                 }
+                                playbackState.value.volume = vol;
                                 volume.value = vol;
                             }
                             

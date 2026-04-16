@@ -9,23 +9,23 @@
 9        android:targetSdkVersion="34" />
 10
 11    <uses-permission android:name="android.permission.INTERNET" />
-11-->/home/arnaud/lantunes/android/app/src/main/AndroidManifest.xml:5:5-67
-11-->/home/arnaud/lantunes/android/app/src/main/AndroidManifest.xml:5:22-64
+11-->/home/arnaud/dev/lantunes/android/app/src/main/AndroidManifest.xml:5:5-67
+11-->/home/arnaud/dev/lantunes/android/app/src/main/AndroidManifest.xml:5:22-64
 12    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
-12-->/home/arnaud/lantunes/android/app/src/main/AndroidManifest.xml:6:5-79
-12-->/home/arnaud/lantunes/android/app/src/main/AndroidManifest.xml:6:22-76
+12-->/home/arnaud/dev/lantunes/android/app/src/main/AndroidManifest.xml:6:5-79
+12-->/home/arnaud/dev/lantunes/android/app/src/main/AndroidManifest.xml:6:22-76
 13    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
-13-->/home/arnaud/lantunes/android/app/src/main/AndroidManifest.xml:7:5-77
-13-->/home/arnaud/lantunes/android/app/src/main/AndroidManifest.xml:7:22-74
+13-->/home/arnaud/dev/lantunes/android/app/src/main/AndroidManifest.xml:7:5-77
+13-->/home/arnaud/dev/lantunes/android/app/src/main/AndroidManifest.xml:7:22-74
 14    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK" />
-14-->/home/arnaud/lantunes/android/app/src/main/AndroidManifest.xml:8:5-92
-14-->/home/arnaud/lantunes/android/app/src/main/AndroidManifest.xml:8:22-89
+14-->/home/arnaud/dev/lantunes/android/app/src/main/AndroidManifest.xml:8:5-92
+14-->/home/arnaud/dev/lantunes/android/app/src/main/AndroidManifest.xml:8:22-89
 15    <uses-permission android:name="android.permission.WAKE_LOCK" />
-15-->/home/arnaud/lantunes/android/app/src/main/AndroidManifest.xml:9:5-68
-15-->/home/arnaud/lantunes/android/app/src/main/AndroidManifest.xml:9:22-65
+15-->/home/arnaud/dev/lantunes/android/app/src/main/AndroidManifest.xml:9:5-68
+15-->/home/arnaud/dev/lantunes/android/app/src/main/AndroidManifest.xml:9:22-65
 16    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
-16-->/home/arnaud/lantunes/android/app/src/main/AndroidManifest.xml:10:5-77
-16-->/home/arnaud/lantunes/android/app/src/main/AndroidManifest.xml:10:22-74
+16-->/home/arnaud/dev/lantunes/android/app/src/main/AndroidManifest.xml:10:5-77
+16-->/home/arnaud/dev/lantunes/android/app/src/main/AndroidManifest.xml:10:22-74
 17
 18    <permission
 18-->[androidx.core:core:1.12.0] /home/arnaud/.gradle/caches/8.10.2/transforms/b6b8a7af94ec2c77cc150e7ebc415ad1/transformed/core-1.12.0/AndroidManifest.xml:22:5-24:47
@@ -39,86 +39,86 @@
 22-->[androidx.core:core:1.12.0] /home/arnaud/.gradle/caches/8.10.2/transforms/b6b8a7af94ec2c77cc150e7ebc415ad1/transformed/core-1.12.0/AndroidManifest.xml:26:22-94
 23
 24    <application
-24-->/home/arnaud/lantunes/android/app/src/main/AndroidManifest.xml:12:5-58:19
+24-->/home/arnaud/dev/lantunes/android/app/src/main/AndroidManifest.xml:12:5-58:19
 25        android:allowBackup="true"
-25-->/home/arnaud/lantunes/android/app/src/main/AndroidManifest.xml:13:9-35
+25-->/home/arnaud/dev/lantunes/android/app/src/main/AndroidManifest.xml:13:9-35
 26        android:appComponentFactory="androidx.core.app.CoreComponentFactory"
 26-->[androidx.core:core:1.12.0] /home/arnaud/.gradle/caches/8.10.2/transforms/b6b8a7af94ec2c77cc150e7ebc415ad1/transformed/core-1.12.0/AndroidManifest.xml:28:18-86
 27        android:debuggable="true"
 28        android:extractNativeLibs="false"
 29        android:icon="@drawable/ic_launcher"
-29-->/home/arnaud/lantunes/android/app/src/main/AndroidManifest.xml:14:9-45
+29-->/home/arnaud/dev/lantunes/android/app/src/main/AndroidManifest.xml:14:9-45
 30        android:label="@string/app_name"
-30-->/home/arnaud/lantunes/android/app/src/main/AndroidManifest.xml:15:9-41
+30-->/home/arnaud/dev/lantunes/android/app/src/main/AndroidManifest.xml:15:9-41
 31        android:roundIcon="@drawable/ic_launcher"
-31-->/home/arnaud/lantunes/android/app/src/main/AndroidManifest.xml:16:9-50
+31-->/home/arnaud/dev/lantunes/android/app/src/main/AndroidManifest.xml:16:9-50
 32        android:supportsRtl="true"
-32-->/home/arnaud/lantunes/android/app/src/main/AndroidManifest.xml:17:9-35
+32-->/home/arnaud/dev/lantunes/android/app/src/main/AndroidManifest.xml:17:9-35
 33        android:theme="@style/Theme.LanTunes"
-33-->/home/arnaud/lantunes/android/app/src/main/AndroidManifest.xml:18:9-46
+33-->/home/arnaud/dev/lantunes/android/app/src/main/AndroidManifest.xml:18:9-46
 34        android:usesCleartextTraffic="true" >
-34-->/home/arnaud/lantunes/android/app/src/main/AndroidManifest.xml:19:9-44
+34-->/home/arnaud/dev/lantunes/android/app/src/main/AndroidManifest.xml:19:9-44
 35        <activity
-35-->/home/arnaud/lantunes/android/app/src/main/AndroidManifest.xml:22:9-32:20
+35-->/home/arnaud/dev/lantunes/android/app/src/main/AndroidManifest.xml:22:9-32:20
 36            android:name="com.lantunes.MainActivity"
-36-->/home/arnaud/lantunes/android/app/src/main/AndroidManifest.xml:23:13-41
+36-->/home/arnaud/dev/lantunes/android/app/src/main/AndroidManifest.xml:23:13-41
 37            android:configChanges="orientation|screenSize|keyboardHidden"
-37-->/home/arnaud/lantunes/android/app/src/main/AndroidManifest.xml:25:13-74
+37-->/home/arnaud/dev/lantunes/android/app/src/main/AndroidManifest.xml:25:13-74
 38            android:exported="true"
-38-->/home/arnaud/lantunes/android/app/src/main/AndroidManifest.xml:24:13-36
+38-->/home/arnaud/dev/lantunes/android/app/src/main/AndroidManifest.xml:24:13-36
 39            android:launchMode="singleTask"
-39-->/home/arnaud/lantunes/android/app/src/main/AndroidManifest.xml:26:13-44
+39-->/home/arnaud/dev/lantunes/android/app/src/main/AndroidManifest.xml:26:13-44
 40            android:theme="@style/Theme.LanTunes" >
-40-->/home/arnaud/lantunes/android/app/src/main/AndroidManifest.xml:27:13-50
+40-->/home/arnaud/dev/lantunes/android/app/src/main/AndroidManifest.xml:27:13-50
 41            <intent-filter>
-41-->/home/arnaud/lantunes/android/app/src/main/AndroidManifest.xml:28:13-31:29
+41-->/home/arnaud/dev/lantunes/android/app/src/main/AndroidManifest.xml:28:13-31:29
 42                <action android:name="android.intent.action.MAIN" />
-42-->/home/arnaud/lantunes/android/app/src/main/AndroidManifest.xml:29:17-69
-42-->/home/arnaud/lantunes/android/app/src/main/AndroidManifest.xml:29:25-66
+42-->/home/arnaud/dev/lantunes/android/app/src/main/AndroidManifest.xml:29:17-69
+42-->/home/arnaud/dev/lantunes/android/app/src/main/AndroidManifest.xml:29:25-66
 43
 44                <category android:name="android.intent.category.LAUNCHER" />
-44-->/home/arnaud/lantunes/android/app/src/main/AndroidManifest.xml:30:17-77
-44-->/home/arnaud/lantunes/android/app/src/main/AndroidManifest.xml:30:27-74
+44-->/home/arnaud/dev/lantunes/android/app/src/main/AndroidManifest.xml:30:17-77
+44-->/home/arnaud/dev/lantunes/android/app/src/main/AndroidManifest.xml:30:27-74
 45            </intent-filter>
 46        </activity>
 47        <activity
-47-->/home/arnaud/lantunes/android/app/src/main/AndroidManifest.xml:34:9-38:53
+47-->/home/arnaud/dev/lantunes/android/app/src/main/AndroidManifest.xml:34:9-38:53
 48            android:name="com.lantunes.SettingsActivity"
-48-->/home/arnaud/lantunes/android/app/src/main/AndroidManifest.xml:35:13-45
+48-->/home/arnaud/dev/lantunes/android/app/src/main/AndroidManifest.xml:35:13-45
 49            android:exported="false"
-49-->/home/arnaud/lantunes/android/app/src/main/AndroidManifest.xml:36:13-37
+49-->/home/arnaud/dev/lantunes/android/app/src/main/AndroidManifest.xml:36:13-37
 50            android:parentActivityName="com.lantunes.MainActivity"
-50-->/home/arnaud/lantunes/android/app/src/main/AndroidManifest.xml:37:13-55
+50-->/home/arnaud/dev/lantunes/android/app/src/main/AndroidManifest.xml:37:13-55
 51            android:theme="@style/Theme.LanTunes" />
-51-->/home/arnaud/lantunes/android/app/src/main/AndroidManifest.xml:38:13-50
+51-->/home/arnaud/dev/lantunes/android/app/src/main/AndroidManifest.xml:38:13-50
 52
 53        <service
-53-->/home/arnaud/lantunes/android/app/src/main/AndroidManifest.xml:40:9-48:19
+53-->/home/arnaud/dev/lantunes/android/app/src/main/AndroidManifest.xml:40:9-48:19
 54            android:name="com.lantunes.PlaybackService"
-54-->/home/arnaud/lantunes/android/app/src/main/AndroidManifest.xml:41:13-44
+54-->/home/arnaud/dev/lantunes/android/app/src/main/AndroidManifest.xml:41:13-44
 55            android:exported="true"
-55-->/home/arnaud/lantunes/android/app/src/main/AndroidManifest.xml:42:13-36
+55-->/home/arnaud/dev/lantunes/android/app/src/main/AndroidManifest.xml:42:13-36
 56            android:foregroundServiceType="mediaPlayback" >
-56-->/home/arnaud/lantunes/android/app/src/main/AndroidManifest.xml:43:13-58
+56-->/home/arnaud/dev/lantunes/android/app/src/main/AndroidManifest.xml:43:13-58
 57            <intent-filter>
-57-->/home/arnaud/lantunes/android/app/src/main/AndroidManifest.xml:45:13-47:29
+57-->/home/arnaud/dev/lantunes/android/app/src/main/AndroidManifest.xml:45:13-47:29
 58                <action android:name="android.intent.action.MEDIA_BUTTON" />
-58-->/home/arnaud/lantunes/android/app/src/main/AndroidManifest.xml:46:17-77
-58-->/home/arnaud/lantunes/android/app/src/main/AndroidManifest.xml:46:25-74
+58-->/home/arnaud/dev/lantunes/android/app/src/main/AndroidManifest.xml:46:17-77
+58-->/home/arnaud/dev/lantunes/android/app/src/main/AndroidManifest.xml:46:25-74
 59            </intent-filter>
 60        </service>
 61
 62        <receiver
-62-->/home/arnaud/lantunes/android/app/src/main/AndroidManifest.xml:50:9-56:20
+62-->/home/arnaud/dev/lantunes/android/app/src/main/AndroidManifest.xml:50:9-56:20
 63            android:name="androidx.media.MediaButtonReceiver"
-63-->/home/arnaud/lantunes/android/app/src/main/AndroidManifest.xml:51:13-62
+63-->/home/arnaud/dev/lantunes/android/app/src/main/AndroidManifest.xml:51:13-62
 64            android:exported="true" >
-64-->/home/arnaud/lantunes/android/app/src/main/AndroidManifest.xml:52:13-36
+64-->/home/arnaud/dev/lantunes/android/app/src/main/AndroidManifest.xml:52:13-36
 65            <intent-filter>
-65-->/home/arnaud/lantunes/android/app/src/main/AndroidManifest.xml:45:13-47:29
+65-->/home/arnaud/dev/lantunes/android/app/src/main/AndroidManifest.xml:45:13-47:29
 66                <action android:name="android.intent.action.MEDIA_BUTTON" />
-66-->/home/arnaud/lantunes/android/app/src/main/AndroidManifest.xml:46:17-77
-66-->/home/arnaud/lantunes/android/app/src/main/AndroidManifest.xml:46:25-74
+66-->/home/arnaud/dev/lantunes/android/app/src/main/AndroidManifest.xml:46:17-77
+66-->/home/arnaud/dev/lantunes/android/app/src/main/AndroidManifest.xml:46:25-74
 67            </intent-filter>
 68        </receiver>
 69
