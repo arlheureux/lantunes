@@ -531,11 +531,23 @@
             
             .stats-grid { grid-template-columns: repeat(2, 1fr) !important; }
             
-            /* Smaller cards on mobile */
-            .album-card { max-width: 100%; }
-            .album-cover { height: auto !important; aspect-ratio: 1; }
-            .album-card .name { font-size: 13px; }
-            .album-card .artist { font-size: 11px; }
+            /* Album grid - 2 columns with centering on mobile */
+            .album-grid { 
+                grid-template-columns: repeat(2, 1fr) !important;
+                justify-items: center;
+            }
+            .album-card { 
+                max-width: 100%;
+                text-align: center;
+            }
+            .album-cover { 
+                height: auto !important; 
+                aspect-ratio: 1;
+                margin: 0 auto;
+            }
+            .album-card .name { font-size: 13px; text-align: center; }
+            .album-card .artist { font-size: 11px; text-align: center; }
+            .album-play-btn { left: 50% !important; transform: translateX(-50%) !important; }
             
             /* Adjust padding and margins for mobile */
             .content { padding: 12px !important; }
@@ -1637,11 +1649,11 @@
                         <div>
                             <h1>{{ currentAlbum.title }}</h1>
                             <p style="color:#aaa;margin-bottom:16px;">{{ currentAlbum.artist }} · {{ currentAlbum.year }}</p>
-                            <div style="display:flex;gap:8px;">
-                                <button @click="playAlbum(currentAlbum)" style="background:var(--accent);color:#000;border:none;padding:12px 24px;border-radius:24px;font-size:14px;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:8px;">
+                            <div style="display:flex;gap:8px;flex-wrap:wrap;">
+                                <button @click="playAlbum(currentAlbum)" style="background:var(--accent);color:#000;border:none;padding:12px 24px;border-radius:24px;font-size:14px;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:8px;flex:1;min-width:140px;justify-content:center;">
                                     <i class="fas fa-play"></i> Play Album
                                 </button>
-                                <button @click="openAlbumPlaylistDialog(currentAlbum)" style="background:transparent;color:var(--text);border:1px solid var(--text-muted);padding:12px 24px;border-radius:24px;font-size:14px;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:8px;">
+                                <button @click="openAlbumPlaylistDialog(currentAlbum)" style="background:transparent;color:var(--text);border:1px solid var(--text-muted);padding:12px 24px;border-radius:24px;font-size:14px;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:8px;flex:1;min-width:140px;justify-content:center;">
                                     <i class="fas fa-plus"></i> Add to Playlist
                                 </button>
                             </div>
