@@ -2351,7 +2351,9 @@ const playbackState = ref({ track: null, position: 0, is_playing: false, volume:
                 let lastPositionSent = 0;
                 
                 function onTimeUpdate() {
-                    if (audioPlayer.value) {
+                    // Only update position from audio element if this device is the player
+                    // Non-player devices should rely on position_update events
+                    if (audioPlayer.value && isThisDevicePlayer()) {
                         const pos = audioPlayer.value.currentTime;
                         playbackState.value.position = pos;
                         
