@@ -245,6 +245,14 @@ def add_track_to_playlist(playlist_id: int, track_id: int, db: Session = Depends
     if not playlist:
         raise HTTPException(status_code=404, detail="Playlist not found")
     
+    # Check if track already exists in playlist
+    existing = db.query(PlaylistTrack).filter(
+        PlaylistTrack.playlist_id == playlist_id,
+        PlaylistTrack.track_id == track_id
+    ).first()
+    if existing:
+        return {"added": True, "duplicate": True}
+    
     max_pos = db.query(PlaylistTrack).filter(PlaylistTrack.playlist_id == playlist_id).count()
     pt = PlaylistTrack(playlist_id=playlist_id, track_id=track_id, position=max_pos)
     db.add(pt)
