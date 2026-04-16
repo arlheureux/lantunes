@@ -2379,14 +2379,14 @@ const playbackState = ref({ track: null, position: 0, is_playing: false, volume:
                     if (p) playlists.value = p;
                 }
                 
-                async function saveConfig() {
+async function saveConfig() {
                     await apiCall('/api/config', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify(config.value)
+                        body: JSON.stringify({ music_path: config.value.library?.music_path || '' })
                     });
                     alert('Config saved! Restart server to apply changes.');
-}
+                }
                 
                 // Bluetooth headset controls from Android MediaSession
                 window.onPlay = function() { sendControl('play'); };
