@@ -235,6 +235,11 @@ def delete_playlist(playlist_id: int, db: Session = Depends(get_db)):
     playlist = db.query(Playlist).filter(Playlist.id == playlist_id).first()
     if not playlist:
         raise HTTPException(status_code=404, detail="Playlist not found")
+    
+    # Delete playlist tracks first (relationship table entries)
+    db.query(PlaylistTrack).filter(PlaylistTrack.playlist_id == playlist_id).delete()
+    
+    # Then delete playlist
     db.delete(playlist)
     db.commit()
     return {"deleted": True}

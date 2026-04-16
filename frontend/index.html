@@ -2631,6 +2631,9 @@ async function saveConfig() {
                             }
                         }
                     }
+                    
+                    // Refresh playlists list so new playlist shows immediately
+                    loadLibrary();
                 }
                 
                 const newPlaylistName = ref('');
