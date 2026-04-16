@@ -163,6 +163,11 @@ async def scan_stream():
     """SSE endpoint for scan progress"""
     import concurrent.futures
     
+    music_path = config.get("library", {}).get("music_path", "")
+    if not music_path:
+        yield f"data: {json.dumps({'error': 'Music path not configured'})}\n\n"
+        return
+    
     async def event_generator():
         progress_data = {"current": 0, "total": 0, "message": "Starting...", "stage": "preparing", "percent": 0}
         
@@ -171,7 +176,7 @@ async def scan_stream():
         
         def run_scan():
             from scanner import scan_library as _scan
-            return _scan(None, progress_callback)
+            return _scan(music_path, progress_callback)
         
         with concurrent.futures.ThreadPoolExecutor() as executor:
             future = executor.submit(run_scan)
