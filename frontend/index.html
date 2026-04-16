@@ -1540,7 +1540,7 @@
                             <input v-model="newPlaylistName" class="dialog-input" placeholder="New playlist name" @keyup.enter="createAndAddToPlaylist">
                         </div>
                         <div class="dialog-buttons">
-                            <button class="dialog-btn dialog-btn-secondary" @click="playlistDialog.show = false">Cancel</button>
+                            <button class="dialog-btn dialog-btn-secondary" @click="playlistDialog = { show: false, track: null, album: null }; newPlaylistName = ''">Cancel</button>
                             <button class="dialog-btn dialog-btn-primary" @click="createAndAddToPlaylist">Create</button>
                         </div>
                     </div>
@@ -2552,6 +2552,11 @@ async function saveConfig() {
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({ name: name, track_ids: trackIds })
                     });
+                    
+                    // Clear any lingering playlist dialog state
+                    playlistDialog.value = { show: false, track: null, album: null };
+                    newPlaylistName.value = '';
+                    
                     loadLibrary();
                     alert('Playlist "' + name + '" created!');
                 }
