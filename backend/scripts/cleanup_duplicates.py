@@ -11,25 +11,25 @@ backend_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, backend_dir)
 
 from database import SessionLocal, Album, Track, Artist
+from sqlalchemy import func
 
 
 def cleanup_duplicate_albums():
     db = SessionLocal()
     
     try:
-        # Find albums with duplicate titles
         print("Finding duplicate albums...")
         
-        # Get all albums grouped by title
-        album_counts = db.query(
-            Album.title,
+        # Get albums with their track counts using a join and group by
+        results = db.query(
             Album.id,
-            db.query(Track).filter(Track.album_id == Album.id).count().label('track_count')
-        ).all()
+            Album.title,
+            func.count(Track.id).label('track_count')
+        ).outerjoin(Track, Album.id == Track.album_id).group_by(Album.id).all()
         
         # Group by title
         albums_by_title = {}
-        for title, album_id, track_count in album_counts:
+        for album_id, title, track_count in results:
             if title not in albums_by_title:
                 albums_by_title[title] = []
             albums_by_title[title].append({'id': album_id, 'track_count': track_count})
