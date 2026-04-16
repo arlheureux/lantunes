@@ -1252,7 +1252,7 @@
             overflow-y: auto;
             background: #1e1e1e;
             border-radius: 12px;
-            padding: 12px;
+            padding: 16px;
             box-shadow: 0 4px 12px rgba(0,0,0,0.3);
         }
         .player-modal .modal-queue-section .queue-header {
@@ -2097,18 +2097,19 @@
         
         <!-- Player Modal - Mobile (original) -->
         <div class="mobile-queue-overlay" v-if="showPlayerModal && isMobile" @click.self="showPlayerModal = false" :style="playbackState.track?.album_id ? { backgroundImage: 'url(' + getMediaUrl('/api/library/artwork/' + playbackState.track.album_id + '?size=500') + ')', backgroundSize: 'cover', backgroundPosition: 'center' } : {}">
-            <div class="mobile-queue-header">
+            <div style="position:absolute;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.75);backdrop-filter:blur(30px);-webkit-backdrop-filter:blur(30px);z-index:0;"></div>
+            <div class="mobile-queue-header" style="position:relative;z-index:1;">
                 <h3>Now Playing</h3>
                 <button @click="showPlayerModal = false"><i class="fas fa-times"></i></button>
             </div>
-            <div class="mobile-queue-list" style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:40px 20px;">
+            <div class="mobile-queue-list" style="position:relative;z-index:1;flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:40px 20px;">
                 <div style="width:280px;height:280px;border-radius:12px;overflow:hidden;margin-bottom:32px;box-shadow:0 8px 32px rgba(0,0,0,0.5);">
                     <img v-if="playbackState.track?.album_id" :src="getMediaUrl('/api/library/artwork/' + playbackState.track.album_id)" style="width:100%;height:100%;object-fit:cover;" @error="$event.target.style.display='none'">
                     <div v-else style="width:100%;height:100%;background:#333;display:flex;align-items:center;justify-content:center;">
                         <i class="fas fa-music" style="font-size:80px;color:#555;"></i>
                     </div>
                 </div>
-                <div style="text-align:center;margin-bottom:24px;">
+                <div style="position:relative;z-index:1;text-align:center;margin-bottom:24px;">
                     <div style="font-size:20px;font-weight:600;margin-bottom:8px;">{{ playbackState.track?.title || 'No track' }}</div>
                     <div style="color:var(--text-secondary);">{{ playbackState.track?.artist || '' }}</div>
                     <div style="color:var(--text-muted);font-size:12px;margin-top:4px;">
@@ -2378,10 +2379,6 @@ const isLiked = ref(false);
                 
                 function closeAlbumContextMenu() {
                     albumContextMenu.value.show = false;
-                }
-                
-                async function setVolume() {
-                    sendControl('set_volume', { volume: volume.value });
                 }
                 
                 function sendWS(event, data) {
@@ -3409,7 +3406,7 @@ async function saveConfig() {
                     letters, scrollToLetter, selectedLetter, filteredArtists, selectedAlbumLetter, filteredAlbums, selectedGenreLetter, filteredGenres, playRandomAlbum, playRandomArtist, albumContextMenu,
                     sessions, selectedSessionId, currentSessionId, deviceName, updateDeviceName, focusSearch, setPlayerSession,
                     users, showUserForm, newUser, isAdmin, isMobile, showMobileQueue, showDeviceModal, showPlayerModal, showMoreMenu, isLiked, toggleLike, loadUsers, createUser, deleteUser, logout,
-                    viewPlaylist, playPlaylist, deletePlaylist, downloadPlaylist, shufflePlaylist, shuffleCount, loading, loadQueueTracks
+                    viewPlaylist, playPlaylist, deletePlaylist, downloadPlaylist, shufflePlaylist, shuffleCount, loading, loadQueueTracks, viewFavorites
                 };
             }
         }).mount('#app');
