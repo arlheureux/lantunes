@@ -15,7 +15,7 @@ A self-hosted LAN music streaming server with multi-client sync and device casti
 - **Letter Filtering** - Filter Albums, Artists, and Genres by first letter
 - **Play Random** - One-click to play a random album or artist
 - **Stats Dashboard** - Home page shows library statistics
-- **Mobile Optimized** - Touch-friendly with swipe gestures
+- **Mobile Optimized** - Touch-friendly interface
 
 ## Requirements
 
