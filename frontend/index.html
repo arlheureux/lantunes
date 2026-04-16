@@ -2593,16 +2593,26 @@ async function saveConfig() {
                 
                 async function createAndAddToPlaylist() {
                     if (!newPlaylistName.value.trim()) return;
+                    
+                    // Store name and what to add in local variables FIRST before clearing
+                    const playlistName = newPlaylistName.value.trim();
+                    const trackToAdd = playlistDialog.value.track;
+                    const albumToAdd = playlistDialog.value.album;
+                    
+                    // Clear dialog state immediately
+                    playlistDialog.value = { show: false, track: null, album: null };
+                    newPlaylistName.value = '';
+                    
                     const result = await apiCall('/api/playlists', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ name: newPlaylistName.value })
+                        body: JSON.stringify({ name: playlistName })
                     });
                     if (result && result.id) {
-                        if (playlistDialog.value.track) {
-                            await apiCall('/api/playlists/' + result.id + '/tracks?track_id=' + playlistDialog.value.track.id, { method: 'POST' });
-                        } else if (playlistDialog.value.album) {
-                            const albumDetails = await apiCall('/api/library/albums/' + playlistDialog.value.album.id);
+                        if (trackToAdd) {
+                            await apiCall('/api/playlists/' + result.id + '/tracks?track_id=' + trackToAdd.id, { method: 'POST' });
+                        } else if (albumToAdd) {
+                            const albumDetails = await apiCall('/api/library/albums/' + albumToAdd.id);
                             if (albumDetails && albumDetails.tracks) {
                                 for (const track of albumDetails.tracks) {
                                     await apiCall('/api/playlists/' + result.id + '/tracks?track_id=' + track.id, { method: 'POST' });
@@ -2610,7 +2620,6 @@ async function saveConfig() {
                             }
                         }
                     }
-                    playlistDialog.value.show = false;
                 }
                 
                 const newPlaylistName = ref('');
