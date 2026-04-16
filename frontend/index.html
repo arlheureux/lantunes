@@ -2159,7 +2159,7 @@
                 const view = ref('library');
                 const currentUser = ref(JSON.parse(localStorage.getItem('user') || '{}'));
                 const isAdmin = ref(currentUser.value.role === 'admin');
-                const isMobile = ref(window.innerWidth <= 768);
+                const isMobile = ref(window.innerWidth <= 1024);
                 const showMobileQueue = ref(false);
                 const showDeviceModal = ref(false);
                 const showPlayerModal = ref(false);
@@ -2167,7 +2167,7 @@
                 
                 // Update isMobile on resize
                 window.addEventListener('resize', () => {
-                    isMobile.value = window.innerWidth <= 768;
+                    isMobile.value = window.innerWidth <= 1024;
                 });
                 
                 const searchQuery = ref('');
