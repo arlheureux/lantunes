@@ -535,21 +535,21 @@
             
             .stats-grid { grid-template-columns: repeat(2, 1fr) !important; }
             
-            /* Album grid - 3 columns, stretch to fill on mobile */
+            /* Album grid - responsive like desktop on mobile */
             .album-grid { 
-                grid-template-columns: repeat(3, 1fr) !important;
+                grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
                 gap: 8px;
             }
             .album-card { 
                 max-width: 100%;
-                text-align: center;
             }
             .album-cover { 
                 height: auto !important; 
                 aspect-ratio: 1;
             }
-            .album-card .name { font-size: 12px; text-align: center; }
-            .album-card .artist { font-size: 10px; text-align: center; }
+            .album-card .name { font-size: 12px; }
+            .album-card .artist { font-size: 10px; }
+            .album-play-btn { width: 36px; height: 36px; font-size: 14px; }
             .album-play-btn { left: 50% !important; transform: translateX(-50%) !important; }
             
             /* Adjust padding and margins for mobile */
