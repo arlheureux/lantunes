@@ -43,7 +43,7 @@
 
           <TrackList
             v-else-if="currentView === 'tracks'"
-            :tracks="allTracks"
+            :tracks="[]"
             :loading="loadingTracks"
             @play="playTrack"
           />
@@ -180,7 +180,7 @@ const { user, isAdmin } = useAuth()
 const {
   albums, artists, genres, playlists, favorites, queue,
   loadingAlbums, loadingArtists, loadingGenres, loadingPlaylists, loadingFavorites, loadingTracks,
-  allTracks, searchResults, searching,
+  searchResults, searching,
   loadAlbums, loadArtists, loadGenres, loadPlaylists, loadFavorites, loadQueue,
   searchMusic, triggerScan, createPlaylist, selectAlbum, selectArtist, selectGenre, selectPlaylist, selectedAlbum, selectedArtist, selectedPlaylist
 } = useLibrary()
@@ -200,7 +200,6 @@ const viewTitle = computed(() => {
     albums: 'Albums',
     artists: 'Artists',
     genres: 'Genres',
-    tracks: 'All Tracks',
     favorites: 'Favorites',
     playlists: 'Playlists',
     queue: 'Queue',

@@ -1,60 +1,112 @@
 import { ref, computed } from 'vue'
+import { useWebSocket } from './useWebSocket.js'
 
 export function usePlayer() {
-  const playbackState = ref({
-    track: null,
-    position: 0,
-    is_playing: false,
-    volume: 1.0,
-    queue: [],
-    queue_index: 0,
-    shuffle_mode: false,
-    repeat_mode: 'off',
-    player_device_id: null
-  })
-
-  const isLiked = ref(false)
+  const currentTrack = ref(null)
+  const isPlaying = ref(false)
+  const currentTime = ref(0)
+  const duration = ref(0)
+  const volume = ref(1.0)
+  const muted = ref(false)
+  const shuffle = ref(false)
+  const repeat = ref('none')
+  const queue = ref([])
+  const queueIndex = ref(0)
   const isLoading = ref(false)
 
-  const progressPercent = computed(() => {
-    if (!playbackState.value.track?.duration) return 0
-    return (playbackState.value.position / playbackState.value.track.duration) * 100
-  })
+  const { send } = useWebSocket()
 
-  function updateState(newState) {
-    playbackState.value = { ...playbackState.value, ...newState }
+  const hasCurrentTrack = computed(() => !!currentTrack.value)
+
+  function play(track, index = 0) {
+    if (track) {
+      currentTrack.value = track
+      isPlaying.value = true
+      send('play', { track_id: track.id })
+    }
   }
 
-  function updatePosition(position) {
-    playbackState.value.position = position
+  function pause() {
+    isPlaying.value = false
+    send('pause')
   }
 
-  function updateQueue(queue) {
-    playbackState.value.queue = queue
+  function previous() {
+    if (queueIndex.value > 0) {
+      queueIndex.value--
+      currentTrack.value = queue.value[queueIndex.value]
+      play(currentTrack.value)
+    }
   }
 
-  function setVolume(volume) {
-    playbackState.value.volume = volume
+  function next() {
+    if (queueIndex.value < queue.value.length - 1) {
+      queueIndex.value++
+      currentTrack.value = queue.value[queueIndex.value]
+      play(currentTrack.value)
+    }
   }
 
-  function setLiked(value) {
-    isLiked.value = value
+  function seek(position) {
+    currentTime.value = position
+    send('seek', { position })
   }
 
-  function setLoading(value) {
-    isLoading.value = value
+  function setVolume(vol) {
+    volume.value = vol
+    send('volume', { volume: vol })
+  }
+
+  function toggleMute() {
+    muted.value = !muted.value
+  }
+
+  function setShuffle(value) {
+    shuffle.value = value
+  }
+
+  function setRepeat(value) {
+    repeat.value = value
+  }
+
+  function updateState(state) {
+    if (state.track) currentTrack.value = state.track
+    if (state.is_playing !== undefined) isPlaying.value = state.is_playing
+    if (state.position !== undefined) currentTime.value = state.position
+    if (state.volume !== undefined) volume.value = state.volume
+    if (state.queue) queue.value = state.queue
+    if (state.queue_index !== undefined) queueIndex.value = state.queue_index
+  }
+
+  function playTrack(track) {
+    queue.value = [track]
+    queueIndex.value = 0
+    play(track)
   }
 
   return {
-    playbackState,
-    isLiked,
+    currentTrack,
+    isPlaying,
+    currentTime,
+    duration,
+    volume,
+    muted,
+    shuffle,
+    repeat,
+    queue,
+    queueIndex,
     isLoading,
-    progressPercent,
-    updateState,
-    updatePosition,
-    updateQueue,
+    hasCurrentTrack,
+    play,
+    pause,
+    previous,
+    next,
+    seek,
     setVolume,
-    setLiked,
-    setLoading
+    toggleMute,
+    setShuffle,
+    setRepeat,
+    updateState,
+    playTrack
   }
 }

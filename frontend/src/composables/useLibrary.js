@@ -6,89 +6,111 @@ export function useLibrary() {
   const recentAlbums = ref([])
   const artists = ref([])
   const playlists = ref([])
+  const favorites = ref([])
   const genres = ref([])
+  const queue = ref([])
+  const searchResults = ref([])
   const config = ref({ library: { music_path: '' } })
-  const loading = ref({
-    library: false,
-    tracks: false
-  })
 
-  const letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ#'.split('')
-  const selectedLetter = ref('A')
-  const selectedAlbumLetter = ref('A')
-  const selectedGenreLetter = ref(null)
+  const loadingAlbums = ref(false)
+  const loadingArtists = ref(false)
+  const loadingGenres = ref(false)
+  const loadingPlaylists = ref(false)
+  const loadingFavorites = ref(false)
+  const loadingTracks = ref(false)
+  const searching = ref(false)
 
-  const filteredArtists = computed(() => {
-    if (!selectedLetter.value) return artists.value
-    return artists.value.filter(a => {
-      const firstChar = a.name.charAt(0).toUpperCase()
-      if (selectedLetter.value === '#') return !'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.includes(firstChar)
-      return firstChar === selectedLetter.value
-    })
-  })
+  const selectedAlbum = ref(null)
+  const selectedArtist = ref(null)
+  const selectedPlaylist = ref(null)
 
-  const filteredAlbums = computed(() => {
-    if (!selectedAlbumLetter.value) return albums.value
-    return albums.value.filter(a => {
-      const firstChar = a.title.charAt(0).toUpperCase()
-      if (selectedAlbumLetter.value === '#') return !'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.includes(firstChar)
-      return firstChar === selectedAlbumLetter.value
-    })
-  })
-
-  const filteredGenres = computed(() => {
-    if (!selectedGenreLetter.value) return genres.value
-    return genres.value.filter(g => {
-      const firstChar = g.charAt(0).toUpperCase()
-      if (selectedGenreLetter.value === '#') return !'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.includes(firstChar)
-      return firstChar === selectedGenreLetter.value
-    })
-  })
-
-  async function loadLibrary() {
-    loading.value.library = true
+  async function loadAlbums() {
+    loadingAlbums.value = true
     try {
-      const [a, ra, ar, p, g, c] = await Promise.all([
-        api.getAlbums(),
-        api.getRecentAlbums(),
-        api.getArtists(),
-        api.getPlaylists(),
-        api.getGenres(),
-        api.getConfig()
-      ])
-      if (a) albums.value = a
-      if (ra) recentAlbums.value = ra
-      if (ar) artists.value = ar
-      if (p) playlists.value = p
-      if (g) genres.value = g
-      if (c) config.value = c
+      const data = await api.getAlbums()
+      if (data) albums.value = data
     } finally {
-      loading.value.library = false
+      loadingAlbums.value = false
     }
   }
 
-  async function loadArtist(id) {
-    return api.getArtist(id)
+  async function loadArtists() {
+    loadingArtists.value = true
+    try {
+      const data = await api.getArtists()
+      if (data) artists.value = data
+    } finally {
+      loadingArtists.value = false
+    }
   }
 
-  async function loadAlbum(id) {
-    return api.getAlbum(id)
+  async function loadGenres() {
+    loadingGenres.value = true
+    try {
+      const data = await api.getGenres()
+      if (data) genres.value = data
+    } finally {
+      loadingGenres.value = false
+    }
   }
 
-  async function loadPlaylist(id) {
-    return api.getPlaylist(id)
-  }
-
-  async function loadGenreAlbums(genre) {
-    return api.getGenreAlbums(genre)
+  async function loadPlaylists() {
+    loadingPlaylists.value = true
+    try {
+      const data = await api.getPlaylists()
+      if (data) playlists.value = data
+    } finally {
+      loadingPlaylists.value = false
+    }
   }
 
   async function loadFavorites() {
-    return api.getFavorites()
+    loadingFavorites.value = true
+    try {
+      const data = await api.getFavorites()
+      if (data) favorites.value = data
+    } finally {
+      loadingFavorites.value = false
+    }
   }
 
-  async function search(query) {
-    return api.search(query)
+  async function loadQueue() {
+    // Queue is managed by usePlayer, this is for display
+  }
+
+  async function searchMusic(query) {
+    searching.value = true
+    try {
+      const data = await api.search(query)
+      if (data) searchResults.value = data
+    } finally {
+      searching.value = false
+    }
+  }
+
+  async function triggerScan() {
+    // Admin function to trigger library scan
+    return api.apiCall('/api/library/scan', { method: 'POST' })
+  }
+
+  async function createPlaylist(name) {
+    return api.createPlaylist(name)
+  }
+
+  function selectAlbum(album) {
+    selectedAlbum.value = album
+  }
+
+  function selectArtist(artist) {
+    selectedArtist.value = artist
+  }
+
+  function selectPlaylist(playlist) {
+    selectedPlaylist.value = playlist
+  }
+
+  function selectGenre(genre) {
+    // Navigate to genre view
   }
 
   return {
@@ -96,22 +118,33 @@ export function useLibrary() {
     recentAlbums,
     artists,
     playlists,
+    favorites,
     genres,
+    queue,
+    searchResults,
     config,
-    loading,
-    letters,
-    selectedLetter,
-    selectedAlbumLetter,
-    selectedGenreLetter,
-    filteredArtists,
-    filteredAlbums,
-    filteredGenres,
-    loadLibrary,
-    loadArtist,
-    loadAlbum,
-    loadPlaylist,
-    loadGenreAlbums,
+    loadingAlbums,
+    loadingArtists,
+    loadingGenres,
+    loadingPlaylists,
+    loadingFavorites,
+    loadingTracks,
+    searching,
+    selectedAlbum,
+    selectedArtist,
+    selectedPlaylist,
+    loadAlbums,
+    loadArtists,
+    loadGenres,
+    loadPlaylists,
     loadFavorites,
-    search
+    loadQueue,
+    searchMusic,
+    triggerScan,
+    createPlaylist,
+    selectAlbum,
+    selectArtist,
+    selectPlaylist,
+    selectGenre
   }
 }

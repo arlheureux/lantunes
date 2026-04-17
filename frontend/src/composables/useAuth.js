@@ -1,8 +1,8 @@
 import { ref, computed } from 'vue'
 import { login as apiLogin } from '../api/index.js'
 
-const currentUser = ref(JSON.parse(localStorage.getItem('user') || '{}'))
-const isAdmin = computed(() => currentUser.value.role === 'admin')
+const user = ref(JSON.parse(localStorage.getItem('user') || '{}'))
+const isAdmin = computed(() => user.value?.role === 'admin')
 
 export function useAuth() {
   const isAuthenticated = computed(() => {
@@ -15,7 +15,7 @@ export function useAuth() {
     if (result && result.access_token) {
       localStorage.setItem('access_token', result.access_token)
       localStorage.setItem('user', JSON.stringify(result.user))
-      currentUser.value = result.user
+      user.value = result.user
       return true
     }
     return false
@@ -24,7 +24,7 @@ export function useAuth() {
   function logout() {
     localStorage.removeItem('access_token')
     localStorage.removeItem('user')
-    currentUser.value = {}
+    user.value = {}
     window.location.href = '/login.html'
   }
 
@@ -38,7 +38,7 @@ export function useAuth() {
   }
 
   return {
-    currentUser,
+    user,
     isAdmin,
     isAuthenticated,
     login,
