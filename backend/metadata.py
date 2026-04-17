@@ -184,9 +184,35 @@ def fetch_album_cover(artist: str, album: str, album_id: int, year: str = None) 
     return None
 
 def extract_and_save_artwork(filepath: str, album_id: int) -> Optional[str]:
-    """Extract embedded artwork or fetch from external provider"""
+    """Extract embedded artwork, check common filenames, or fetch from external provider"""
     import base64
     
+    # Common artwork filenames to check in the music folder
+    COMMON_ARTWORK_NAMES = [
+        'cover.jpg', 'cover.jpeg', 'cover.png',
+        'folder.jpg', 'folder.jpeg', 'folder.png',
+        'album.jpg', 'album.jpeg', 'album.png',
+        'front.jpg', 'front.jpeg', 'front.png',
+        'thumb.jpg', 'thumb.jpeg', 'thumb.png',
+        '.folder.jpg', '.folder.jpeg', '.folder.png',
+        'coverart.jpg', 'coverart.jpeg', 'coverart.png',
+    ]
+    
+    # Try common filenames first (before extracting embedded)
+    audio_dir = os.path.dirname(filepath)
+    for name in COMMON_ARTWORK_NAMES:
+        art_path = os.path.join(audio_dir, name)
+        if os.path.exists(art_path) and os.path.isfile(art_path):
+            # Copy to artwork directory
+            dest_path = get_artwork_path(album_id)
+            try:
+                import shutil
+                shutil.copy2(art_path, dest_path)
+                return str(dest_path)
+            except Exception as e:
+                print(f"Error copying artwork {art_path}: {e}")
+    
+    # Try embedded artwork
     try:
         from mutagen import File
         audio = File(filepath)
