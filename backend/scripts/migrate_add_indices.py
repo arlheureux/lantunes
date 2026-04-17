@@ -10,14 +10,15 @@ import os
 script_dir = os.path.dirname(os.path.abspath(__file__))
 possible_db_paths = [
     "/root/lantunes/lantunes.db",
-    os.path.join(script_dir, "..", "lantunes.db"),
+    os.path.join(script_dir, "..", "..", "lantunes.db"),
     os.path.join(os.getcwd(), "lantunes.db"),
+    "/home/arnaud/dev/lantunes/lantunes.db",
 ]
 
 db_path = None
 for p in possible_db_paths:
     if os.path.exists(p):
-        db_path = p
+        db_path = os.path.abspath(p)
         break
 
 def migrate():
