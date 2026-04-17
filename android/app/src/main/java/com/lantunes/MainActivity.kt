@@ -73,6 +73,9 @@ class MainActivity : AppCompatActivity() {
             setupBackNavigation()
             setupMediaSession()
 
+            // Start playback service to ensure notification appears
+            PlaybackService.startService(this)
+
             val url = getServerUrl()
             if (url.isEmpty()) {
                 showServerUrlDialog()
@@ -353,8 +356,7 @@ webViewClient = LanTunesWebViewClient()
     @JavascriptInterface
     fun updatePlaybackState(isPlaying: Boolean, trackTitle: String?, artistName: String?) {
         PlaybackService.updatePlaybackState(isPlaying, trackTitle, artistName)
-        if (isPlaying && trackTitle != null) {
-            PlaybackService.keepServiceAlive(this)
-        }
+        // Always try to keep service alive when playback state changes
+        PlaybackService.keepServiceAlive(this)
     }
 }
