@@ -2024,7 +2024,7 @@
             </button>
             <div class="modal-left">
                 <div class="modal-artwork">
-                    <img v-if="playbackState.track?.album_id" :src="getMediaUrl('/api/library/artwork/' + playbackState.track?.album_id)" @error="$event.target.parentElement.querySelector('.placeholder')?.style?.display !== 'none'">
+                    <img v-if="playbackState.track?.album_id" :src="getMediaUrl('/api/library/artwork/' + playbackState.track?.album_id)">
                     <div v-else class="placeholder">
                         <i class="fas fa-music"></i>
                     </div>
@@ -2113,7 +2113,7 @@
             </div>
             <div class="mobile-queue-list" style="position:relative;z-index:1;flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:40px 20px;">
                 <div style="width:280px;height:280px;border-radius:12px;overflow:hidden;margin-bottom:32px;box-shadow:0 8px 32px rgba(0,0,0,0.5);">
-                    <img v-if="playbackState.track?.album_id" :src="getMediaUrl('/api/library/artwork/' + playbackState.track?.album_id)" style="width:100%;height:100%;object-fit:cover;" @error="$event.target.style.display='none'">
+                    <img v-if="playbackState.track?.album_id" :src="getMediaUrl('/api/library/artwork/' + playbackState.track?.album_id)" style="width:100%;height:100%;object-fit:cover;">
                     <div v-else style="width:100%;height:100%;background:#333;display:flex;align-items:center;justify-content:center;">
                         <i class="fas fa-music" style="font-size:80px;color:#555;"></i>
                     </div>
@@ -2170,6 +2170,13 @@
                         <i class="fas fa-list"></i>
                     </button>
                 </div>
+                <div style="display:flex;justify-content:center;margin-top:16px;" v-if="sessions.length > 1">
+                    <select v-model="selectedSessionId" @change="setPlayerSession(selectedSessionId)" style="background:var(--bg-elevated);color:var(--text-primary);border:1px solid var(--border-subtle);padding:8px 12px;border-radius:var(--radius-md);font-size:13px;cursor:pointer;min-width:150px;">
+                        <option v-for="s in sessions" :key="s.id" :value="s.id">
+                            {{ s.is_player ? '🎵 ' : '📱 ' }}{{ s.device_name }}
+                        </option>
+                    </select>
+                </div>
             </div>
         </div>
         
@@ -2177,7 +2184,7 @@
         <div class="player-bar-desktop" v-if="!isMobile && playbackState.track">
             <div class="track-info">
                 <div class="track-artwork" @click="showPlayerModal = true" style="cursor:pointer;">
-                    <img v-if="playbackState.track?.album_id" :src="getMediaUrl('/api/library/artwork/' + playbackState.track?.album_id)" @error="$event.target.style.display='none'">
+                    <img v-if="playbackState.track?.album_id" :src="getMediaUrl('/api/library/artwork/' + playbackState.track?.album_id)">
                 </div>
                 <div>
                     <div class="title">{{ playbackState.track?.title }}</div>
@@ -2231,7 +2238,7 @@
         <div class="player-bar-mobile" v-if="isMobile && playbackState.track" @touchstart="onTouchStart" @touchend="onTouchEnd">
             <div class="track-info">
                 <div class="track-artwork" @click="showPlayerModal = true" style="cursor:pointer;">
-                    <img v-if="playbackState.track?.album_id" :src="getMediaUrl('/api/library/artwork/' + playbackState.track?.album_id)" @error="$event.target.style.display='none'">
+                    <img v-if="playbackState.track?.album_id" :src="getMediaUrl('/api/library/artwork/' + playbackState.track?.album_id)">
                 </div>
                 <div>
                     <div class="title">{{ playbackState.track?.title }}</div>
