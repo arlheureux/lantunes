@@ -2443,10 +2443,19 @@ const isLiked = ref(false);
                     return sessions.value.find(s => s.is_player);
                 }
                 
+                let lastPositionSent = 0;
+                
                 function onTimeUpdate() {
                     // Only update position from audio element if this device is the player
                     if (audioPlayer.value && isThisDevicePlayer()) {
-                        playbackState.value.position = audioPlayer.value.currentTime;
+                        const pos = audioPlayer.value.currentTime;
+                        playbackState.value.position = pos;
+                        
+                        // Send position to server every 2 seconds so other devices can sync
+                        if (playbackState.value.is_playing && Math.abs(pos - lastPositionSent) >= 2) {
+                            lastPositionSent = pos;
+                            sendControl('update_position', { position: Math.floor(pos) });
+                        }
                     }
                 }
                 
