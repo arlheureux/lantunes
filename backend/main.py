@@ -82,7 +82,9 @@ async def ws(websocket: WebSocket):
     await websocket_endpoint(websocket)
 
 frontend_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), "frontend")
-index_path = os.path.join(frontend_path, "index.html")
+dist_path = os.path.join(frontend_path, "dist")
+src_path = os.path.join(frontend_path, "src")
+index_path = os.path.join(src_path, "index.html")
 login_path = os.path.join(frontend_path, "login.html")
 
 @app.get("/")
@@ -97,7 +99,10 @@ async def serve_login():
 async def serve_frontend(path: str):
     if path == "login.html":
         return HTMLResponse(open(login_path).read())
-    file_path = os.path.join(frontend_path, path)
-    if os.path.exists(file_path):
-        return FileResponse(file_path)
+    dist_file = os.path.join(dist_path, path)
+    if os.path.exists(dist_file):
+        return FileResponse(dist_file)
+    src_file = os.path.join(src_path, path)
+    if os.path.exists(src_file):
+        return FileResponse(src_file)
     return HTMLResponse(open(index_path).read())
