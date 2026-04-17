@@ -17,9 +17,24 @@ logger = logging.getLogger("lantunes.websocket")
 def is_authorized_for_control(auth_payload: dict, session_id: str, action: str) -> bool:
     """Check if user is authorized to execute control actions.
     
-    All authenticated users can control playback.
+    Users can only control their own devices (sessions they own).
     """
     if not auth_payload:
+        return False
+    
+    user_id = auth_payload.get("user_id")
+    
+    # Get the device owner for this session
+    session = playback._sessions.get(session_id)
+    if not session:
+        logger.warning(f"No session found for: {session_id}")
+        return False
+    
+    device_owner = session.get("device_owner")
+    
+    # Check if this user owns the device
+    if device_owner != user_id:
+        logger.warning(f"Unauthorized control: user={user_id} tried to control session={session_id} owned by={device_owner}")
         return False
     
     return True
