@@ -6,16 +6,29 @@ Run this script once to update the existing database schema.
 import sqlite3
 import os
 
-db_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), "lantunes.db")
+# Try multiple possible database locations
+script_dir = os.path.dirname(os.path.abspath(__file__))
+possible_db_paths = [
+    "/root/lantunes/lantunes.db",
+    os.path.join(script_dir, "..", "lantunes.db"),
+    os.path.join(os.getcwd(), "lantunes.db"),
+]
+
+db_path = None
+for p in possible_db_paths:
+    if os.path.exists(p):
+        db_path = p
+        break
 
 def migrate():
-    print(f"Looking for database at: {db_path}")
-    print(f"Database exists: {os.path.exists(db_path)}")
-    
-    if not os.path.exists(db_path):
-        print("Database file not found! Starting the server should create it.")
-        print("Run: python run.py (then Ctrl+C to stop)")
+    if db_path is None:
+        print("Database not found! Searched in:")
+        for p in possible_db_paths:
+            print(f"  {p}")
+        print("\nFind the database with: python backend/scripts/find_database.py")
         return
+    
+    print(f"Using database at: {db_path}")
     
     conn = sqlite3.connect(db_path)
     cursor = conn.cursor()
