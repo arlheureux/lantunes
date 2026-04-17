@@ -9,6 +9,14 @@ import os
 db_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), "lantunes.db")
 
 def migrate():
+    print(f"Looking for database at: {db_path}")
+    print(f"Database exists: {os.path.exists(db_path)}")
+    
+    if not os.path.exists(db_path):
+        print("Database file not found! Starting the server should create it.")
+        print("Run: python run.py (then Ctrl+C to stop)")
+        return
+    
     conn = sqlite3.connect(db_path)
     cursor = conn.cursor()
     
@@ -18,8 +26,11 @@ def migrate():
     cursor.execute("SELECT name FROM sqlite_master WHERE type='table'")
     tables = [row[0] for row in cursor.fetchall()]
     
+    print(f"Tables found: {tables}")
+    
     if not tables:
         print("No tables found. Database may need to be initialized first by starting the server.")
+        print("Run: python run.py (then Ctrl+C to stop)")
         conn.close()
         return
     
