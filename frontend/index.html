@@ -2071,7 +2071,7 @@
                 </div>
                 <div class="modal-volume" style="display:flex;align-items:center;gap:8px;margin-top:12px;">
                     <button @click="setVolume(0)" style="background:none;border:none;color:var(--text-muted);cursor:pointer;"><i class="fas fa-volume-off"></i></button>
-                    <input type="range" min="0" max="1" step="0.01" :value="playbackState.volume" @input="setVolume(parseFloat($event.target.value))" style="flex:1;cursor:pointer;">
+                    <input type="range" min="0" max="1" step="0.01" :value="playbackState.volume" @input="setVolume(parseFloat($event.target.value))" :style="{ background: 'linear-gradient(to right, var(--accent) 0%, var(--accent) ' + (playbackState.volume * 100) + '%, var(--bg-elevated) ' + (playbackState.volume * 100) + '%, var(--bg-elevated) 100%)' }" style="flex:1;cursor:pointer;">
                     <button @click="setVolume(1)" style="background:none;border:none;color:var(--text-muted);cursor:pointer;"><i class="fas fa-volume-up"></i></button>
                 </div>
             </div>
@@ -2154,7 +2154,7 @@
                     <button @click="setVolume(0)" style="background:none;border:none;color:var(--text-secondary);font-size:20px;" title="Mute">
                         <i class="fas fa-volume-off"></i>
                     </button>
-                    <input type="range" min="0" max="1" step="0.01" :value="playbackState.volume" @input="setVolume(parseFloat($event.target.value))" style="width:80px;cursor:pointer;">
+                    <input type="range" min="0" max="1" step="0.01" :value="playbackState.volume" @input="setVolume(parseFloat($event.target.value))" :style="{ background: 'linear-gradient(to right, var(--accent) 0%, var(--accent) ' + (playbackState.volume * 100) + '%, var(--bg-elevated) ' + (playbackState.volume * 100) + '%, var(--bg-elevated) 100%)' }" style="width:80px;cursor:pointer;">
                     <button @click="setVolume(1)" style="background:none;border:none;color:var(--text-secondary);font-size:20px;" title="Max volume">
                         <i class="fas fa-volume-up"></i>
                     </button>
@@ -2215,7 +2215,7 @@
             
             <div class="volume">
                 <i class="fas fa-volume-up"></i>
-                <input type="range" min="0" max="1" step="0.01" v-model="volume" @input="setVolume(parseFloat($event.target.value))">
+                <input type="range" min="0" max="1" step="0.01" v-model="volume" @input="setVolume(parseFloat($event.target.value))" :style="{ background: 'linear-gradient(to right, var(--accent) 0%, var(--accent) ' + (volume * 100) + '%, var(--bg-elevated) ' + (volume * 100) + '%, var(--bg-elevated) 100%)' }">
             </div>
         </div>
         
