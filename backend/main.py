@@ -95,6 +95,13 @@ async def root():
 async def serve_login():
     return HTMLResponse(open(login_path).read())
 
+@app.get("/assets/{path:path}")
+async def serve_assets(path: str):
+    file_path = os.path.join(dist_path, "assets", path)
+    if os.path.exists(file_path):
+        return FileResponse(file_path)
+    return JSONResponse({"error": "Not found"}, status_code=404)
+
 @app.get("/{path:path}")
 async def serve_frontend(path: str):
     if path == "login.html":
