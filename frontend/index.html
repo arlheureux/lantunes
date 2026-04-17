@@ -3319,6 +3319,9 @@ async function saveConfig() {
                                     audioPlayer.value.currentTime = pos;
                                 }
                                 playbackState.value.position = pos;
+                            } else if (action === 'update_position') {
+                                const pos = msg.data.position;
+                                playbackState.value.position = pos;
                             } else if (action === 'set_volume') {
                                 const vol = msg.data.volume;
                                 if (amIPlayer && audioPlayer.value) {
