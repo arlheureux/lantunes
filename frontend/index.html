@@ -2215,7 +2215,7 @@
             
             <div class="volume">
                 <i class="fas fa-volume-up"></i>
-                <input type="range" min="0" max="1" step="0.01" v-model="volume" @change="setVolume">
+                <input type="range" min="0" max="1" step="0.01" v-model="volume" @input="setVolume(parseFloat($event.target.value))">
             </div>
         </div>
         
@@ -3191,6 +3191,9 @@ async function saveConfig() {
                             const oldPosition = playbackState.value.position;
                             playbackState.value = msg.data;
                             
+                            // Keep local volume in sync with server state
+                            volume.value = msg.data.volume;
+                            
                             loadQueueTracks();
                             
                             const trackChanged = oldTrackId !== msg.data.track?.id;
@@ -3372,11 +3375,11 @@ async function saveConfig() {
                         } else if (e.code === 'ArrowUp' && e.ctrlKey) {
                             e.preventDefault();
                             volume.value = Math.min(1, volume.value + 0.1);
-                            setVolume();
+                            setVolume(volume.value);
                         } else if (e.code === 'ArrowDown' && e.ctrlKey) {
                             e.preventDefault();
                             volume.value = Math.max(0, volume.value - 0.1);
-                            setVolume();
+                            setVolume(volume.value);
                         }
                     });
                     
