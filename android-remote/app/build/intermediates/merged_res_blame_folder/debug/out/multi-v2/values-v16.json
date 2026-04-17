@@ -1,0 +1,38 @@
+{
+    "logs": [
+        {
+            "outputFile": "com.lantunesremote.app-mergeDebugResources-34:/values-v16/values-v16.xml",
+            "map": [
+                {
+                    "source": "/home/arnaud/.gradle/caches/8.10.2/transforms/dd383524bbb9bffc0df04f9bc426c482/transformed/appcompat-1.6.1/res/values-v16/values-v16.xml",
+                    "from": {
+                        "startLines": "2",
+                        "startColumns": "4",
+                        "startOffsets": "55",
+                        "endLines": "5",
+                        "endColumns": "12",
+                        "endOffsets": "223"
+                    },
+                    "to": {
+                        "startLines": "3",
+                        "startColumns": "4",
+                        "startOffsets": "121",
+                        "endLines": "6",
+                        "endColumns": "12",
+                        "endOffsets": "289"
+                    }
+                },
+                {
+                    "source": "/home/arnaud/.gradle/caches/8.10.2/transforms/b6b8a7af94ec2c77cc150e7ebc415ad1/transformed/core-1.12.0/res/values-v16/values-v16.xml",
+                    "from": {
+                        "startLines": "2",
+                        "startColumns": "4",
+                        "startOffsets": "55",
+                        "endColumns": "65",
+                        "endOffsets": "116"
+                    }
+                }
+            ]
+        }
+    ]
+}
