@@ -10,10 +10,6 @@ library:
   music_path: ""
   scan_on_startup: false
 
-dlna:
-  enabled: false
-  friendly_name: "LanTunes"
-
 lastfm:
   api_key: ""
   enabled: false

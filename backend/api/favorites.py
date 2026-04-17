@@ -10,9 +10,17 @@ router = APIRouter(prefix="/api/favorites", tags=["favorites"])
 @router.get("")
 def get_favorites(db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
     favorites = db.query(Favorite).filter(Favorite.user_id == current_user.id).all()
+    
+    if not favorites:
+        return []
+    
+    track_ids = [f.track_id for f in favorites]
+    tracks = db.query(Track).filter(Track.id.in_(track_ids)).all()
+    tracks_map = {t.id: t for t in tracks}
+    
     result = []
     for f in favorites:
-        track = db.query(Track).filter(Track.id == f.track_id).first()
+        track = tracks_map.get(f.track_id)
         if track:
             result.append({
                 "id": track.id,

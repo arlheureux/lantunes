@@ -32,7 +32,6 @@ def scan_library(music_path: str, progress_callback=None):
     if not music_path or not os.path.isdir(music_path):
         return {"scanned": 0, "added": 0, "errors": 0}
     
-    # Path traversal prevention
     abs_path = os.path.abspath(music_path)
     if ".." in music_path or not abs_path.startswith("/"):
         return {"scanned": 0, "added": 0, "errors": 1, "error": "Invalid path"}
@@ -43,12 +42,13 @@ def scan_library(music_path: str, progress_callback=None):
     errors = 0
     skipped_format = 0
     skipped_duplicate = 0
+    skipped_symlink = 0
     unsupported_formats = {}
     
-    # Count total files first
     send_progress("Counting files...", stage="counting")
     total_files = 0
-    for root, dirs, files in os.walk(music_path):
+    for root, dirs, files in os.walk(music_path, followlinks=False):
+        dirs[:] = [d for d in dirs if not os.path.islink(os.path.join(root, d))]
         for filename in files:
             ext = Path(filename).suffix.lower()
             if ext in AUDIO_EXTENSIONS:
@@ -57,7 +57,8 @@ def scan_library(music_path: str, progress_callback=None):
     send_progress(f"Found {total_files} audio files", current=0, total=total_files, stage="scanning")
     
     try:
-        for root, dirs, files in os.walk(music_path):
+        for root, dirs, files in os.walk(music_path, followlinks=False):
+            dirs[:] = [d for d in dirs if not os.path.islink(os.path.join(root, d))]
             for filename in files:
                 ext = Path(filename).suffix.lower()
                 if ext not in AUDIO_EXTENSIONS:

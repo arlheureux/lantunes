@@ -1,5 +1,6 @@
 import sys
 import os
+import fcntl
 backend_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, backend_dir)
 
@@ -8,7 +9,7 @@ from pydantic import BaseModel
 import yaml
 from pathlib import Path
 import requests
-from dependencies import get_current_user
+from dependencies import get_current_user, require_admin
 
 router = APIRouter(prefix="/api/config", tags=["config"])
 
@@ -18,32 +19,45 @@ class ConfigUpdate(BaseModel):
 class TestServerRequest(BaseModel):
     url: str
 
+
 @router.get("")
-def get_config():
+def get_config(current_user = Depends(get_current_user)):
     config_path = Path(__file__).parent.parent.parent / "config.yaml"
     if config_path.exists():
         with open(config_path) as f:
             return yaml.safe_load(f)
     return {"library": {"music_path": ""}}
 
+
 @router.post("")
-def update_config(data: ConfigUpdate):
+def update_config(data: ConfigUpdate, current_user = Depends(require_admin)):
     config_path = Path(__file__).parent.parent.parent / "config.yaml"
     
-    # Validate path - prevent path traversal
     music_path = data.music_path.strip()
-    if music_path and (".." in music_path or music_path.startswith("/etc") or music_path.startswith("/root")):
-        raise HTTPException(status_code=400, detail="Invalid path")
     
-    with open(config_path) as f:
-        config = yaml.safe_load(f)
+    if music_path:
+        abs_music_path = os.path.abspath(music_path)
+        forbidden_paths = ['/etc', '/root', '/home', '/var', '/usr', '/bin', '/sbin', '/sys', '/proc', '/dev', '/boot', '/srv', '/opt', '/mnt', '/media']
+        if ".." in music_path or any(abs_music_path.startswith(fp) for fp in forbidden_paths):
+            raise HTTPException(status_code=400, detail="Invalid path")
     
-    config["library"]["music_path"] = music_path
+    lock_path = str(config_path) + ".lock"
+    with open(lock_path, 'w') as lock_file:
+        try:
+            fcntl.flock(lock_file.fileno(), fcntl.LOCK_EX)
+            with open(config_path, 'r') as f:
+                config = yaml.safe_load(f) or {}
+            
+            config.setdefault("library", {})["music_path"] = music_path
+            
+            with open(config_path, 'w') as f:
+                yaml.dump(config, f)
+        finally:
+            fcntl.flock(lock_file.fileno(), fcntl.LOCK_UN)
     
-    with open(config_path, "w") as f:
-        yaml.dump(config, f)
-    
+    os.remove(lock_path)
     return {"saved": True}
+
 
 @router.post("/test")
 async def test_server(data: TestServerRequest, current_user = Depends(get_current_user)):
@@ -53,7 +67,6 @@ async def test_server(data: TestServerRequest, current_user = Depends(get_curren
     if not test_url:
         raise HTTPException(status_code=400, detail="URL required")
     
-    # Add protocol if missing
     if not test_url.startswith("http://") and not test_url.startswith("https://"):
         test_url = "http://" + test_url
     
@@ -70,6 +83,7 @@ async def test_server(data: TestServerRequest, current_user = Depends(get_curren
     except Exception as e:
         return {"success": False, "error": str(e)}
 
+
 def run_migration():
     """Add missing columns to playback_state and download_jobs tables"""
     from backend.models import engine
@@ -78,7 +92,6 @@ def run_migration():
     conn = sqlite3.connect(engine.url.database)
     cursor = conn.cursor()
     
-    # Playback state columns
     cursor.execute("PRAGMA table_info(playback_state)")
     columns = [row[1] for row in cursor.fetchall()]
     
@@ -91,7 +104,6 @@ def run_migration():
     if "repeat" not in columns:
         cursor.execute("ALTER TABLE playback_state ADD COLUMN repeat TEXT DEFAULT 'off'")
     
-    # Download jobs table
     cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='download_jobs'")
     if not cursor.fetchone():
         cursor.execute("""
@@ -110,11 +122,3 @@ def run_migration():
     
     conn.commit()
     conn.close()
-
-
-run_migration()
-
-
-@router.post("/migrate")
-def run_migration_endpoint():
-    return {"success": True}

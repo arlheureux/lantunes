@@ -24,7 +24,7 @@ class Album(Base):
     __tablename__ = "albums"
     id = Column(Integer, primary_key=True)
     title = Column(String(255), nullable=False)
-    artist_id = Column(Integer, ForeignKey("artists.id"))
+    artist_id = Column(Integer, ForeignKey("artists.id", ondelete="SET NULL"), index=True)
     year = Column(Integer)
     genre = Column(String(100))
     artwork_path = Column(String(500))
@@ -36,8 +36,8 @@ class Track(Base):
     __tablename__ = "tracks"
     id = Column(Integer, primary_key=True)
     title = Column(String(255), nullable=False)
-    album_id = Column(Integer, ForeignKey("albums.id"))
-    artist_id = Column(Integer, ForeignKey("artists.id"))
+    album_id = Column(Integer, ForeignKey("albums.id", ondelete="SET NULL"), index=True)
+    artist_id = Column(Integer, ForeignKey("artists.id", ondelete="SET NULL"), index=True)
     disc_number = Column(Integer, default=1)
     track_number = Column(Integer)
     duration = Column(Integer)
@@ -47,6 +47,7 @@ class Track(Base):
     sample_rate = Column(Integer)
     created_at = Column(DateTime, default=func.now())
     album = relationship("Album", back_populates="tracks")
+    artist = relationship("Artist")
     
     def as_dict(self):
         return {
@@ -67,21 +68,22 @@ class Playlist(Base):
     __tablename__ = "playlists"
     id = Column(Integer, primary_key=True)
     name = Column(String(255), nullable=False)
+    user_id = Column(Integer, ForeignKey("users.id", ondelete="SET NULL"), index=True)
     created_at = Column(DateTime, default=func.now())
     updated_at = Column(DateTime, default=func.now(), onupdate=func.now())
 
 class PlaylistTrack(Base):
     __tablename__ = "playlist_tracks"
     id = Column(Integer, primary_key=True)
-    playlist_id = Column(Integer, ForeignKey("playlists.id", ondelete="CASCADE"))
-    track_id = Column(Integer, ForeignKey("tracks.id", ondelete="CASCADE"))
+    playlist_id = Column(Integer, ForeignKey("playlists.id", ondelete="CASCADE"), index=True)
+    track_id = Column(Integer, ForeignKey("tracks.id", ondelete="CASCADE"), index=True)
     position = Column(Integer, nullable=False)
 
 class Favorite(Base):
     __tablename__ = "favorites"
     id = Column(Integer, primary_key=True)
-    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"))
-    track_id = Column(Integer, ForeignKey("tracks.id", ondelete="CASCADE"))
+    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), index=True)
+    track_id = Column(Integer, ForeignKey("tracks.id", ondelete="CASCADE"), index=True)
     created_at = Column(DateTime, default=func.now())
 
 class Client(Base):
@@ -96,7 +98,7 @@ class Client(Base):
 class DownloadJob(Base):
     __tablename__ = "download_jobs"
     id = Column(Integer, primary_key=True)
-    playlist_id = Column(Integer, ForeignKey("playlists.id"))
+    playlist_id = Column(Integer, ForeignKey("playlists.id", ondelete="CASCADE"))
     status = Column(String(20), default="pending")
     progress = Column(Integer, default=0)
     total = Column(Integer, default=0)
@@ -108,7 +110,7 @@ class DownloadJob(Base):
 class PlaybackState(Base):
     __tablename__ = "playback_state"
     id = Column(Integer, primary_key=True, default=1)
-    current_track_id = Column(Integer, ForeignKey("tracks.id"))
+    current_track_id = Column(Integer, ForeignKey("tracks.id", ondelete="SET NULL"))
     position = Column(Integer, default=0)
     is_playing = Column(Boolean, default=False)
     volume = Column(Float, default=1.0)

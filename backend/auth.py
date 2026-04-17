@@ -50,14 +50,12 @@ def hash_password(password: str) -> str:
     return bcrypt.hashpw(password.encode(), bcrypt.gensalt()).decode()
 
 def verify_password(password: str, password_hash: str) -> bool:
-    """Verify password against bcrypt hash. Supports legacy SHA256 hashes."""
+    """Verify password against bcrypt hash."""
     import bcrypt
-    import hashlib
     
-    if password_hash.startswith('$2'):  # bcrypt
+    if password_hash.startswith('$2'):
         try:
             return bcrypt.checkpw(password.encode(), password_hash.encode())
         except Exception:
             return False
-    else:  # Legacy SHA256
-        return hashlib.sha256(password.encode()).hexdigest() == password_hash
+    return False

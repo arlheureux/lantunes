@@ -1,17 +1,19 @@
 import logging
+import threading
 from sqlalchemy.orm import Session
 from database import get_db, PlaybackState, Track, Artist, Album
 from datetime import datetime
 from typing import List, Optional
 import json
-import uuid
 
 logger = logging.getLogger("lantunes.playback")
 
 class PlaybackController:
     def __init__(self):
+        self._lock = threading.RLock()
         self.queue: List[int] = []
         self.current_index: int = 0
+        self.last_played_track_id: int = None
         self._ws_connections: List = []
         self._sessions: dict = {}
         self._player_session_id: str = None
@@ -340,52 +342,51 @@ class PlaybackController:
         return result
     
     def play(self, db: Session, position: int = None, track_id: int = None, queue: List[int] = None, session_id: str = None):
-        state = db.query(PlaybackState).filter(PlaybackState.id == 1).first()
-        if not state:
-            state = PlaybackState(id=1)
-            db.add(state)
-        
-        current_track_id = state.current_track_id
-        new_track = False
-        resume_play = False
-        
-        if queue is not None:
-            self.queue = queue
-            self.current_index = 0
-            state.queue = ','.join(map(str, self.queue))
-            new_track = True
-        
-        if track_id is not None:
-            if track_id == current_track_id and current_track_id:
-                resume_play = True
-            elif track_id not in self.queue:
-                self.queue.append(track_id)
-                self.current_index = self.queue.index(track_id)
-                new_track = True
-            else:
-                self.current_index = self.queue.index(track_id)
-                new_track = True
-        
-        # Resume case: no new track, just resume current
-        if track_id is None and queue is None and current_track_id:
-            resume_play = True
-        
-        if self.queue:
-            state.current_track_id = self.queue[self.current_index]
-            state.is_playing = True
-            if new_track and not resume_play:
-                state.position = 0
-            elif position is not None and position > 0:
-                state.position = position
-            # else: keep existing position (from pause)
-            if not state.queue:
-                state.queue = ','.join(map(str, self.queue))
-            state.updated_at = datetime.utcnow()
-            db.commit()
+        with self._lock:
+            state = db.query(PlaybackState).filter(PlaybackState.id == 1).first()
+            if not state:
+                state = PlaybackState(id=1)
+                db.add(state)
             
-            self.broadcast_playback_state()
-        
-        return self.get_state(db)
+            current_track_id = state.current_track_id
+            new_track = False
+            resume_play = False
+            
+            if queue is not None:
+                self.queue = queue
+                self.current_index = 0
+                state.queue = ','.join(map(str, self.queue))
+                new_track = True
+            
+            if track_id is not None:
+                if track_id == current_track_id and current_track_id:
+                    resume_play = True
+                elif track_id not in self.queue:
+                    self.queue.append(track_id)
+                    self.current_index = self.queue.index(track_id)
+                    new_track = True
+                else:
+                    self.current_index = self.queue.index(track_id)
+                    new_track = True
+            
+            if track_id is None and queue is None and current_track_id:
+                resume_play = True
+            
+            if self.queue:
+                state.current_track_id = self.queue[self.current_index]
+                state.is_playing = True
+                if new_track and not resume_play:
+                    state.position = 0
+                elif position is not None and position > 0:
+                    state.position = position
+                if not state.queue:
+                    state.queue = ','.join(map(str, self.queue))
+                state.updated_at = datetime.utcnow()
+                db.commit()
+                
+                self.broadcast_playback_state()
+            
+            return self.get_state(db)
     
     def update_position(self, db: Session, position: int):
         """Update current position in DB while playing, then broadcast to other devices"""
@@ -421,50 +422,51 @@ class PlaybackController:
         return self.get_state(db)
     
     def next(self, db: Session, session_id: str = None):
-        if not self.queue:
-            return self.get_state(db)
-        
-        if self.shuffle_mode and len(self.queue) > 1:
-            # Pick random track, avoiding the last played one
-            available_indices = [i for i in range(len(self.queue)) if i != self.current_index]
-            if available_indices:
-                import random
-                self.current_index = random.choice(available_indices)
-        else:
-            if self.current_index < len(self.queue) - 1:
-                self.current_index += 1
+        with self._lock:
+            if not self.queue:
+                return self.get_state(db)
+            
+            if self.shuffle_mode and len(self.queue) > 1:
+                available_indices = [i for i in range(len(self.queue)) if i != self.current_index]
+                if available_indices:
+                    import random
+                    self.current_index = random.choice(available_indices)
             else:
-                self.current_index = 0
-        
-        state = db.query(PlaybackState).filter(PlaybackState.id == 1).first()
-        state.current_track_id = self.queue[self.current_index]
-        state.position = 0
-        state.queue = ','.join(map(str, self.queue)) if self.queue else None
-        state.updated_at = datetime.utcnow()
-        db.commit()
-        
-        self.last_played_track_id = self.queue[self.current_index]
-        self.broadcast_playback_state()
-        return self.get_state(db)
+                if self.current_index < len(self.queue) - 1:
+                    self.current_index += 1
+                else:
+                    self.current_index = 0
+            
+            state = db.query(PlaybackState).filter(PlaybackState.id == 1).first()
+            state.current_track_id = self.queue[self.current_index]
+            state.position = 0
+            state.queue = ','.join(map(str, self.queue)) if self.queue else None
+            state.updated_at = datetime.utcnow()
+            db.commit()
+            
+            self.last_played_track_id = self.queue[self.current_index]
+            self.broadcast_playback_state()
+            return self.get_state(db)
     
     def previous(self, db: Session, session_id: str = None):
-        if not self.queue:
+        with self._lock:
+            if not self.queue:
+                return self.get_state(db)
+            
+            if self.current_index > 0:
+                self.current_index -= 1
+            else:
+                self.current_index = len(self.queue) - 1
+            
+            state = db.query(PlaybackState).filter(PlaybackState.id == 1).first()
+            state.current_track_id = self.queue[self.current_index]
+            state.position = 0
+            state.updated_at = datetime.utcnow()
+            db.commit()
+            
+            self.last_played_track_id = self.queue[self.current_index]
+            self.broadcast_playback_state()
             return self.get_state(db)
-        
-        if self.current_index > 0:
-            self.current_index -= 1
-        else:
-            self.current_index = len(self.queue) - 1
-        
-        state = db.query(PlaybackState).filter(PlaybackState.id == 1).first()
-        state.current_track_id = self.queue[self.current_index]
-        state.position = 0
-        state.updated_at = datetime.utcnow()
-        db.commit()
-        
-        self.last_played_track_id = self.queue[self.current_index]
-        self.broadcast_playback_state()
-        return self.get_state(db)
     
     def seek(self, db: Session, position: int, session_id: str = None):
         state = db.query(PlaybackState).filter(PlaybackState.id == 1).first()
@@ -485,34 +487,33 @@ class PlaybackController:
         return self.get_state(db)
     
     def set_queue(self, db: Session, track_ids: List[int], start_index: int = 0, session_id: str = None):
-        self.queue = track_ids
-        self.current_index = start_index if start_index < len(track_ids) else 0
-        
-        state = db.query(PlaybackState).filter(PlaybackState.id == 1).first()
-        if state and self.queue:
-            state.current_track_id = self.queue[self.current_index]
-            state.is_playing = True
-            state.position = 0
-            state.queue = ','.join(map(str, self.queue)) if self.queue else None
-            state.shuffle_mode = self.shuffle_mode
-            state.updated_at = datetime.utcnow()
-            db.commit()
-        
-        self.broadcast_playback_state()
-        self.broadcast("queue_updated", {"queue": self.queue})
-        return self.get_state(db)
+        with self._lock:
+            self.queue = track_ids
+            self.current_index = start_index if start_index < len(track_ids) else 0
+            
+            state = db.query(PlaybackState).filter(PlaybackState.id == 1).first()
+            if state and self.queue:
+                state.current_track_id = self.queue[self.current_index]
+                state.is_playing = True
+                state.position = 0
+                state.queue = ','.join(map(str, self.queue)) if self.queue else None
+                state.shuffle_mode = self.shuffle_mode
+                state.updated_at = datetime.utcnow()
+                db.commit()
+            
+            self.broadcast_playback_state()
+            self.broadcast("queue_updated", {"queue": self.queue})
+            return self.get_state(db)
     
     def play_next(self, db: Session, track_id: int):
-        """Add a track to play next (after current track)"""
-        if track_id not in self.queue:
-            # Insert right after current position
-            insert_pos = self.current_index + 1
-            self.queue.insert(insert_pos, track_id)
-        else:
-            # Already in queue, move to just after current
-            self.queue.remove(track_id)
-            insert_pos = self.current_index + 1
-            self.queue.insert(insert_pos, track_id)
+        with self._lock:
+            if track_id not in self.queue:
+                insert_pos = self.current_index + 1
+                self.queue.insert(insert_pos, track_id)
+            else:
+                self.queue.remove(track_id)
+                insert_pos = self.current_index + 1
+                self.queue.insert(insert_pos, track_id)
         
         self.broadcast("queue_updated", {"queue": self.queue})
         return {"added": True, "position": self.queue.index(track_id)}
@@ -567,17 +568,15 @@ class PlaybackController:
         """Fill queue with random tracks from library"""
         import random
         
-        all_tracks = db.query(Track).all()
-        if not all_tracks:
+        all_track_ids = db.query(Track.id).all()
+        if not all_track_ids:
             return {"error": "No tracks in library"}
         
-        # Shuffle and pick 'count' tracks
-        track_ids = [t.id for t in all_tracks]
+        track_ids = [t[0] for t in all_track_ids]
         random.shuffle(track_ids)
         self.queue = track_ids[:count]
         self.current_index = 0
         
-        # Start playing
         state = db.query(PlaybackState).filter(PlaybackState.id == 1).first()
         if state:
             state.current_track_id = self.queue[self.current_index]

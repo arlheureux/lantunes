@@ -1,5 +1,6 @@
 import os
 import sys
+import time
 import requests
 from pathlib import Path
 from typing import Optional
@@ -10,6 +11,17 @@ sys.path.insert(0, str(project_root))
 from backend.config import config
 
 ARTWORK_DIR = project_root / "artwork"
+
+_last_musicbrainz_request = 0
+_MUSICBRAINZ_MIN_INTERVAL = 1.1
+
+
+def _rate_limit_musicbrainz():
+    global _last_musicbrainz_request
+    elapsed = time.time() - _last_musicbrainz_request
+    if elapsed < _MUSICBRAINZ_MIN_INTERVAL:
+        time.sleep(_MUSICBRAINZ_MIN_INTERVAL - elapsed)
+    _last_musicbrainz_request = time.time()
 
 def get_artwork_path(album_id: int) -> Path:
     ARTWORK_DIR.mkdir(exist_ok=True)
@@ -22,7 +34,8 @@ def get_artist_artwork_path(artist_id: int) -> Path:
 def fetch_cover_from_musicbrainz(artist: str, album: str, year: str = None) -> Optional[bytes]:
     """Fetch cover from MusicBrainz/Cover Art Archive"""
     try:
-        # Search MusicBrainz for release
+        _rate_limit_musicbrainz()
+        
         search_url = "https://musicbrainz.org/ws/2/release/"
         params = {
             'query': f'release:"{album}" AND artist:"{artist}"',
@@ -94,12 +107,6 @@ def fetch_cover_from_deezer(artist: str, album: str) -> Optional[bytes]:
     except Exception as e:
         print(f"Deezer lookup failed: {e}")
     
-    return None
-
-def fetch_cover_from_spotify(artist: str, album: str) -> Optional[bytes]:
-    """Fetch cover from Spotify (requires API key, fallback method)"""
-    # Spotify requires API key, so we'll skip this one
-    # User can add their own API key in config if needed
     return None
 
 def fetch_cover_from_lastfm(artist: str, album: str, api_key: str) -> Optional[bytes]:

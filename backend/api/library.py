@@ -9,8 +9,10 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from starlette.responses import StreamingResponse
 from fastapi.responses import StreamingResponse
 from sqlalchemy.orm import Session, joinedload
-from database import get_db, Track, Album, Artist, Playlist, PlaylistTrack, Client
+from database import get_db, Track, Album, Artist
 from scanner import scan_library, set_progress_callback
+from dependencies import require_admin, get_current_user
+from models import User
 
 import config as config_module
 
@@ -83,7 +85,7 @@ def get_album(album_id: int, db: Session = Depends(get_db)):
     }
 
 @router.put("/albums/{album_id}")
-def update_album(album_id: int, title: str = None, year: int = None, genre: str = None, db: Session = Depends(get_db)):
+def update_album(album_id: int, title: str = None, year: int = None, genre: str = None, db: Session = Depends(get_db), current_user: User = Depends(require_admin)):
     album = db.query(Album).filter(Album.id == album_id).first()
     if not album:
         raise HTTPException(status_code=404, detail="Album not found")
@@ -94,7 +96,7 @@ def update_album(album_id: int, title: str = None, year: int = None, genre: str 
     return {"id": album.id, "title": album.title, "year": album.year, "genre": album.genre, "artwork": album.artwork_path}
 
 @router.delete("/albums/{album_id}/artwork")
-def remove_album_artwork(album_id: int, db: Session = Depends(get_db)):
+def remove_album_artwork(album_id: int, db: Session = Depends(get_db), current_user: User = Depends(require_admin)):
     album = db.query(Album).filter(Album.id == album_id).first()
     if not album:
         raise HTTPException(status_code=404, detail="Album not found")
@@ -144,7 +146,7 @@ def search(q: str = Query(...), db: Session = Depends(get_db)):
     }
 
 @router.post("/scan")
-async def trigger_scan(db: Session = Depends(get_db)):
+async def trigger_scan(db: Session = Depends(get_db), current_user: User = Depends(require_admin)):
     music_path = config.get("library", {}).get("music_path", "")
     if not music_path:
         raise HTTPException(status_code=400, detail="Music path not configured")
@@ -215,18 +217,17 @@ def get_artwork(album_id: int, db: Session = Depends(get_db)):
     return FileResponse(album.artwork_path, media_type="image/jpeg")
 
 @router.post("/fetch-covers")
-def fetch_missing_covers(db: Session = Depends(get_db)):
+def fetch_missing_covers(db: Session = Depends(get_db), current_user: User = Depends(require_admin)):
     """Fetch covers for albums that don't have artwork yet"""
     from metadata import fetch_album_cover
     
-    albums_without_art = db.query(Album).filter(Album.artwork_path == None).all()
+    albums_without_art = db.query(Album).options(joinedload(Album.artist)).filter(Album.artwork_path == None).all()
     fetched = 0
     
     for album in albums_without_art:
-        artist = db.query(Artist).filter(Artist.id == album.artist_id).first()
-        if artist:
+        if album.artist:
             year_str = str(album.year) if album.year else None
-            artwork_path = fetch_album_cover(artist.name, album.title, album.id, year_str)
+            artwork_path = fetch_album_cover(album.artist.name, album.title, album.id, year_str)
             if artwork_path:
                 album.artwork_path = artwork_path
                 fetched += 1
@@ -245,7 +246,7 @@ def get_artist_artwork(artist_id: int, db: Session = Depends(get_db)):
     return FileResponse(artist.artwork_path, media_type="image/jpeg")
 
 @router.post("/fetch-artist-images")
-def fetch_missing_artist_images(db: Session = Depends(get_db)):
+def fetch_missing_artist_images(db: Session = Depends(get_db), current_user: User = Depends(require_admin)):
     """Fetch images for artists that don't have artwork yet"""
     from metadata import fetch_artist_image
     
@@ -262,7 +263,7 @@ def fetch_missing_artist_images(db: Session = Depends(get_db)):
     return {"fetched": fetched, "total_without_artwork": len(artists_without_art)}
 
 @router.get("/fetch-artwork/stream")
-async def fetch_artwork_stream():
+async def fetch_artwork_stream(current_user: User = Depends(require_admin)):
     """SSE endpoint for fetching missing artwork (album covers + artist images)"""
     import concurrent.futures
     from metadata import fetch_album_cover, fetch_artist_image
@@ -286,8 +287,7 @@ async def fetch_artwork_stream():
             artists_fetched = 0
             
             try:
-                # Fetch album covers
-                albums = db.query(Album).filter(Album.artwork_path == None).all()
+                albums = db.query(Album).options(joinedload(Album.artist)).filter(Album.artwork_path == None).all()
                 total_albums = len(albums)
                 
                 if total_albums > 0:
@@ -295,10 +295,9 @@ async def fetch_artwork_stream():
                     
                     for i, album in enumerate(albums):
                         send_progress(f"Fetching: {album.title}", i + 1, total_albums, "album_covers")
-                        artist = db.query(Artist).filter(Artist.id == album.artist_id).first()
-                        if artist:
+                        if album.artist:
                             year_str = str(album.year) if album.year else None
-                            artwork_path = fetch_album_cover(artist.name, album.title, album.id, year_str)
+                            artwork_path = fetch_album_cover(album.artist.name, album.title, album.id, year_str)
                             if artwork_path:
                                 album.artwork_path = artwork_path
                                 albums_fetched += 1

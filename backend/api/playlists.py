@@ -1,8 +1,6 @@
 import sys
 import os
-import uuid
 import threading
-import time
 backend_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, backend_dir)
 
@@ -12,13 +10,18 @@ from sqlalchemy.orm import Session
 from database import get_db, Playlist, PlaylistTrack, Track, DownloadJob
 from typing import List, Optional
 from datetime import datetime
+from dependencies import get_current_user
+from models import User
 
 router = APIRouter(prefix="/api/playlists", tags=["playlists"])
 
 
 @router.get("")
-def get_playlists(db: Session = Depends(get_db)):
-    playlists = db.query(Playlist).all()
+def get_playlists(db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+    if current_user.role == "admin":
+        playlists = db.query(Playlist).all()
+    else:
+        playlists = db.query(Playlist).filter(Playlist.user_id == current_user.id).all()
     result = []
     for p in playlists:
         track_count = db.query(PlaylistTrack).filter(PlaylistTrack.playlist_id == p.id).count()
@@ -27,17 +30,24 @@ def get_playlists(db: Session = Depends(get_db)):
 
 
 @router.get("/{playlist_id}")
-def get_playlist(playlist_id: int, db: Session = Depends(get_db)):
+def get_playlist(playlist_id: int, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
     playlist = db.query(Playlist).filter(Playlist.id == playlist_id).first()
     if not playlist:
         raise HTTPException(status_code=404, detail="Playlist not found")
     
+    if current_user.role != "admin" and playlist.user_id != current_user.id:
+        raise HTTPException(status_code=403, detail="Access denied")
+    
     pt_list = db.query(PlaylistTrack).filter(PlaylistTrack.playlist_id == playlist_id).order_by(PlaylistTrack.position).all()
-    tracks = []
-    for pt in pt_list:
-        track = db.query(Track).filter(Track.id == pt.track_id).first()
-        if track:
-            tracks.append(track.as_dict())
+    
+    if not pt_list:
+        return {"id": playlist.id, "name": playlist.name, "tracks": [], "created_at": playlist.created_at}
+    
+    track_ids = [pt.track_id for pt in pt_list]
+    tracks = db.query(Track).filter(Track.id.in_(track_ids)).all()
+    tracks_map = {t.id: t for t in tracks}
+    
+    tracks = [tracks_map.get(pt.track_id).as_dict() for pt in pt_list if tracks_map.get(pt.track_id)]
     
     return {"id": playlist.id, "name": playlist.name, "tracks": tracks, "created_at": playlist.created_at}
 
@@ -64,10 +74,14 @@ def stream_zip(job_id: int):
         job.total = len(pt_list)
         db.commit()
         
+        track_ids = [pt.track_id for pt in pt_list]
+        tracks = db.query(Track).filter(Track.id.in_(track_ids)).all() if track_ids else []
+        tracks_map = {t.id: t for t in tracks}
+        
         zip_buffer = io.BytesIO()
         with zipfile.ZipFile(zip_buffer, 'w', zipfile.ZIP_DEFLATED) as zf:
             for i, pt in enumerate(pt_list):
-                track = db.query(Track).filter(Track.id == pt.track_id).first()
+                track = tracks_map.get(pt.track_id)
                 if track and track.path and os.path.exists(track.path):
                     filename = os.path.basename(track.path)
                     with open(track.path, 'rb') as f:
@@ -100,10 +114,13 @@ def stream_zip(job_id: int):
 
 
 @router.post("/{playlist_id}/download/async")
-def create_download_job(playlist_id: int, db: Session = Depends(get_db)):
+def create_download_job(playlist_id: int, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
     playlist = db.query(Playlist).filter(Playlist.id == playlist_id).first()
     if not playlist:
         raise HTTPException(status_code=404, detail="Playlist not found")
+    
+    if current_user.role != "admin" and playlist.user_id != current_user.id:
+        raise HTTPException(status_code=403, detail="Access denied")
     
     pt_list = db.query(PlaylistTrack).filter(PlaylistTrack.playlist_id == playlist_id).all()
     if not pt_list:
@@ -121,7 +138,7 @@ def create_download_job(playlist_id: int, db: Session = Depends(get_db)):
 
 
 @router.get("/download/{job_id}")
-def get_download_job(job_id: int, db: Session = Depends(get_db)):
+def get_download_job(job_id: int, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
     job = db.query(DownloadJob).filter(DownloadJob.id == job_id).first()
     if not job:
         raise HTTPException(status_code=404, detail="Job not found")
@@ -136,7 +153,7 @@ def get_download_job(job_id: int, db: Session = Depends(get_db)):
 
 
 @router.get("/{playlist_id}/download")
-def download_playlist(playlist_id: int, db: Session = Depends(get_db)):
+def download_playlist(playlist_id: int, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
     import zipfile
     import io
     from fastapi.responses import Response
@@ -145,14 +162,21 @@ def download_playlist(playlist_id: int, db: Session = Depends(get_db)):
     if not playlist:
         raise HTTPException(status_code=404, detail="Playlist not found")
     
+    if current_user.role != "admin" and playlist.user_id != current_user.id:
+        raise HTTPException(status_code=403, detail="Access denied")
+    
     pt_list = db.query(PlaylistTrack).filter(PlaylistTrack.playlist_id == playlist_id).order_by(PlaylistTrack.position).all()
     if not pt_list:
         raise HTTPException(status_code=400, detail="Playlist is empty")
     
+    track_ids = [pt.track_id for pt in pt_list]
+    tracks = db.query(Track).filter(Track.id.in_(track_ids)).all() if track_ids else []
+    tracks_map = {t.id: t for t in tracks}
+    
     zip_buffer = io.BytesIO()
     with zipfile.ZipFile(zip_buffer, 'w', zipfile.ZIP_DEFLATED) as zf:
         for pt in pt_list:
-            track = db.query(Track).filter(Track.id == pt.track_id).first()
+            track = tracks_map.get(pt.track_id)
             if not track:
                 continue
             if not track.path or not os.path.exists(track.path):
@@ -171,21 +195,28 @@ def download_playlist(playlist_id: int, db: Session = Depends(get_db)):
 
 
 @router.get("/{playlist_id}/download/tracks")
-def get_download_tracks(playlist_id: int, db: Session = Depends(get_db)):
+def get_download_tracks(playlist_id: int, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
     """Get list of track URLs for sequential download"""
     playlist = db.query(Playlist).filter(Playlist.id == playlist_id).first()
     if not playlist:
         raise HTTPException(status_code=404, detail="Playlist not found")
     
+    if current_user.role != "admin" and playlist.user_id != current_user.id:
+        raise HTTPException(status_code=403, detail="Access denied")
+    
     pt_list = db.query(PlaylistTrack).filter(PlaylistTrack.playlist_id == playlist_id).order_by(PlaylistTrack.position).all()
     if not pt_list:
         raise HTTPException(status_code=400, detail="Playlist is empty")
     
-    tracks = []
+    track_ids = [pt.track_id for pt in pt_list]
+    tracks = db.query(Track).filter(Track.id.in_(track_ids)).all() if track_ids else []
+    tracks_map = {t.id: t for t in tracks}
+    
+    download_tracks = []
     for pt in pt_list:
-        track = db.query(Track).filter(Track.id == pt.track_id).first()
+        track = tracks_map.get(pt.track_id)
         if track and track.path and os.path.exists(track.path):
-            tracks.append({
+            download_tracks.append({
                 "id": track.id,
                 "title": track.title,
                 "filename": os.path.basename(track.path),
@@ -194,13 +225,13 @@ def get_download_tracks(playlist_id: int, db: Session = Depends(get_db)):
                 "duration": track.duration
             })
     
-    if not tracks:
+    if not download_tracks:
         raise HTTPException(status_code=404, detail="No valid tracks found")
     
-    return {"playlist": playlist.name, "count": len(tracks), "tracks": tracks}
+    return {"playlist": playlist.name, "count": len(download_tracks), "tracks": download_tracks}
 
 @router.post("")
-async def create_playlist(request: Request, db: Session = Depends(get_db)):
+async def create_playlist(request: Request, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
     data = await request.json()
     name = data.get("name")
     track_ids = data.get("track_ids", [])
@@ -208,12 +239,11 @@ async def create_playlist(request: Request, db: Session = Depends(get_db)):
     if not name:
         raise HTTPException(status_code=400, detail="Playlist name required")
     
-    playlist = Playlist(name=name)
+    playlist = Playlist(name=name, user_id=current_user.id)
     db.add(playlist)
     db.commit()
     db.refresh(playlist)
     
-    # Add tracks if provided
     for i, track_id in enumerate(track_ids):
         pt = PlaylistTrack(playlist_id=playlist.id, track_id=track_id, position=i)
         db.add(pt)
@@ -222,33 +252,40 @@ async def create_playlist(request: Request, db: Session = Depends(get_db)):
     return {"id": playlist.id, "name": playlist.name}
 
 @router.put("/{playlist_id}")
-def update_playlist(playlist_id: int, name: str, db: Session = Depends(get_db)):
+def update_playlist(playlist_id: int, name: str, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
     playlist = db.query(Playlist).filter(Playlist.id == playlist_id).first()
     if not playlist:
         raise HTTPException(status_code=404, detail="Playlist not found")
+    
+    if current_user.role != "admin" and playlist.user_id != current_user.id:
+        raise HTTPException(status_code=403, detail="Access denied")
+    
     playlist.name = name
     db.commit()
     return {"id": playlist.id, "name": playlist.name}
 
 @router.delete("/{playlist_id}")
-def delete_playlist(playlist_id: int, db: Session = Depends(get_db)):
+def delete_playlist(playlist_id: int, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
     playlist = db.query(Playlist).filter(Playlist.id == playlist_id).first()
     if not playlist:
         raise HTTPException(status_code=404, detail="Playlist not found")
     
-    # Delete playlist tracks first (relationship table entries)
-    db.query(PlaylistTrack).filter(PlaylistTrack.playlist_id == playlist_id).delete()
+    if current_user.role != "admin" and playlist.user_id != current_user.id:
+        raise HTTPException(status_code=403, detail="Access denied")
     
-    # Then delete playlist
+    db.query(PlaylistTrack).filter(PlaylistTrack.playlist_id == playlist_id).delete()
     db.delete(playlist)
     db.commit()
     return {"deleted": True}
 
 @router.post("/{playlist_id}/tracks")
-def add_track_to_playlist(playlist_id: int, track_id: int, db: Session = Depends(get_db)):
+def add_track_to_playlist(playlist_id: int, track_id: int, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
     playlist = db.query(Playlist).filter(Playlist.id == playlist_id).first()
     if not playlist:
         raise HTTPException(status_code=404, detail="Playlist not found")
+    
+    if current_user.role != "admin" and playlist.user_id != current_user.id:
+        raise HTTPException(status_code=403, detail="Access denied")
     
     # Check if track already exists in playlist
     existing = db.query(PlaylistTrack).filter(

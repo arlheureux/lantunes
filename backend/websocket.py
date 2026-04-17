@@ -13,6 +13,29 @@ import json
 
 logger = logging.getLogger("lantunes.websocket")
 
+
+def is_authorized_for_control(auth_payload: dict, session_id: str, action: str) -> bool:
+    """Check if user is authorized to execute control actions.
+    
+    Admin users can control playback.
+    Non-admin users can only control if they're the active player session.
+    Queue modifications are allowed for any authenticated user.
+    """
+    if not auth_payload:
+        return False
+    
+    role = auth_payload.get("role", "user")
+    user_id = auth_payload.get("user_id")
+    
+    if role == "admin":
+        return True
+    
+    if action in ("add_to_queue", "play_next", "remove_from_queue", "clear_queue", "play_queue"):
+        return True
+    
+    player_session_id = playback.get_player_session()
+    return session_id == player_session_id
+
 async def websocket_endpoint(websocket: WebSocket):
     token = websocket.query_params.get("token")
     logger.info(f" Token from query: {token[:20] if token else None}...")
@@ -107,9 +130,13 @@ async def websocket_endpoint(websocket: WebSocket):
                         playback.broadcast_sessions()
                 
                 elif event == "set_player":
-                    # Set which device should play audio (by session_id)
                     target_session_id = payload.get("session_id")
                     logger.info(f" set_player called with session: {target_session_id}")
+                    
+                    if not is_authorized_for_control(auth_payload, session_id, 'set_player'):
+                        logger.warning(f"Unauthorized set_player attempt: user={user_id}, session={session_id}")
+                        continue
+                    
                     if target_session_id and playback.set_player_session(target_session_id):
                         logger.info(f" Player set to session: {target_session_id}")
                         playback.broadcast_sessions()
@@ -124,76 +151,86 @@ async def websocket_endpoint(websocket: WebSocket):
                 
                 elif event == "control":
                     try:
-                        # Remote control - execute on server side
-                        action = payload.get("action")
+                        control_action = payload.get("action")
                         position = payload.get("position")
-                        logger.info(f"Control: action={action}, position={position}")
+                        logger.info(f"Control: action={control_action}, position={position}")
                         
-                        # Execute action directly on server
-                        if action == 'play':
+                        if not is_authorized_for_control(auth_payload, session_id, control_action):
+                            logger.warning(f"Unauthorized control attempt: user={user_id}, session={session_id}, action={control_action}")
+                            continue
+                        
+                        if control_action == 'play':
                             logger.info(f"Executing play with position={position}")
                             playback.play(db, position=position)
-                        elif action == 'pause':
+                        elif control_action == 'pause':
                             logger.info(f"Executing pause with position={position}")
                             playback.pause(db, position=position if position else None)
-                        elif action == 'stop':
+                        elif control_action == 'stop':
                             playback.stop(db)
-                        elif action == 'next':
+                        elif control_action == 'next':
                             playback.next(db)
-                        elif action == 'previous':
+                        elif control_action == 'previous':
                             playback.previous(db)
-                        elif action == 'seek' and position is not None:
+                        elif control_action == 'seek' and position is not None:
                             playback.seek(db, position)
-                        elif action == 'toggle_shuffle':
+                        elif control_action == 'toggle_shuffle':
                             playback.toggle_shuffle(db)
-                        elif action == 'toggle_repeat':
+                        elif control_action == 'toggle_repeat':
                             playback.toggle_repeat(db)
-                        elif action == 'shuffle_play':
+                        elif control_action == 'shuffle_play':
                             count = payload.get('count', 50)
                             playback.play_random(db, count)
-                        elif action == 'play_next':
+                        elif control_action == 'play_next':
                             track_id = payload.get('track_id')
                             if track_id:
                                 playback.play_next(db, track_id)
-                        elif action == 'add_to_queue':
+                        elif control_action == 'add_to_queue':
                             track_id = payload.get('track_id')
                             if track_id:
                                 playback.add_to_queue(db, track_id)
-                        elif action == 'remove_from_queue':
+                        elif control_action == 'remove_from_queue':
                             index = payload.get('index')
                             logger.info(f"remove_from_queue: index={index}")
                             if index is not None:
                                 playback.remove_from_queue(index)
-                        elif action == 'play_queue':
+                        elif control_action == 'play_queue':
                             track_ids = payload.get('track_ids', [])
                             start_index = payload.get('start_index', 0)
                             logger.info(f"play_queue: track_ids={track_ids}, start_index={start_index}")
                             playback.set_queue(db, track_ids, start_index, session_id=session_id)
                             playback.play(db)
-                        elif action == 'update_position':
+                        elif control_action == 'update_position':
                             position = payload.get('position')
                             if position is not None:
                                 playback.update_position(db, position)
-                        elif action == 'clear_queue':
+                        elif control_action == 'clear_queue':
                             playback.set_queue(db, [], 0, session_id=session_id)
                         
-                        # Broadcast state to all clients immediately after command
                         playback.broadcast_playback_state()
                     except Exception as e:
                         logger.error(f"Error in control handler: {e}")
                 
                 elif event == 'set_volume':
+                    if not is_authorized_for_control(auth_payload, session_id, 'set_volume'):
+                        logger.warning(f"Unauthorized set_volume attempt: user={user_id}, session={session_id}")
+                        continue
                     volume = payload.get('volume', 1.0)
                     playback.set_volume(db, volume, session_id=session_id)
                     playback.broadcast_playback_state()
                 
                 elif event == 'set_queue':
+                    if not is_authorized_for_control(auth_payload, session_id, 'set_queue'):
+                        logger.warning(f"Unauthorized set_queue attempt: user={user_id}, session={session_id}")
+                        continue
                     track_ids = payload.get('track_ids', [])
                     start_index = payload.get('start_index', 0)
                     playback.set_queue(db, track_ids, start_index, session_id=session_id)
                     playback.broadcast_playback_state()
                 
                 elif event == 'play_queue':
+                    if not is_authorized_for_control(auth_payload, session_id, 'play_queue'):
+                        logger.warning(f"Unauthorized play_queue attempt: user={user_id}, session={session_id}")
+                        continue
                     try:
                         track_ids = payload.get('track_ids', [])
                         start_index = payload.get('start_index', 0)
