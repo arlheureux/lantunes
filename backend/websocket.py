@@ -17,24 +17,12 @@ logger = logging.getLogger("lantunes.websocket")
 def is_authorized_for_control(auth_payload: dict, session_id: str, action: str) -> bool:
     """Check if user is authorized to execute control actions.
     
-    Admin users can control playback.
-    Non-admin users can only control if they're the active player session.
-    Queue modifications are allowed for any authenticated user.
+    All authenticated users can control playback.
     """
     if not auth_payload:
         return False
     
-    role = auth_payload.get("role", "user")
-    user_id = auth_payload.get("user_id")
-    
-    if role == "admin":
-        return True
-    
-    if action in ("add_to_queue", "play_next", "remove_from_queue", "clear_queue", "play_queue"):
-        return True
-    
-    player_session_id = playback.get_player_session()
-    return session_id == player_session_id
+    return True
 
 async def websocket_endpoint(websocket: WebSocket):
     token = websocket.query_params.get("token")
