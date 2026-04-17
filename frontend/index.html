@@ -2017,14 +2017,14 @@
         </div>
         
         <!-- Player Modal - Desktop -->
-        <div class="player-modal" v-if="showPlayerModal && !isMobile" @click.self="showPlayerModal = false" :style="playbackState.track?.album_id ? { backgroundImage: 'url(' + getMediaUrl('/api/library/artwork/' + playbackState.track.album_id + '?size=500') + ')', backgroundSize: 'cover', backgroundPosition: 'center' } : {}">
+        <div class="player-modal" v-if="showPlayerModal && !isMobile" @click.self="showPlayerModal = false" :style="playbackState.track?.album_id ? { backgroundImage: 'url(' + getMediaUrl('/api/library/artwork/' + playbackState.track?.album_id + '?size=500') + ')', backgroundSize: 'cover', backgroundPosition: 'center' } : {}">
             <div class="player-modal-overlay"></div>
             <button class="modal-close-btn" @click="showPlayerModal = false">
                 <i class="fas fa-times"></i>
             </button>
             <div class="modal-left">
                 <div class="modal-artwork">
-                    <img v-if="playbackState.track?.album_id" :src="getMediaUrl('/api/library/artwork/' + playbackState.track.album_id)" @error="$event.target.parentElement.querySelector('.placeholder')?.style?.display !== 'none'">
+                    <img v-if="playbackState.track?.album_id" :src="getMediaUrl('/api/library/artwork/' + playbackState.track?.album_id)" @error="$event.target.parentElement.querySelector('.placeholder')?.style?.display !== 'none'">
                     <div v-else class="placeholder">
                         <i class="fas fa-music"></i>
                     </div>
@@ -2105,7 +2105,7 @@
         </div>
         
         <!-- Player Modal - Mobile (original) -->
-        <div class="mobile-queue-overlay" v-if="showPlayerModal && isMobile" @click.self="showPlayerModal = false" :style="playbackState.track?.album_id ? { backgroundImage: 'url(' + getMediaUrl('/api/library/artwork/' + playbackState.track.album_id + '?size=500') + ')', backgroundSize: 'cover', backgroundPosition: 'center' } : {}">
+        <div class="mobile-queue-overlay" v-if="showPlayerModal && isMobile" @click.self="showPlayerModal = false" :style="playbackState.track?.album_id ? { backgroundImage: 'url(' + getMediaUrl('/api/library/artwork/' + playbackState.track?.album_id + '?size=500') + ')', backgroundSize: 'cover', backgroundPosition: 'center' } : {}">
             <div style="position:absolute;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.75);backdrop-filter:blur(30px);-webkit-backdrop-filter:blur(30px);z-index:0;"></div>
             <div class="mobile-queue-header" style="position:relative;z-index:1;">
                 <h3>Now Playing</h3>
@@ -2113,7 +2113,7 @@
             </div>
             <div class="mobile-queue-list" style="position:relative;z-index:1;flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:40px 20px;">
                 <div style="width:280px;height:280px;border-radius:12px;overflow:hidden;margin-bottom:32px;box-shadow:0 8px 32px rgba(0,0,0,0.5);">
-                    <img v-if="playbackState.track?.album_id" :src="getMediaUrl('/api/library/artwork/' + playbackState.track.album_id)" style="width:100%;height:100%;object-fit:cover;" @error="$event.target.style.display='none'">
+                    <img v-if="playbackState.track?.album_id" :src="getMediaUrl('/api/library/artwork/' + playbackState.track?.album_id)" style="width:100%;height:100%;object-fit:cover;" @error="$event.target.style.display='none'">
                     <div v-else style="width:100%;height:100%;background:#333;display:flex;align-items:center;justify-content:center;">
                         <i class="fas fa-music" style="font-size:80px;color:#555;"></i>
                     </div>
@@ -2177,7 +2177,7 @@
         <div class="player-bar-desktop" v-if="!isMobile && playbackState.track">
             <div class="track-info">
                 <div class="track-artwork" @click="showPlayerModal = true" style="cursor:pointer;">
-                    <img v-if="playbackState.track?.album_id" :src="getMediaUrl('/api/library/artwork/' + playbackState.track.album_id)" @error="$event.target.style.display='none'">
+                    <img v-if="playbackState.track?.album_id" :src="getMediaUrl('/api/library/artwork/' + playbackState.track?.album_id)" @error="$event.target.style.display='none'">
                 </div>
                 <div>
                     <div class="title">{{ playbackState.track?.title }}</div>
@@ -2231,7 +2231,7 @@
         <div class="player-bar-mobile" v-if="isMobile && playbackState.track" @touchstart="onTouchStart" @touchend="onTouchEnd">
             <div class="track-info">
                 <div class="track-artwork" @click="showPlayerModal = true" style="cursor:pointer;">
-                    <img v-if="playbackState.track?.album_id" :src="getMediaUrl('/api/library/artwork/' + playbackState.track.album_id)" @error="$event.target.style.display='none'">
+                    <img v-if="playbackState.track?.album_id" :src="getMediaUrl('/api/library/artwork/' + playbackState.track?.album_id)" @error="$event.target.style.display='none'">
                 </div>
                 <div>
                     <div class="title">{{ playbackState.track?.title }}</div>
