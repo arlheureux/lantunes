@@ -220,3 +220,8 @@ export async function deleteUser(id) {
     method: 'DELETE'
   })
 }
+
+// Library maintenance
+export async function cleanupMissingTracks() {
+  return apiCall('/api/library/cleanup', { method: 'POST' })
+}

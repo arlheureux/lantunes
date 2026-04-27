@@ -33,6 +33,15 @@
               <span class="toggle-slider"></span>
             </label>
           </div>
+          <div v-if="isAdmin" class="setting-row">
+            <div class="setting-info">
+              <label>Clean up missing tracks</label>
+              <p class="setting-desc">Remove tracks from database whose files no longer exist</p>
+            </div>
+            <button class="btn btn-secondary" @click="handleCleanup" :disabled="cleaningUp">
+              {{ cleaningUp ? 'Cleaning...' : 'Clean up' }}
+            </button>
+          </div>
 
           <h3>Playback</h3>
           <div class="setting-row">
@@ -170,7 +179,7 @@ import Modal from '@/components/common/Modal.vue'
 import UserManagement from './UserManagement.vue'
 import { useAuth } from '@/composables/useAuth'
 import { useToast } from '@/composables/useToast'
-import { api } from '@/api'
+import { api, cleanupMissingTracks } from '@/api'
 
 const props = defineProps({
   modelValue: Boolean
@@ -184,6 +193,7 @@ const { showToast } = useToast()
 const isAdmin = computed(() => user.value?.is_admin)
 const activeTab = ref('general')
 const saving = ref(false)
+const cleaningUp = ref(false)
 
 const tabs = [
   { id: 'general', label: 'General' },
@@ -237,6 +247,20 @@ const saveSettings = async () => {
 const close = () => {
   emit('update:modelValue', false)
   emit('close')
+}
+
+const handleCleanup = async () => {
+  cleaningUp.value = true
+  try {
+    const result = await cleanupMissingTracks()
+    if (result) {
+      showToast(`Cleaned up ${result.deleted || 0} missing tracks`, 'success')
+    }
+  } catch (err) {
+    showToast('Failed to clean up missing tracks', 'error')
+  } finally {
+    cleaningUp.value = false
+  }
 }
 
 if (props.modelValue) loadSettings()
