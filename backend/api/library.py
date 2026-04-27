@@ -254,6 +254,14 @@ async def trigger_scan(db: Session = Depends(get_db), current_user: User = Depen
         )
     return result
 
+@router.post("/cleanup")
+async def cleanup_missing_tracks(db: Session = Depends(get_db), current_user: User = Depends(require_admin)):
+    """Clean up tracks whose files no longer exist on disk."""
+    from scanner import remove_missing_tracks
+    music_path = config.get("library", {}).get("music_path", "")
+    deleted = remove_missing_tracks(db, music_path)
+    return {"deleted": deleted}
+
 @router.get("/scan/stream")
 async def scan_stream():
     """SSE endpoint for scan progress"""
