@@ -32,6 +32,8 @@ def remove_missing_tracks(db, music_path):
     deleted_albums = 0
     deleted_artists = 0
     
+    print(f"Checking {len(all_tracks)} tracks for missing files...")
+    
     # Track IDs to delete
     tracks_to_delete = []
     album_ids_to_check = set()
