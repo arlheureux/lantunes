@@ -1540,6 +1540,7 @@
                     <div class="context-menu-item" @click="playTrackNext(contextMenu.track); closeContextMenu()">Play Next</div>
                     <div class="context-menu-item" @click="addToQueue(contextMenu.track); closeContextMenu()">Add to Queue</div>
                     <div class="context-menu-item" @click="openPlaylistDialog(contextMenu.track); closeContextMenu()">Add to Playlist</div>
+                    <div v-if="currentUser.role === 'admin'" class="context-menu-item" @click="openTrackEditDialog(contextMenu.track); closeContextMenu()">Edit Metadata</div>
                 </div>
                 
                 <div v-if="albumContextMenu.show" class="context-menu" :style="isMobile ? {} : { top: albumContextMenu.y + 'px', left: albumContextMenu.x + 'px' }">
@@ -1595,6 +1596,38 @@
                         <div class="dialog-buttons">
                             <button class="dialog-btn dialog-btn-secondary" @click="albumEditDialog.show = false">Cancel</button>
                             <button class="dialog-btn dialog-btn-primary" @click="saveAlbumMetadata">Save</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div v-if="trackEditDialog.show" class="dialog-overlay" @click.self="trackEditDialog.show = false">
+                    <div class="dialog" style="min-width: 400px;">
+                        <h3>Edit Track</h3>
+                        <div style="margin-bottom: 16px;">
+                            <label style="display:block; margin-bottom: 8px; color: var(--text-secondary);">Title</label>
+                            <input v-model="trackEditDialog.title" class="dialog-input" placeholder="Track title">
+                        </div>
+                        <div style="margin-bottom: 16px;">
+                            <label style="display:block; margin-bottom: 8px; color: var(--text-secondary);">Artist</label>
+                            <input v-model="trackEditDialog.artist_name" class="dialog-input" placeholder="Artist name">
+                        </div>
+                        <div style="margin-bottom: 16px;">
+                            <label style="display:block; margin-bottom: 8px; color: var(--text-secondary);">Album</label>
+                            <input v-model="trackEditDialog.album_title" class="dialog-input" placeholder="Album title">
+                        </div>
+                        <div style="display: flex; gap: 16px; margin-bottom: 16px;">
+                            <div style="flex: 1;">
+                                <label style="display:block; margin-bottom: 8px; color: var(--text-secondary);">Track #</label>
+                                <input v-model="trackEditDialog.track_number" type="number" class="dialog-input" placeholder="#" style="width: 100%;">
+                            </div>
+                            <div style="flex: 1;">
+                                <label style="display:block; margin-bottom: 8px; color: var(--text-secondary);">Disc #</label>
+                                <input v-model="trackEditDialog.disc_number" type="number" class="dialog-input" placeholder="#" style="width: 100%;">
+                            </div>
+                        </div>
+                        <div class="dialog-buttons">
+                            <button class="dialog-btn dialog-btn-secondary" @click="trackEditDialog.show = false">Cancel</button>
+                            <button class="dialog-btn dialog-btn-primary" @click="saveTrackMetadata">Save</button>
                         </div>
                     </div>
                 </div>
@@ -2311,6 +2344,7 @@ const isLiked = ref(false);
                 const albumContextMenu = ref({ show: false, x: 0, y: 0, album: null });
                 const playlistDialog = ref({ show: false, track: null, album: null });
                 const albumEditDialog = ref({ show: false, id: null, title: '', year: null, genre: '', artwork: null });
+                const trackEditDialog = ref({ show: false, id: null, title: '', artist_name: '', album_title: '', track_number: null, disc_number: null });
                 const tracks = ref([]);
                 const trackCache = ref({});
                 const tracksPage = ref(1);
@@ -2642,7 +2676,7 @@ async function saveConfig() {
                     newPlaylistName.value = '';
                 }
                 
-                function openAlbumEditDialog(album) {
+    function openAlbumEditDialog(album) {
                     albumEditDialog.value = {
                         show: true,
                         id: album.id,
@@ -2652,7 +2686,19 @@ async function saveConfig() {
                         artwork: album.artwork_path || null
                     };
                 }
-                
+
+                function openTrackEditDialog(track) {
+                    trackEditDialog.value = {
+                        show: true,
+                        id: track.id,
+                        title: track.title || '',
+                        artist_name: track.artist_name || '',
+                        album_title: track.album_title || '',
+                        track_number: track.track_number || null,
+                        disc_number: track.disc_number || null
+                    };
+                }
+
                 async function addToPlaylist(playlistId) {
                     // Store in local variables FIRST before clearing
                     const trackToAdd = playlistDialog.value.track;
@@ -2958,7 +3004,7 @@ async function saveConfig() {
                     }
                 }
                 
-                async function saveAlbumMetadata() {
+    async function saveAlbumMetadata() {
                     if (!albumEditDialog.value.id) return;
                     const url = '/api/library/albums/' + albumEditDialog.value.id + 
                         '?title=' + encodeURIComponent(albumEditDialog.value.title) +
@@ -2974,7 +3020,32 @@ async function saveConfig() {
                     }
                     albumEditDialog.value.show = false;
                 }
-                
+
+    async function saveTrackMetadata() {
+                    if (!trackEditDialog.value.id) return;
+                    const params = new URLSearchParams();
+                    params.append('title', trackEditDialog.value.title || '');
+                    params.append('artist_name', trackEditDialog.value.artist_name || '');
+                    params.append('album_title', trackEditDialog.value.album_title || '');
+                    if (trackEditDialog.value.track_number !== null) {
+                        params.append('track_number', trackEditDialog.value.track_number);
+                    }
+                    if (trackEditDialog.value.disc_number !== null) {
+                        params.append('disc_number', trackEditDialog.value.disc_number);
+                    }
+                    const result = await apiCall('/api/library/tracks/' + trackEditDialog.value.id + '?' + params.toString(), { method: 'PUT' });
+                    if (result) {
+                        // Refresh current view
+                        if (currentAlbum.value && currentAlbum.value.id === result.album_id) {
+                            const albumDetails = await apiCall('/api/library/albums/' + result.album_id);
+                            if (albumDetails) currentAlbum.value = albumDetails;
+                        }
+                        const a = await apiCall('/api/library/albums');
+                        if (a) albums.value = a;
+                    }
+                    trackEditDialog.value.show = false;
+                }
+
                 async function removeAlbumArtwork() {
                     if (!albumEditDialog.value.id) return;
                     await apiCall('/api/library/albums/' + albumEditDialog.value.id + '/artwork', { method: 'DELETE' });
@@ -3424,6 +3495,7 @@ async function saveConfig() {
                     openPlaylistDialog, addToPlaylist, createAndAddToPlaylist, newPlaylistName,
                     showAlbumContextMenu, closeAlbumContextMenu, openAlbumPlaylistDialog,
                     openAlbumEditDialog, saveAlbumMetadata, removeAlbumArtwork, albumEditDialog, getMediaUrl,
+                    openTrackEditDialog, saveTrackMetadata, trackEditDialog,
                     letters, scrollToLetter, selectedLetter, filteredArtists, selectedAlbumLetter, filteredAlbums, selectedGenreLetter, filteredGenres, playRandomAlbum, playRandomArtist, albumContextMenu,
                     sessions, selectedSessionId, currentSessionId, deviceName, updateDeviceName, focusSearch, setPlayerSession,
                     users, showUserForm, newUser, isAdmin, isMobile, showMobileQueue, showDeviceModal, showPlayerModal, showMoreMenu, isLiked, toggleLike, loadUsers, createUser, deleteUser, logout,

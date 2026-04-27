@@ -6,7 +6,13 @@ lantunes.db
 .DS_Store
 *.tar.gz
 config.yaml
+AGENTS.md
+.jwt_secret
 frontend/node_modules/
+frontend/dist/
 android/.gradle/
 android/build/
 android/app/build/
+android-remote/.gradle/
+android-remote/build/
+android-remote/app/build/

@@ -6,7 +6,7 @@ from typing import Optional
 from pathlib import Path
 
 ALGORITHM = "HS256"
-ACCESS_TOKEN_EXPIRE_HOURS = 24
+ACCESS_TOKEN_EXPIRE_HOURS = 8760
 
 def get_secret_key():
     """Get JWT secret key from env var or generate secure random one."""
@@ -28,7 +28,7 @@ def get_secret_key():
 SECRET_KEY = get_secret_key()
 
 def create_access_token(data: dict) -> str:
-    """Create JWT access token with 24h expiry"""
+    """Create JWT access token"""
     to_encode = data.copy()
     expire = datetime.utcnow() + timedelta(hours=ACCESS_TOKEN_EXPIRE_HOURS)
     to_encode.update({"exp": expire})

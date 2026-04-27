@@ -117,6 +117,18 @@ export async function updateAlbum(id, { title, year, genre }) {
   })
 }
 
+export async function updateTrack(id, { title, artist_name, album_title, track_number, disc_number }) {
+  const params = new URLSearchParams()
+  if (title !== undefined) params.append('title', title || '')
+  if (artist_name !== undefined) params.append('artist_name', artist_name || '')
+  if (album_title !== undefined) params.append('album_title', album_title || '')
+  if (track_number !== undefined) params.append('track_number', track_number ?? '')
+  if (disc_number !== undefined) params.append('disc_number', disc_number ?? '')
+  return apiCall(`/api/library/tracks/${id}?${params.toString()}`, {
+    method: 'PUT'
+  })
+}
+
 export async function deleteAlbumArtwork(id) {
   return apiCall(`/api/library/albums/${id}/artwork`, {
     method: 'DELETE'

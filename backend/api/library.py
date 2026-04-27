@@ -44,6 +44,99 @@ def get_tracks_batch(ids: list[int], db: Session = Depends(get_db)):
     tracks = db.query(Track).filter(Track.id.in_(ids)).all()
     return {t.id: t.as_dict() for t in tracks}
 
+@router.put("/tracks/{track_id}")
+def update_track(
+    track_id: int,
+    title: str = None,
+    artist_name: str = None,
+    album_title: str = None,
+    track_number: int = None,
+    disc_number: int = None,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_admin)
+):
+    """Update track metadata. Supports artist and album reassignment."""
+    track = db.query(Track).filter(Track.id == track_id).first()
+    if not track:
+        raise HTTPException(status_code=404, detail="Track not found")
+    
+    old_artist_id = track.artist_id
+    old_album_id = track.album_id
+    
+    # Update artist if provided
+    if artist_name is not None:
+        artist_name = artist_name.strip() or "Unknown"
+        artist = db.query(Artist).filter(Artist.name == artist_name).first()
+        if not artist:
+            artist = Artist(name=artist_name)
+            db.add(artist)
+            db.flush()
+        track.artist_id = artist.id
+    
+    # Update album if provided
+    if album_title is not None:
+        album_title = album_title.strip() or "Unknown Album"
+        album = db.query(Album).filter(Album.title == album_title).first()
+        if not album:
+            album = Album(
+                title=album_title,
+                artist_id=track.artist_id,
+                year=None,
+                genre=None
+            )
+            db.add(album)
+            db.flush()
+            # Fetch artwork for new album
+            from metadata import fetch_album_cover
+            year_str = None
+            artwork_path = fetch_album_cover(track.artist.name if track.artist else "Unknown", album_title, album.id, year_str)
+            if artwork_path:
+                album.artwork_path = artwork_path
+        track.album_id = album.id
+    
+    # Update other fields
+    if title is not None:
+        track.title = title.strip()
+    if track_number is not None:
+        track.track_number = track_number
+    if disc_number is not None:
+        track.disc_number = disc_number
+    
+    db.commit()
+    
+    # Cleanup orphaned entities
+    # Check if old artist has no more tracks
+    if old_artist_id and old_artist_id != track.artist_id:
+        remaining = db.query(Track).filter(Track.artist_id == old_artist_id).count()
+        if remaining == 0:
+            artist = db.query(Artist).get(old_artist_id)
+            if artist:
+                if artist.artwork_path and os.path.exists(artist.artwork_path):
+                    try:
+                        os.remove(artist.artwork_path)
+                    except:
+                        pass
+                db.delete(artist)
+                db.commit()
+    
+    # Check if old album has no more tracks
+    if old_album_id and old_album_id != track.album_id:
+        remaining = db.query(Track).filter(Track.album_id == old_album_id).count()
+        if remaining == 0:
+            album = db.query(Album).get(old_album_id)
+            if album:
+                if album.artwork_path and os.path.exists(album.artwork_path):
+                    try:
+                        os.remove(album.artwork_path)
+                    except:
+                        pass
+                db.delete(album)
+                db.commit()
+    
+    # Refresh track from DB
+    db.refresh(track)
+    return track.as_dict()
+
 @router.get("/albums")
 def get_albums(db: Session = Depends(get_db)):
     """Get all albums."""
