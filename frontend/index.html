@@ -1609,11 +1609,17 @@
                         </div>
                         <div style="margin-bottom: 16px;">
                             <label style="display:block; margin-bottom: 8px; color: var(--text-secondary);">Artist</label>
-                            <input v-model="trackEditDialog.artist_name" class="dialog-input" placeholder="Artist name">
+                            <input v-model="trackEditDialog.artist_name" class="dialog-input" placeholder="Artist name" list="artist-list">
+                            <datalist id="artist-list">
+                                <option v-for="artist in artists" :key="artist.id" :value="artist.name">
+                            </datalist>
                         </div>
                         <div style="margin-bottom: 16px;">
                             <label style="display:block; margin-bottom: 8px; color: var(--text-secondary);">Album</label>
-                            <input v-model="trackEditDialog.album_title" class="dialog-input" placeholder="Album title">
+                            <input v-model="trackEditDialog.album_title" class="dialog-input" placeholder="Album title" list="album-list">
+                            <datalist id="album-list">
+                                <option v-for="album in albums" :key="album.id" :value="album.title">
+                            </datalist>
                         </div>
                         <div style="display: flex; gap: 16px; margin-bottom: 16px;">
                             <div style="flex: 1;">
@@ -2697,6 +2703,13 @@ async function saveConfig() {
                         track_number: track.track_number || null,
                         disc_number: track.disc_number || null
                     };
+                    // Load artists and albums if not already loaded
+                    if (artists.value.length === 0) {
+                        apiCall('/api/library/artists').then(a => { if (a) artists.value = a; });
+                    }
+                    if (albums.value.length === 0) {
+                        apiCall('/api/library/albums').then(a => { if (a) albums.value = a; });
+                    }
                 }
 
                 async function addToPlaylist(playlistId) {
