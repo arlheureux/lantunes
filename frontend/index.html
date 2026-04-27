@@ -1540,7 +1540,7 @@
                     <div class="context-menu-item" @click="playTrackNext(contextMenu.track); closeContextMenu()">Play Next</div>
                     <div class="context-menu-item" @click="addToQueue(contextMenu.track); closeContextMenu()">Add to Queue</div>
                     <div class="context-menu-item" @click="openPlaylistDialog(contextMenu.track); closeContextMenu()">Add to Playlist</div>
-                    <div v-if="currentUser.role === 'admin'" class="context-menu-item" @click="openTrackEditDialog(contextMenu.track); closeContextMenu()">Edit Metadata</div>
+                    <div v-if="currentUser?.role === 'admin'" class="context-menu-item" @click="openTrackEditDialog(contextMenu.track); closeContextMenu()">Edit Metadata</div>
                 </div>
                 
                 <div v-if="albumContextMenu.show" class="context-menu" :style="isMobile ? {} : { top: albumContextMenu.y + 'px', left: albumContextMenu.x + 'px' }">
