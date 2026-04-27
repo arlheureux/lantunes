@@ -1896,6 +1896,7 @@
                         <span v-else>Scan Library</span>
                     </button>
                     <button class="btn" @click="fetchMissingArtwork" :disabled="isScanning" style="margin-left:10px;margin-top:10px;background:var(--bg-elevated);color:var(--text-primary);">Fetch Missing Artwork</button>
+                    <button v-if="isAdmin" class="btn" @click="cleanupMissingTracks" :disabled="isScanning" style="margin-left:10px;margin-top:10px;background:var(--bg-elevated);color:var(--text-primary);">Clean up Missing Tracks</button>
                     
                     <!-- Scan Progress -->
                     <div v-if="isScanning || scanProgress.percent > 0" style="margin-top:20px;">
@@ -2620,6 +2621,26 @@ async function saveConfig() {
                         isScanning.value = false;
                         scanResult.value = 'Fetch artwork failed: ' + e.message;
                     }
+                }
+                
+                async function cleanupMissingTracks() {
+                    isScanning.value = true;
+                    scanResult.value = 'Cleaning up missing tracks...';
+                    try {
+                        const res = await fetch(getMediaUrl('/api/library/cleanup'), {
+                            method: 'POST',
+                            headers: { 'Authorization': 'Bearer ' + localStorage.getItem('access_token') }
+                        });
+                        if (res.ok) {
+                            const result = await res.json();
+                            scanResult.value = `Cleaned up ${result.deleted || 0} missing tracks`;
+                        } else {
+                            scanResult.value = 'Cleanup failed';
+                        }
+                    } catch (e) {
+                        scanResult.value = 'Cleanup error: ' + e.message;
+                    }
+                    isScanning.value = false;
                 }
                 
                 function formatDuration(seconds) {
@@ -3501,7 +3522,7 @@ async function saveConfig() {
                     isLoading,
                     tracks, tracksPage, tracksLimit, tracksTotal, tracksTotalPages, contextMenu, playlistDialog,
                     search, viewAlbum, viewArtist, viewGenre, playTrack, playAlbum, playArtist, togglePlay, next, previous, seek, setVolume,
-                    onTimeUpdate, onEnded, onTouchStart, onTouchEnd, createPlaylist, saveConfig, scanLibrary, fetchMissingArtwork, formatDuration, getTrackTitle, getTrackDuration,
+                    onTimeUpdate, onEnded, onTouchStart, onTouchEnd, createPlaylist, saveConfig, scanLibrary, fetchMissingArtwork, cleanupMissingTracks, formatDuration, getTrackTitle, getTrackDuration,
                     loadTracks, prevPage, nextPage, showContextMenu, closeContextMenu, playTrackNext, addToQueue,
                     removeFromQueue, clearQueue, getTrackArtist, saveQueueAsPlaylist,
                     toggleShuffle, toggleRepeat, setVolume, shufflePlay, playFromQueue,
