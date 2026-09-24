@@ -12,15 +12,19 @@ import android.graphics.BitmapFactory
 import android.os.Build
 import android.os.IBinder
 import android.os.StrictMode
+import android.support.v4.media.MediaMetadataCompat
 import android.support.v4.media.session.MediaSessionCompat
+import android.support.v4.media.session.PlaybackStateCompat
 import androidx.core.app.NotificationCompat
 import androidx.media.app.NotificationCompat.MediaStyle
 import androidx.media.session.MediaButtonReceiver
+import android.util.Log
 import java.net.URL
 
 class PlaybackService : Service() {
 
     companion object {
+        private const val TAG = "PlaybackService"
         const val CHANNEL_ID = "lantunes_playback"
         const val NOTIFICATION_ID = 1
         const val ACTION_PLAY = "com.lantunes.PLAY"
@@ -59,6 +63,17 @@ class PlaybackService : Service() {
             }
         }
 
+        fun executeAction(context: Context, action: String) {
+            val intent = Intent(context, PlaybackService::class.java).apply {
+                this.action = action
+            }
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                context.startForegroundService(intent)
+            } else {
+                context.startService(intent)
+            }
+        }
+
         fun updatePlaybackState(isPlaying: Boolean, trackTitle: String?, artistName: String?) {
             playbackState = PlaybackState(isPlaying, trackTitle, artistName)
         }
@@ -78,8 +93,10 @@ class PlaybackService : Service() {
 
     override fun onCreate() {
         super.onCreate()
+        Log.d(TAG, "onCreate")
         createNotificationChannel()
         setupMediaSession()
+        startForeground(NOTIFICATION_ID, createNotification("LanTunes", "", false))
     }
 
     private fun setupMediaSession() {
@@ -110,6 +127,7 @@ class PlaybackService : Service() {
         }
 
         override fun onStop() {
+            Log.d(TAG, "onStop callback - stopping service")
             callJs("onPause")
             stopForeground(STOP_FOREGROUND_REMOVE)
             stopSelf()
@@ -131,9 +149,38 @@ class PlaybackService : Service() {
         val title = state?.trackTitle ?: "LanTunes"
         val artist = state?.artistName ?: ""
 
+        // Update MediaSession playback state
+        val playbackStateCompat = PlaybackStateCompat.Builder()
+            .setState(
+                if (isPlaying) PlaybackStateCompat.STATE_PLAYING else PlaybackStateCompat.STATE_PAUSED,
+                0,
+                if (isPlaying) 1.0f else 0.0f
+            )
+            .setActions(
+                PlaybackStateCompat.ACTION_PLAY or
+                PlaybackStateCompat.ACTION_PAUSE or
+                PlaybackStateCompat.ACTION_SKIP_TO_NEXT or
+                PlaybackStateCompat.ACTION_SKIP_TO_PREVIOUS
+            )
+            .build()
+        mediaSession.setPlaybackState(playbackStateCompat)
+        mediaSession.isActive = true
+
+        // Update MediaSession metadata
+        val metadata = MediaMetadataCompat.Builder()
+            .putString(MediaMetadataCompat.METADATA_KEY_TITLE, title)
+            .putString(MediaMetadataCompat.METADATA_KEY_ARTIST, artist)
+            .apply {
+                val artwork = getArtworkBitmap()
+                if (artwork != null) {
+                    putBitmap(MediaMetadataCompat.METADATA_KEY_ALBUM_ART, artwork)
+                }
+            }
+            .build()
+        mediaSession.setMetadata(metadata)
+
         val notification = createNotification(title, artist, isPlaying)
-        val manager = getSystemService(NotificationManager::class.java)
-        manager.notify(NOTIFICATION_ID, notification)
+        startForeground(NOTIFICATION_ID, notification)
     }
 
     private fun getArtworkBitmap(): Bitmap? {
@@ -161,10 +208,27 @@ class PlaybackService : Service() {
     override fun onBind(intent: Intent?): IBinder? = null
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+        Log.d(TAG, "onStartCommand: action=${intent?.action}, intent=$intent")
+
+        // Handle null intent (service restarted by system with START_STICKY)
+        if (intent == null) {
+            Log.d(TAG, "Service restarted by system, re-establishing foreground")
+            val state = playbackState
+            startForeground(
+                NOTIFICATION_ID,
+                createNotification(
+                    state?.trackTitle ?: "LanTunes",
+                    state?.artistName ?: "",
+                    state?.isPlaying ?: false
+                )
+            )
+            return START_STICKY
+        }
+
         // Handle media button intents from Bluetooth headset
         MediaButtonReceiver.handleIntent(mediaSession, intent)
-        
-        when (intent?.action) {
+
+        when (intent.action) {
             ACTION_PLAY -> {
                 callJs("onPlay")
                 updateNotificationState(true)
@@ -176,13 +240,14 @@ class PlaybackService : Service() {
             ACTION_NEXT -> callJs("onNext")
             ACTION_PREV -> callJs("onPrevious")
             ACTION_STOP -> {
+                Log.d(TAG, "ACTION_STOP received")
                 callJs("onPause")
                 stopForeground(STOP_FOREGROUND_REMOVE)
                 stopSelf()
             }
             ACTION_KEEP_ALIVE -> {
-                // Just keep service alive, no playback action
                 startForeground(NOTIFICATION_ID, createNotification(playbackState?.trackTitle ?: "LanTunes", playbackState?.artistName ?: "", playbackState?.isPlaying ?: false))
+                updateNotificationState(playbackState?.isPlaying ?: false)
             }
         }
         return START_STICKY
@@ -193,7 +258,7 @@ class PlaybackService : Service() {
             val channel = NotificationChannel(
                 CHANNEL_ID,
                 "Playback",
-                NotificationManager.IMPORTANCE_LOW
+                NotificationManager.IMPORTANCE_DEFAULT
             ).apply {
                 description = "LanTunes playback controls"
                 setShowBadge(false)
@@ -246,8 +311,8 @@ class PlaybackService : Service() {
             .setContentText(artist)
             .setSmallIcon(android.R.drawable.ic_media_play)
             .setContentIntent(pendingIntent)
-            .setOngoing(isPlaying)
-            .setPriority(NotificationCompat.PRIORITY_LOW)
+            .setOngoing(true)
+            .setPriority(NotificationCompat.PRIORITY_DEFAULT)
             .setCategory(NotificationCompat.CATEGORY_SERVICE)
             .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
             .addAction(prevAction)
@@ -276,6 +341,7 @@ class PlaybackService : Service() {
     }
 
     override fun onDestroy() {
+        Log.d(TAG, "onDestroy")
         mediaSession.release()
         super.onDestroy()
     }

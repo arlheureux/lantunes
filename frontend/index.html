@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>LanTunes</title>
     <link rel="manifest" href="/manifest.json">
+    <link rel="icon" type="image/png" href="/favicon.ico">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
@@ -1601,7 +1602,7 @@
                 </div>
 
                 <div v-if="trackEditDialog.show" class="dialog-overlay" @click.self="trackEditDialog.show = false">
-                    <div class="dialog" style="min-width: 400px;">
+                    <div class="dialog" style="min-width: 400px; position: relative; z-index: 2001;">
                         <h3>Edit Track</h3>
                         <div style="margin-bottom: 16px;">
                             <label style="display:block; margin-bottom: 8px; color: var(--text-secondary);">Title</label>
@@ -1609,17 +1610,23 @@
                         </div>
                         <div style="margin-bottom: 16px;">
                             <label style="display:block; margin-bottom: 8px; color: var(--text-secondary);">Artist</label>
-                            <input v-model="trackEditDialog.artist_name" class="dialog-input" placeholder="Artist name" list="artist-list">
-                            <datalist id="artist-list">
-                                <option v-for="artist in artists" :key="artist.id" :value="artist.name">
-                            </datalist>
+                            <div style="display: flex; gap: 8px;">
+                                <input v-model="trackEditDialog.artist_name" class="dialog-input" placeholder="Artist name" style="flex: 1;">
+                                <button type="button" @click="toggleArtistSuggestions" style="padding: 10px 14px; background: var(--bg-surface); border: 1px solid var(--border-subtle); border-radius: var(--radius-md); color: var(--text-primary); cursor: pointer;">▼</button>
+                            </div>
+                            <div v-if="showArtistSuggestions" v-click-outside="closeArtistSuggestions" style="position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: var(--bg-elevated); border: 1px solid var(--border-subtle); border-radius: 8px; max-height: 200px; overflow-y: auto; z-index: 3000; min-width: 300px;">
+                                <div v-for="artist in artists" :key="artist.id" @click="trackEditDialog.artist_name = artist.name; showArtistSuggestions = false" style="padding: 12px 16px; cursor: pointer;" onmouseover="this.style.background='var(--bg-hover)'" onmouseout="this.style.background=''">{{ artist.name }}</div>
+                            </div>
                         </div>
                         <div style="margin-bottom: 16px;">
                             <label style="display:block; margin-bottom: 8px; color: var(--text-secondary);">Album</label>
-                            <input v-model="trackEditDialog.album_title" class="dialog-input" placeholder="Album title" list="album-list">
-                            <datalist id="album-list">
-                                <option v-for="album in albums" :key="album.id" :value="album.title">
-                            </datalist>
+                            <div style="display: flex; gap: 8px;">
+                                <input v-model="trackEditDialog.album_title" class="dialog-input" placeholder="Album title" style="flex: 1;">
+                                <button type="button" @click="toggleAlbumSuggestions" style="padding: 10px 14px; background: var(--bg-surface); border: 1px solid var(--border-subtle); border-radius: var(--radius-md); color: var(--text-primary); cursor: pointer;">▼</button>
+                            </div>
+                            <div v-if="showAlbumSuggestions" v-click-outside="closeAlbumSuggestions" style="position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: var(--bg-elevated); border: 1px solid var(--border-subtle); border-radius: 8px; max-height: 200px; overflow-y: auto; z-index: 3000; min-width: 300px;">
+                                <div v-for="album in albums" :key="album.id" @click="trackEditDialog.album_title = album.title; showAlbumSuggestions = false" style="padding: 12px 16px; cursor: pointer;" onmouseover="this.style.background='var(--bg-hover)'" onmouseout="this.style.background=''">{{ album.title }}</div>
+                            </div>
                         </div>
                         <div style="display: flex; gap: 16px; margin-bottom: 16px;">
                             <div style="flex: 1;">
@@ -2352,6 +2359,8 @@ const isLiked = ref(false);
                 const playlistDialog = ref({ show: false, track: null, album: null });
                 const albumEditDialog = ref({ show: false, id: null, title: '', year: null, genre: '', artwork: null });
                 const trackEditDialog = ref({ show: false, id: null, title: '', artist_name: '', album_title: '', track_number: null, disc_number: null });
+                const showArtistSuggestions = ref(false);
+                const showAlbumSuggestions = ref(false);
                 const tracks = ref([]);
                 const trackCache = ref({});
                 const tracksPage = ref(1);
@@ -2450,6 +2459,59 @@ const isLiked = ref(false);
                     }
                 }
                 
+                function setupBrowserMediaSession() {
+                    if (!('mediaSession' in navigator)) return;
+                    const ms = navigator.mediaSession;
+                    try {
+                        ms.setActionHandler('play', () => sendControl('play'));
+                        ms.setActionHandler('pause', () => sendControl('pause'));
+                        ms.setActionHandler('previoustrack', () => sendControl('previous'));
+                        ms.setActionHandler('nexttrack', () => sendControl('next'));
+                        ms.setActionHandler('seekto', (details) => sendControl('seek', { position: details.seekTime || 0 }));
+                    } catch (e) {}
+                }
+                
+                function updateBrowserMediaSession() {
+                    if (!('mediaSession' in navigator)) return;
+                    const track = playbackState.value.track;
+                    const ms = navigator.mediaSession;
+                    if (track) {
+                        let artwork = [];
+                        if (track.album_id) {
+                            const token = localStorage.getItem('access_token') || '';
+                            artwork = [{
+                                src: location.origin + '/api/library/artwork/' + track.album_id + (token ? '?token=' + token : ''),
+                                sizes: '512x512',
+                                type: 'image/jpeg'
+                            }];
+                        }
+                        ms.metadata = new MediaMetadata({
+                            title: track.title || 'Unknown',
+                            artist: track.artist || '',
+                            album: track.album || '',
+                            artwork
+                        });
+                    } else {
+                        ms.metadata = null;
+                    }
+                    ms.playbackState = playbackState.value.is_playing ? 'playing' : 'paused';
+                    updateMediaSessionPosition();
+                }
+                
+                function updateMediaSessionPosition() {
+                    if (!('mediaSession' in navigator)) return;
+                    const track = playbackState.value.track;
+                    const duration = track?.duration || (audioPlayer.value ? audioPlayer.value.duration : 0);
+                    if (!duration) return;
+                    try {
+                        navigator.mediaSession.setPositionState({
+                            duration,
+                            position: Math.min(playbackState.value.position || 0, duration),
+                            playbackRate: playbackState.value.is_playing ? 1 : 0
+                        });
+                    } catch (e) {}
+                }
+                
                 function registerDevice() {
                     currentSessionId.value = sessionId;
                     sendWS('register', { session_id: sessionId, device_id: deviceId, device_name: deviceName.value });
@@ -2511,6 +2573,9 @@ const isLiked = ref(false);
                             lastPositionSent = pos;
                             sendControl('update_position', { position: Math.floor(pos) });
                         }
+                    }
+                    if (isThisDevicePlayer()) {
+                        updateMediaSessionPosition();
                     }
                 }
                 
@@ -2714,7 +2779,7 @@ async function saveConfig() {
                     };
                 }
 
-                function openTrackEditDialog(track) {
+function openTrackEditDialog(track) {
                     trackEditDialog.value = {
                         show: true,
                         id: track.id,
@@ -2724,13 +2789,24 @@ async function saveConfig() {
                         track_number: track.track_number || null,
                         disc_number: track.disc_number || null
                     };
-                    // Load artists and albums if not already loaded
-                    if (artists.value.length === 0) {
-                        apiCall('/api/library/artists').then(a => { if (a) artists.value = a; });
-                    }
+                    showArtistSuggestions.value = false;
+                    showAlbumSuggestions.value = false;
+                }
                     if (albums.value.length === 0) {
                         apiCall('/api/library/albums').then(a => { if (a) albums.value = a; });
                     }
+
+                function toggleArtistSuggestions() {
+                    showArtistSuggestions.value = !showArtistSuggestions.value;
+                }
+                function toggleAlbumSuggestions() {
+                    showAlbumSuggestions.value = !showAlbumSuggestions.value;
+                }
+                function closeArtistSuggestions() {
+                    showArtistSuggestions.value = false;
+                }
+                function closeAlbumSuggestions() {
+                    showAlbumSuggestions.value = false;
                 }
 
                 async function addToPlaylist(playlistId) {
@@ -3069,6 +3145,13 @@ async function saveConfig() {
                     }
                     const result = await apiCall('/api/library/tracks/' + trackEditDialog.value.id + '?' + params.toString(), { method: 'PUT' });
                     if (result) {
+                        // Refresh artist/album lists so new additions appear in dropdown
+                        const [artistsData, albumsData] = await Promise.all([
+                            apiCall('/api/library/artists'),
+                            apiCall('/api/library/albums')
+                        ]);
+                        if (artistsData) artists.value = artistsData;
+                        if (albumsData) albums.value = albumsData;
                         // Refresh current view
                         if (currentAlbum.value && currentAlbum.value.id === result.album_id) {
                             const albumDetails = await apiCall('/api/library/albums/' + result.album_id);
@@ -3310,6 +3393,8 @@ async function saveConfig() {
                             const oldPosition = playbackState.value.position;
                             playbackState.value = msg.data;
                             
+                            updateBrowserMediaSession();
+                            
                             // Keep local volume in sync with server state
                             volume.value = msg.data.volume;
                             
@@ -3378,6 +3463,7 @@ async function saveConfig() {
                         } else if (msg.event === 'position_update') {
                             if (!isThisDevicePlayer()) {
                                 playbackState.value.position = msg.data.position;
+                                updateMediaSessionPosition();
                             }
                         } else if (msg.event === 'sessions') {
                             sessions.value = msg.data.sessions || [];
@@ -3479,6 +3565,7 @@ async function saveConfig() {
                     loadTracks();
                     connectWS();
                     loadUsers();
+                    setupBrowserMediaSession();
                     
                     // Keyboard shortcuts
                     document.addEventListener('keydown', (e) => {
@@ -3529,7 +3616,7 @@ async function saveConfig() {
                     openPlaylistDialog, addToPlaylist, createAndAddToPlaylist, newPlaylistName,
                     showAlbumContextMenu, closeAlbumContextMenu, openAlbumPlaylistDialog,
                     openAlbumEditDialog, saveAlbumMetadata, removeAlbumArtwork, albumEditDialog, getMediaUrl,
-                    openTrackEditDialog, saveTrackMetadata, trackEditDialog,
+                    openTrackEditDialog, saveTrackMetadata, trackEditDialog, showArtistSuggestions, showAlbumSuggestions, toggleArtistSuggestions, toggleAlbumSuggestions,
                     letters, scrollToLetter, selectedLetter, filteredArtists, selectedAlbumLetter, filteredAlbums, selectedGenreLetter, filteredGenres, playRandomAlbum, playRandomArtist, albumContextMenu,
                     sessions, selectedSessionId, currentSessionId, deviceName, updateDeviceName, focusSearch, setPlayerSession,
                     users, showUserForm, newUser, currentUser, isAdmin, isMobile, showMobileQueue, showDeviceModal, showPlayerModal, showMoreMenu, isLiked, toggleLike, loadUsers, createUser, deleteUser, logout,

@@ -8,5 +8,13 @@
   "theme_color": "#121212",
   "orientation": "any",
   "categories": ["music", "entertainment"],
-  "lang": "en"
+  "lang": "en",
+  "icons": [
+    {
+      "src": "/favicon.ico",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
 }

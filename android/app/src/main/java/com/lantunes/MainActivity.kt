@@ -13,6 +13,7 @@ import android.os.Build
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
+import android.view.KeyEvent
 import android.webkit.JavascriptInterface
 import android.webkit.WebChromeClient
 import android.webkit.WebResourceError
@@ -51,6 +52,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var settingsButton: Button
 
     private var isPageLoaded = false
+    private var isPlaying = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
         try {
@@ -71,7 +73,6 @@ class MainActivity : AppCompatActivity() {
             
             setupClickListeners()
             setupBackNavigation()
-            setupMediaSession()
 
             // Start playback service to ensure notification appears
             PlaybackService.startService(this)
@@ -149,8 +150,7 @@ webViewClient = LanTunesWebViewClient()
                 if (webView.canGoBack()) {
                     webView.goBack()
                 } else {
-                    isEnabled = false
-                    onBackPressedDispatcher.onBackPressed()
+                    moveTaskToBack(true)
                 }
             }
         })
@@ -336,8 +336,23 @@ webViewClient = LanTunesWebViewClient()
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
     }
 
-    private fun setupMediaSession() {
-        // Bluetooth controls temporarily disabled - needs proper MediaSession setup
+    override fun onKeyDown(keyCode: Int, event: KeyEvent?): Boolean {
+        val action = when (keyCode) {
+            KeyEvent.KEYCODE_MEDIA_PLAY -> PlaybackService.ACTION_PLAY
+            KeyEvent.KEYCODE_MEDIA_PAUSE -> PlaybackService.ACTION_PAUSE
+            KeyEvent.KEYCODE_MEDIA_PLAY_PAUSE ->
+                if (isPlaying) PlaybackService.ACTION_PAUSE else PlaybackService.ACTION_PLAY
+            KeyEvent.KEYCODE_MEDIA_NEXT -> PlaybackService.ACTION_NEXT
+            KeyEvent.KEYCODE_MEDIA_PREVIOUS -> PlaybackService.ACTION_PREV
+            KeyEvent.KEYCODE_MEDIA_STOP -> PlaybackService.ACTION_STOP
+            else -> null
+        }
+        return if (action != null) {
+            PlaybackService.executeAction(this, action)
+            true
+        } else {
+            super.onKeyDown(keyCode, event)
+        }
     }
 
     @JavascriptInterface
@@ -355,6 +370,7 @@ webViewClient = LanTunesWebViewClient()
 
     @JavascriptInterface
     fun updatePlaybackState(isPlaying: Boolean, trackTitle: String?, artistName: String?) {
+        this.isPlaying = isPlaying
         PlaybackService.updatePlaybackState(isPlaying, trackTitle, artistName)
         // Always try to keep service alive when playback state changes
         PlaybackService.keepServiceAlive(this)
